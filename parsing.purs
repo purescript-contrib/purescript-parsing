@@ -38,7 +38,7 @@ string s = Parser $ \s' -> case indexOfS s' s of
   _ -> Left $ parseError $ "Expected \"" ++ s ++ "\""
 
 instance Prelude.Monad (Parser s) where
-  ret a = Parser $ \s -> Right (parseResult s a)
+  return a = Parser $ \s -> Right (parseResult s a)
   (>>=) (Parser p) f = Parser $ \s -> case p s of
     Left err -> Left err
     Right (ParseResult { leftover = s, result = a }) -> runParser (f a) s
