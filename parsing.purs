@@ -34,8 +34,13 @@ fail message = Parser $ \s -> Left (parseError message)
 
 string :: String -> Parser String String
 string s = Parser $ \s' -> case indexOfS s' s of
-  0 -> Right $ parseResult (substr 0 (lengthS s) s') s
+  0 -> Right $ parseResult (substring (lengthS s) (lengthS s') s') s
   _ -> Left $ parseError $ "Expected \"" ++ s ++ "\""
+
+char :: Parser String String
+char = Parser $ \s -> case s of
+  "" -> Left $ parseError $ "Unexpected EOF"
+  _ -> Right $ parseResult (substring 1 (lengthS s) s) (substr 0 1 s)
 
 instance Prelude.Monad (Parser s) where
   return a = Parser $ \s -> Right (parseResult s a)
