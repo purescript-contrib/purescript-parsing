@@ -1,1 +1,1 @@
-psc parsing.purs test.purs -o test.js --run-main --tco --magic-do
+psc parsing.purs test.purs -o test.js --main --module Main --tco --magic-do
