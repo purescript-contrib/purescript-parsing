@@ -1,10 +1,10 @@
 module Parsing where
 
 import Prelude
-import Either
-import String
-import Arrays
-import Maybe
+import Data.Array
+import Data.Either
+import Data.Maybe
+import Data.String
 
 data ParseError = ParseError
   { message :: String

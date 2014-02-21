@@ -1,12 +1,12 @@
 module Main where
 
 import Prelude
-import Either
-import Eff
+import Data.Array
+import Data.Either
+import Data.Maybe
+import Control.Monad.Eff
+import Debug.Trace
 import Parsing
-import Trace
-import Arrays
-import Maybe
 
 parens :: forall a. ({} -> Parser String a) -> Parser String a
 parens = between (string "(") (string ")")
@@ -18,8 +18,8 @@ nested _ = (do
 
 parseTest :: forall s a eff. (Show a) => Parser s a -> s -> Eff (trace :: Trace | eff) {}
 parseTest p input = case runParser p input of
-  ParseResult { result = Left (ParseError err) } -> Trace.print err.message
-  ParseResult { result = Right result } -> Trace.print result
+  ParseResult { result = Left (ParseError err) } -> print err.message
+  ParseResult { result = Right result } -> print result
 
 opTest = chainl char (do string "+"
                          return (++)) ""
