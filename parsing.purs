@@ -34,7 +34,7 @@ successResult leftover consumed result = parseResult leftover consumed (Right re
 failureResult :: forall s a. s -> Boolean -> ParseError -> ParseResult s a
 failureResult leftover consumed err = parseResult leftover consumed (Left err)
 
-instance Prelude.Functor (ParseResult s) where
+instance functorParseResult :: Prelude.Functor (ParseResult s) where
   (<$>) f (ParseResult o) = parseResult o.leftover o.consumed (f <$> o.result)
 
 data Parser s a = Parser (s -> ParseResult s a)
@@ -42,13 +42,13 @@ data Parser s a = Parser (s -> ParseResult s a)
 runParser :: forall s a. Parser s a -> s -> ParseResult s a
 runParser (Parser p) s = p s
 
-instance Prelude.Monad (Parser s) where
+instance monadParser :: Prelude.Monad (Parser s) where
   return a = Parser $ \s -> successResult s false a
   (>>=) p f = Parser $ \s -> case runParser p s of
     ParseResult ({ leftover = s', consumed = consumed, result = Left err }) -> failureResult s' consumed err
     ParseResult ({ leftover = s', consumed = consumed, result = Right a }) -> runParser (f a) s' -- TODO
 
-instance Prelude.Alternative (Parser s) where
+instance monadAlternative :: Prelude.Alternative (Parser s) where
   empty = fail "No alternative"
   (<|>) p1 p2 = Parser $ \s -> case runParser p1 s of
     ParseResult ({ leftover = s', consumed = false, result = Left _ }) -> runParser p2 s
