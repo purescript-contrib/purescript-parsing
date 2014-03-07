@@ -1,6 +1,7 @@
 module Text.Parsing.Parser where
 
 import Prelude
+import Control.Monad
 import Data.Array
 import Data.Either
 import Data.Maybe
@@ -151,6 +152,11 @@ chainr1' p f a = (do f' <- f
                      a' <- chainr1 p f
                      return $ f' a a') <|> return a
 
+choice :: forall s a. [Parser s a] -> Parser s a
+choice []   = fail "Nothing to parse"
+choice [x]  = x
+choice (x:xs) = x <|> choice xs
+
 -- String Parsers
 
 eof :: Parser String {}
@@ -167,3 +173,78 @@ char :: Parser String String
 char = Parser $ \s -> case s of
   "" -> failureResult s false $ parseError "Unexpected EOF"
   _ -> successResult (substring 1 (lengthS s) s) true (substr 0 1 s)
+
+-- Expressions
+
+data Assoc = AssocNone | AssocLeft | AssocRight
+
+data Operator s a = Infix   (Parser s (a -> a -> a)) Assoc |
+                    Prefix  (Parser s (a -> a)) |
+                    Postfix (Parser s (a -> a))
+                    
+type OperatorTable s a = [[Operator s a]]
+
+type SplitAccum s a = { rassoc :: [Parser s (a -> a -> a)], lassoc :: [Parser s (a -> a -> a)], nassoc :: [Parser s (a -> a -> a)], prefix :: [Parser s (a -> a)], postfix :: [Parser s (a -> a)] }
+
+splitOp :: forall s a. SplitAccum s a -> Operator s a -> SplitAccum s a
+splitOp accum (Infix op AssocNone)  = accum { nassoc = op:accum.nassoc }
+splitOp accum (Infix op AssocLeft)  = accum { lassoc = op:accum.lassoc }
+splitOp accum (Infix op AssocRight) = accum { rassoc = op:accum.rassoc }            
+splitOp accum (Prefix  op) = accum { prefix = op:accum.prefix }
+splitOp accum (Postfix op) = accum { postfix = op:accum.postfix }
+
+buildExprParser :: forall s a. OperatorTable s a -> Parser s a -> Parser s a
+buildExprParser operators simpleExpr = 
+  let 
+    makeParser = \term ops -> 
+      let accum     = foldr splitOp { rassoc: [], lassoc: [], nassoc: [], prefix: [], postfix: [] } ops in
+      
+      let rassocOp  = choice accum.rassoc in
+      let lassocOp  = choice accum.lassoc in
+      let nassocOp  = choice accum.nassoc in
+      let prefixOp  = choice accum.prefix <?> "" in
+      let postfixOp = choice accum.postfix <?> "" in
+      
+      let ambigious = \assoc op -> try $ op >>= \_ -> fail ("ambiguous use of a " ++ assoc ++ " associative operator") in
+      
+      let ambigiousRight    = ambigious "right" rassocOp in
+      let ambigiousLeft     = ambigious "left" lassocOp in
+      let ambigiousNon      = ambigious "non" nassocOp in
+
+      let postfixP = postfixOp <|> return id in
+
+      let prefixP = prefixOp <|> return id in
+      
+      let termP = do
+        pre   <- prefixP
+        x     <- term
+        post  <- postfixP
+        return (post (pre x)) in      
+
+      let rassocP = \x -> (do
+        f <- rassocOp
+        y <- do 
+          z <- termP
+          rassocP1 z
+        return (f x y)) <|> ambigiousLeft <|> ambigiousNon in
+
+      let rassocP1 = \x -> rassocP x  <|> return x in
+
+      let lassocP = \x -> (do
+        f <- lassocOp
+        y <- termP
+        lassocP1 (f x y)) <|> ambigiousRight <|> ambigiousNon in
+
+      let lassocP1 = \x -> lassocP x <|> return x in 
+
+      let nassocP = \x -> do
+        f <- nassocOp
+        y <- termP
+        ambigiousRight <|> ambigiousLeft <|> ambigiousNon <|> return (f x y)
+
+      in do 
+        x <- termP
+        rassocP x <|> lassocP  x <|> nassocP x <|> return x <?> "operator"
+    
+  in foldl (makeParser) simpleExpr operators
+  
