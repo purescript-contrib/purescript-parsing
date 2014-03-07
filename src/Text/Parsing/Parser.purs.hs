@@ -1,4 +1,4 @@
-module Parsing where
+module Text.Parsing.Parser where
 
 import Prelude
 import Data.Array

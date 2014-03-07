@@ -6,7 +6,7 @@ import Data.Either
 import Data.Maybe
 import Control.Monad.Eff
 import Debug.Trace
-import Parsing
+import Text.Parsing.Parser
 
 parens :: forall a. ({} -> Parser String a) -> Parser String a
 parens = between (string "(") (string ")")
