@@ -8,7 +8,7 @@
   ],
   "dependencies": {
     "purescript-transformers": "src",
-    "purescript-prelude": "src",
+    "purescript-prelude": "src"
   },
   "devDependencies": {
     "purescript-quickcheck": "src"
