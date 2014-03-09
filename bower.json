@@ -1,0 +1,16 @@
+{
+  "name": "purescript-parsing",
+  "version": "0.0.1",
+  "ignore": [
+    ".jshintrc",
+    "**/*.txt",
+    "tmp/**"
+  ],
+  "dependencies": {
+    "purescript-transformers": "src",
+    "purescript-prelude": "src",
+  },
+  "devDependencies": {
+    "purescript-quickcheck": "src"
+  }
+}
