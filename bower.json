@@ -7,10 +7,9 @@
     "tmp/**"
   ],
   "dependencies": {
-    "purescript-transformers": "src",
-    "purescript-prelude": "src"
+    "purescript-transformers": "https://github.com/purescript/purescript-transformers.git"
   },
   "devDependencies": {
-    "purescript-quickcheck": "src"
+    "purescript-quickcheck": "https://github.com/purescript/purescript-quickcheck.git"
   }
 }
