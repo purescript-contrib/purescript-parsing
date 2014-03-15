@@ -2,7 +2,6 @@ module Text.Parsing.Parser where
 
 import Prelude
 import Control.Monad
-import Data.Array
 import Data.Either
 import Data.Maybe
 
@@ -11,7 +10,7 @@ data ParseError = ParseError
   }
 
 parseError :: String -> ParseError
-parseError message = ParseError 
+parseError message = ParseError
   { message: message
   }
 
@@ -58,4 +57,4 @@ fail :: forall s a. String -> Parser s a
 fail message = Parser $ \s -> failureResult s false (parseError message)
 
 
-  
+
