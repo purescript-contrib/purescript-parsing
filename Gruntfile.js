@@ -1,41 +1,29 @@
 module.exports = function(grunt) {
-  "use strict";
-  
-  grunt.initConfig({ 
-    jshint: {
-      all: [
-        "Gruntfile.js",
-        "tasks/*.js",
-        "<%= nodeunit.tests %>"
-      ]
-    },
+
+    "use strict";
+
+    grunt.initConfig({ 
     
-    clean: {
-      tests: ["tmp"],
-    },
-
-    purescript: {
-      options: {
-          
-      },
-      compile: {
-          files: {
-              "tmp/out.js": ["src/**/*.hs", "examples/**/*.hs"]
-          }
-      }
-    },
+        clean: ["externs", "js"],
     
-    nodeunit: {
-      tests: ["test/*_test.js"],
-    },
-  });
+        "purescript-make": {
+            options: {
+                tco: true,
+                magicDo: true
+            },
+            lib: {
+                src:
+                    [ "src/**/*.purs.hs"
+                    , "examples/**/*.purs.hs"
+                    , "bower_components/purescript-*/src/**/*.purs"
+                    ]
+            }
+        }
+        
+    });
 
-  grunt.loadTasks("tasks");
-  grunt.loadNpmTasks("grunt-contrib-jshint");
-  grunt.loadNpmTasks("grunt-contrib-clean");
-  grunt.loadNpmTasks("grunt-contrib-nodeunit");
-  grunt.loadNpmTasks("grunt-purescript");
+    grunt.loadNpmTasks("grunt-purescript");
+    grunt.loadNpmTasks("grunt-contrib-clean");
 
-  grunt.registerTask("test", ["clean", "purescript", "nodeunit"]);
-  grunt.registerTask("default", ["jshint", "test"]);
+    grunt.registerTask("default", ["purescript-make:lib"]);
 };
