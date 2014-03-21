@@ -6,9 +6,10 @@ module.exports = function(grunt) {
     
         clean: ["externs", "js"],
     
-        "purescript-make": {
+        "purescript": {
             options: {
                 tco: true,
+                main: true,
                 magicDo: true
             },
             lib: {
@@ -16,7 +17,8 @@ module.exports = function(grunt) {
                     [ "src/**/*.purs.hs"
                     , "examples/**/*.purs.hs"
                     , "bower_components/purescript-*/src/**/*.purs"
-                    ]
+                    ],
+                dest: "js/Main.js"
             }
         }
         
@@ -25,5 +27,5 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks("grunt-purescript");
     grunt.loadNpmTasks("grunt-contrib-clean");
 
-    grunt.registerTask("default", ["purescript-make:lib"]);
+    grunt.registerTask("default", ["purescript:lib"]);
 };

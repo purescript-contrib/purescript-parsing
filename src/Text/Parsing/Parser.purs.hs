@@ -1,60 +1,68 @@
 module Text.Parsing.Parser where
 
 import Prelude
-import Control.Monad
+
 import Data.Either
 import Data.Maybe
+import Data.Monoid
+
+import Control.Monad
+import Control.Monad.Identity
+
+import Control.Monad.Trans
+import Control.Monad.State.Class
+import Control.Monad.State.Trans
+import Control.Monad.Error
+import Control.Monad.Error.Class
+import Control.Monad.Error.Trans
 
 data ParseError = ParseError
   { message :: String
   }
 
-parseError :: String -> ParseError
-parseError message = ParseError
-  { message: message
-  }
+instance errorParseError :: Error ParseError where
+  noMsg = ParseError { message: "" }
+  strMsg msg = ParseError { message: msg }
 
-data ParseResult s a = ParseResult
-  { leftover :: s
-  , consumed :: Boolean
-  , result :: Either ParseError a
-  }
+data Consumed = Consumed Boolean
 
-parseResult :: forall s a. s -> Boolean -> Either ParseError a -> ParseResult s a
-parseResult leftover consumed result = ParseResult
-  { leftover: leftover
-  , consumed: consumed
-  , result: result
-  }
+runConsumed :: Consumed -> Boolean
+runConsumed (Consumed c) = c
 
-successResult :: forall s a. s -> Boolean -> a -> ParseResult s a
-successResult leftover consumed result = parseResult leftover consumed (Right result)
+data ParserT s m a = ParserT (StateT s (StateT Consumed (ErrorT ParseError m)) a)
 
-failureResult :: forall s a. s -> Boolean -> ParseError -> ParseResult s a
-failureResult leftover consumed err = parseResult leftover consumed (Left err)
+unParserT :: forall m s a. ParserT s m a -> StateT s (StateT Consumed (ErrorT ParseError m)) a
+unParserT (ParserT p) = p
 
-instance functorParseResult :: Prelude.Functor (ParseResult s) where
-  (<$>) f (ParseResult o) = parseResult o.leftover o.consumed (f <$> o.result)
+runParserT :: forall m s a. (Monad m) => s -> ParserT s m a -> m (Either ParseError a)
+runParserT s = runErrorT <<< flip evalStateT (Consumed false) <<< flip evalStateT s <<< unParserT
 
-data Parser s a = Parser (s -> ParseResult s a)
+type Parser s a = ParserT s Identity a
 
-runParser :: forall s a. Parser s a -> s -> ParseResult s a
-runParser (Parser p) s = p s
+runParser :: forall s a. s -> Parser s a -> Either ParseError a
+runParser s = runIdentity <<< runParserT s
 
-instance monadParser :: Prelude.Monad (Parser s) where
-  return a = Parser $ \s -> successResult s false a
-  (>>=) p f = Parser $ \s -> case runParser p s of
-    ParseResult ({ leftover = s', consumed = consumed, result = Left err }) -> failureResult s' consumed err
-    ParseResult ({ leftover = s', consumed = consumed, result = Right a }) -> runParser (f a) s'
+instance monadParserT :: (Monad m) => Monad (ParserT s m) where
+  return a = ParserT (return a)
+  (>>=) p f = ParserT (unParserT p >>= (unParserT <<< f))
 
-instance monadAlternative :: Prelude.Alternative (Parser s) where
-  empty = fail "No alternative"
-  (<|>) p1 p2 = Parser $ \s -> case runParser p1 s of
-    ParseResult ({ leftover = s', consumed = false, result = Left _ }) -> runParser p2 s
-    res -> res
+instance alternativeParserT :: (Monad m) => Alternative (ParserT s m) where
+  empty = ParserT empty
+  (<|>) p1 p2 = ParserT (unParserT p1 <|> unParserT p2)
 
-fail :: forall s a. String -> Parser s a
-fail message = Parser $ \s -> failureResult s false (parseError message)
+instance monadTransParserT :: MonadTrans (ParserT s) where
+  lift m = ParserT (lift (lift (lift m)))
 
+instance monadErrorParserT :: (Monad m) => MonadError ParseError (ParserT s m) where
+  throwError e = ParserT (throwError e)
+  catchError p f = ParserT (catchError (unParserT p) (unParserT <<< f))
 
+instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
+  state f = ParserT (state f)
+
+instance monadStateConsumerParserT :: (Monad m) => MonadState Consumed (ParserT s m) where
+  state f = ParserT (state f)
+
+fail :: forall m s a. (Monad m) => String -> ParserT s m a
+fail message = throwError (ParseError { message: message })
 

@@ -7,7 +7,7 @@
     "tmp/**"
   ],
   "dependencies": {
-    "purescript-transformers": "https://github.com/purescript/purescript-transformers.git",
+    "purescript-transformers": "*",
     "purescript-either": "*",
     "purescript-maybe": "*",
     "purescript-arrays": "*",
