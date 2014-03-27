@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "devDependencies": {
     "grunt": "~0.4.4",
-    "grunt-purescript": "~0.3.1",
+    "grunt-purescript": "~0.4.0",
     "grunt-contrib-clean": "~0.5.0"
   }
 }
