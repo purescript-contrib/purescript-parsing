@@ -7,7 +7,11 @@ import Data.String
 import Control.Monad.State.Class
 import Control.Monad.Error.Class
 
+import Data.Foldable
+import Data.Monoid
+
 import Text.Parsing.Parser
+import Text.Parsing.Parser.Combinators
 
 eof :: forall m. (Monad m) => ParserT String m {}
 eof = do
@@ -35,4 +39,15 @@ char = do
       put (Consumed true)
       put (substring 1 (lengthS s) s)
       return (substr 0 1 s)
+
+satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
+satisfy f = do
+  p <- char
+  r <- if not $ f p then fail "Character did not satisfy prediate" else return p
+  return r
+
+whiteSpace :: forall m. (Monad m) => ParserT String m String
+whiteSpace = do
+  list <- many $ string "\n" <|> string "\r" <|> string " " <|> string "\t"
+  return $ foldMap id list
 
