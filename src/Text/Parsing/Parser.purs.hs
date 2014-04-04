@@ -42,6 +42,13 @@ type Parser s a = ParserT s Identity a
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = runIdentity <<< runParserT s
 
+instance functorParserT :: (Monad m) => Functor (ParserT s m) where
+  (<$>) = liftA1
+
+instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
+  pure = return
+  (<*>) = ap
+
 instance monadParserT :: (Monad m) => Monad (ParserT s m) where
   return a = ParserT (return a)
   (>>=) p f = ParserT (unParserT p >>= (unParserT <<< f))
