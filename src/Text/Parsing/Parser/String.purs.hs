@@ -23,10 +23,10 @@ eof = do
 string :: forall m. (Monad m) => String -> ParserT String m String
 string s = do
   s' <- get
-  case indexOfS s' s of
+  case indexOf s' s of
     0 -> do
       put (Consumed true)
-      put (substring (lengthS s) (lengthS s') s')
+      put (substring (length s) (length s') s')
       return s
     _ -> fail $ "Expected \"" ++ s ++ "\""
 
@@ -37,7 +37,7 @@ char = do
     "" -> fail "Unexpected EOF"
     _ -> do
       put (Consumed true)
-      put (substring 1 (lengthS s) s)
+      put (substring 1 (length s) s)
       return (substr 0 1 s)
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
