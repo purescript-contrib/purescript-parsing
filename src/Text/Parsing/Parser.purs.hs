@@ -45,17 +45,20 @@ runParser s = runIdentity <<< runParserT s
 instance functorParserT :: (Monad m) => Functor (ParserT s m) where
   (<$>) = liftA1
 
+instance applyParserT :: (Monad m) => Apply (ParserT s m) where
+  (<*>) = ap
+  
 instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
   pure = return
-  (<*>) = ap
-
-instance monadParserT :: (Monad m) => Monad (ParserT s m) where
-  return a = ParserT (return a)
-  (>>=) p f = ParserT (unParserT p >>= (unParserT <<< f))
-
+  
 instance alternativeParserT :: (Monad m) => Alternative (ParserT s m) where
   empty = ParserT empty
   (<|>) p1 p2 = ParserT (unParserT p1 <|> unParserT p2)
+
+instance bindParserT :: (Monad m) => Bind (ParserT s m) where
+  (>>=) p f = ParserT (unParserT p >>= (unParserT <<< f))
+
+instance monadParserT :: (Monad m) => Monad (ParserT s m)
 
 instance monadTransParserT :: MonadTrans (ParserT s) where
   lift m = ParserT (lift (lift (lift m)))
