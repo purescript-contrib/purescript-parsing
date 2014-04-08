@@ -49,7 +49,7 @@ instance applyParserT :: (Monad m) => Apply (ParserT s m) where
   (<*>) = ap
   
 instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
-  pure = return
+  pure a = ParserT (pure a) 
   
 instance alternativeParserT :: (Monad m) => Alternative (ParserT s m) where
   empty = ParserT empty
