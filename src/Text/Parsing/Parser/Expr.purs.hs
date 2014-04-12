@@ -2,7 +2,6 @@ module Text.Parsing.Parser.Expr where
 
 import Prelude
 
-import Data.Array
 import Data.Either
 import Data.Foldable
 
