@@ -1,19 +1,17 @@
 module Text.Parsing.Parser.Token where
-  
-import Prelude  
+
+import Prelude
 
 import Data.String
 
 import Control.Monad.State.Class
 import Control.Monad.Error.Class
 
-import Control.Applicative
-
 import Text.Parsing.Parser
 import Text.Parsing.Parser.String
 import Text.Parsing.Parser.Combinators
-  
-type LanguageDef s m = { 
+
+type LanguageDef s m = {
     commentStart    :: String,
     commentEnd      :: String,
     commentLine     :: String,
@@ -26,7 +24,7 @@ type LanguageDef s m = {
     reservedOpNames :: [String],
     caseSensitive   :: Boolean
   }
-  
+
 type TokenParser s m = {
     identifier      :: ParserT s m String,
     reserved        :: String -> ParserT s m String,
@@ -50,7 +48,7 @@ type TokenParser s m = {
     brackets        :: forall a. ParserT s m a -> ParserT s m a,
     semi            :: ParserT s m String,
     comma           :: ParserT s m String,
-    colon           :: ParserT s m String,  
+    colon           :: ParserT s m String,
     dot             :: ParserT s m String,
     semiSep         :: forall a. ParserT s m a -> ParserT s m [a],
     semiSep1        :: forall a. ParserT s m a -> ParserT s m [a],
@@ -58,7 +56,7 @@ type TokenParser s m = {
     commaSep1       :: forall a. ParserT s m a -> ParserT s m [a]
   }
 
-{- 
+{-
 -- Port in progress
 makeTokenParser :: LanguageDef s m -> TokenParser s m
 makeTokenParser languageDef
@@ -436,5 +434,5 @@ makeTokenParser languageDef
           <?> "end of comment"
           where
             startEnd   = nub (commentEnd languageDef ++ commentStart languageDef)
-            
+
 -}
