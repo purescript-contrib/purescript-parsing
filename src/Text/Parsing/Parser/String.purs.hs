@@ -23,7 +23,7 @@ eof = do
 string :: forall m. (Monad m) => String -> ParserT String m String
 string s = do
   s' <- get
-  case indexOf s' s of
+  case indexOf s s' of
     0 -> do
       put (Consumed true)
       put (substring (length s) (length s') s')
