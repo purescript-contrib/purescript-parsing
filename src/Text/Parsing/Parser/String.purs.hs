@@ -26,7 +26,7 @@ string s = do
   case indexOf s s' of
     0 -> do
       put (Consumed true)
-      put (substring (length s) (length s') s')
+      put (drop (length s) s')
       return s
     _ -> fail $ "Expected \"" ++ s ++ "\""
 
@@ -37,8 +37,8 @@ char = do
     "" -> fail "Unexpected EOF"
     _ -> do
       put (Consumed true)
-      put (substring 1 (length s) s)
-      return (substr 0 1 s)
+      put (drop 1 s)
+      return (take 1 s)
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 satisfy f = do
