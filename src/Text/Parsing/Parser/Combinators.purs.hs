@@ -15,6 +15,9 @@ import Control.Monad.State.Class
 
 import Text.Parsing.Parser
 
+fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
+fix f = ParserT (StateT (\s -> runStateT (unParserT (f (fix f))) s))
+
 many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
 many p = many1 p <|> return []
 
@@ -24,12 +27,12 @@ many1 p = do a <- p
              return (a : as)
 
 (<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
-(<?>) p msg = p <|> fail msg
+(<?>) p msg = p <|> fail ("Expected " ++ msg)
 
-between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m close -> ({} -> ParserT s m a) -> ParserT s m a
+between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 between open close p = do
   open
-  a <- p {}
+  a <- p
   close 
   return a
 

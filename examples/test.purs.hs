@@ -12,13 +12,13 @@ import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Expr
 import Text.Parsing.Parser.String
 
-parens :: forall m a. (Monad m) => ({} -> ParserT String m a) -> ParserT String m a
+parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
-nested :: forall m. (Monad m) => {} -> ParserT String m Number
-nested _ = (do 
+nested :: forall m. (Monad m) => ParserT String m Number
+nested = fix $ \p -> (do 
   string "a"
-  return 0) <|> ((+) 1) <$> parens nested
+  return 0) <|> ((+) 1) <$> parens p
 
 parseTest :: forall s a eff. (Show a) => Parser s a -> s -> Eff (trace :: Trace | eff) {}
 parseTest p input = case runParser input p of
@@ -46,11 +46,11 @@ exprTest = buildExprParser [[Infix (string "/" >>= \_ -> return (/)) AssocRight]
                            ,[Infix (string "*" >>= \_ -> return (*)) AssocRight]
                            ,[Infix (string "-" >>= \_ -> return (-)) AssocRight]
                            ,[Infix (string "+" >>= \_ -> return (+)) AssocRight]] digit
-
+              
 main = do
-  parseTest (nested {}) "(((a)))"
+  parseTest nested "(((a)))"
   parseTest (many (string "a")) "aaa"
-  parseTest (parens (const $ do
+  parseTest (parens (do
     string "a"
     optionMaybe $ string "b")) "(ab)"
   parseTest (string "a" `sepBy1` string ",") "a,a,a"
