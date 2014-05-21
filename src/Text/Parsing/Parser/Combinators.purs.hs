@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Maybe
 import Data.Array
+import Data.Tuple
 import Data.Either
 
 import Control.Monad
@@ -17,6 +18,11 @@ import Text.Parsing.Parser
 
 fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
 fix f = ParserT (StateT (\s -> runStateT (unParserT (f (fix f))) s))
+
+fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
+fix2 f = Tuple
+           (ParserT (StateT (\s -> runStateT (unParserT (fst (f (fix2 f)))) s)))
+           (ParserT (StateT (\s -> runStateT (unParserT (snd (f (fix2 f)))) s)))
 
 many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
 many p = many1 p <|> return []
