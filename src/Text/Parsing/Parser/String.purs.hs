@@ -3,9 +3,11 @@ module Text.Parsing.Parser.String where
 import Prelude
 
 import Data.String
+import Data.Either
 
-import Control.Monad.State.Class
+import Control.Monad.Error
 import Control.Monad.Error.Class
+import Control.Monad.State.Class
 
 import Data.Foldable
 import Data.Monoid
@@ -14,37 +16,27 @@ import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 
 eof :: forall m. (Monad m) => ParserT String m {}
-eof = do
-  s <- get
-  case s of
-    "" -> return {}
-    _ -> fail "Expected EOF"
+eof = ParserT $ \s -> 
+  return $ case s of
+    "" -> { consumed: false, input: s, result: Right {} }
+    _ -> { consumed: false, input: s, result: Left (strMsg "Expected EOF") }
 
 string :: forall m. (Monad m) => String -> ParserT String m String
-string s = do
-  s' <- get
-  case indexOf s s' of
-    0 -> do
-      put (Consumed true)
-      put (drop (length s) s')
-      return s
-    _ -> fail $ "Expected \"" ++ s ++ "\""
+string s = ParserT $ \s'  -> 
+  return $ case indexOf s s' of
+    0 -> { consumed: true, input: drop (length s) s', result: Right s }
+    _ -> { consumed: false, input: s', result: Left (strMsg ("Expected " ++ show s)) }
 
 char :: forall m. (Monad m) => ParserT String m String
-char = do
-  s <- get
-  case s of
-    "" -> fail "Unexpected EOF"
-    _ -> do
-      put (Consumed true)
-      put (drop 1 s)
-      return (take 1 s)
+char = ParserT $ \s' -> 
+  return $ case s' of
+    "" -> { consumed: false, input: s', result: Left (strMsg "Unexpected EOF") }
+    _ -> { consumed: true, input: drop 1 s', result: Right (charAt 0 s') }
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 satisfy f = do
   p <- char
-  r <- if not $ f p then fail "Character did not satisfy prediate" else return p
-  return r
+  if f p then return p else fail "Character did not satisfy predicate"
 
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 whiteSpace = do

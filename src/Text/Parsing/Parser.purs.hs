@@ -5,6 +5,7 @@ import Prelude
 import Data.Either
 import Data.Maybe
 import Data.Monoid
+import Data.Tuple
 
 import Control.Monad
 import Control.Monad.Identity
@@ -24,55 +25,60 @@ instance errorParseError :: Error ParseError where
   noMsg = ParseError { message: "" }
   strMsg msg = ParseError { message: msg }
 
-data Consumed = Consumed Boolean
+data ParserT s m a = ParserT (s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean })
 
-runConsumed :: Consumed -> Boolean
-runConsumed (Consumed c) = c
-
-data ParserT s m a = ParserT (StateT s (StateT Consumed (ErrorT ParseError m)) a)
-
-unParserT :: forall m s a. ParserT s m a -> StateT s (StateT Consumed (ErrorT ParseError m)) a
+unParserT :: forall m s a. ParserT s m a -> s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean }
 unParserT (ParserT p) = p
 
 runParserT :: forall m s a. (Monad m) => s -> ParserT s m a -> m (Either ParseError a)
-runParserT s = runErrorT <<< flip evalStateT (Consumed false) <<< flip evalStateT s <<< unParserT
+runParserT s p = do
+  o <- unParserT p s
+  return o.result
 
 type Parser s a = ParserT s Identity a
 
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = runIdentity <<< runParserT s
 
-instance functorParserT :: (Monad m) => Functor (ParserT s m) where
-  (<$>) = liftA1
+instance functorParserT :: (Functor m) => Functor (ParserT s m) where
+  (<$>) f p = ParserT $ \s -> f' <$> unParserT p s 
+    where
+    f' o = { input: o.input, result: f <$> o.result, consumed: o.consumed }
 
 instance applyParserT :: (Monad m) => Apply (ParserT s m) where
   (<*>) = ap
   
 instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
-  pure a = ParserT (pure a) 
+  pure a = ParserT $ \s -> pure { input: s, result: Right a, consumed: false }
   
 instance alternativeParserT :: (Monad m) => Alternative (ParserT s m) where
-  empty = ParserT empty
-  (<|>) p1 p2 = ParserT (unParserT p1 <|> unParserT p2)
+  empty = fail "No alternative"
+  (<|>) p1 p2 = ParserT $ \s -> unParserT p1 s >>= \o ->
+    case o.result of
+      Left _ | not o.consumed -> unParserT p2 s
+      _ -> return o
 
 instance bindParserT :: (Monad m) => Bind (ParserT s m) where
-  (>>=) p f = ParserT (unParserT p >>= (unParserT <<< f))
+  (>>=) p f = ParserT $ \s -> unParserT p s >>= \o ->
+    case o.result of
+      Left err -> return { input: o.input, result: Left err, consumed: o.consumed }
+      Right a -> updateConsumedFlag o.consumed <$> unParserT (f a) o.input
+    where
+    updateConsumedFlag c o = { input: o.input, consumed: c || o.consumed, result: o.result }
 
 instance monadParserT :: (Monad m) => Monad (ParserT s m)
 
 instance monadTransParserT :: MonadTrans (ParserT s) where
-  lift m = ParserT (lift (lift (lift m)))
-
-instance monadErrorParserT :: (Monad m) => MonadError ParseError (ParserT s m) where
-  throwError e = ParserT (throwError e)
-  catchError p f = ParserT (catchError (unParserT p) (unParserT <<< f))
+  lift m = ParserT $ \s -> (\a -> { input: s, consumed: false, result: Right a }) <$> m
 
 instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
-  state f = ParserT (state f)
+  state f = ParserT $ \s -> 
+    return $ case f s of
+      Tuple a s' -> { input: s', consumed: false, result: Right a }
 
-instance monadStateConsumerParserT :: (Monad m) => MonadState Consumed (ParserT s m) where
-  state f = ParserT (state f)
+consume :: forall s m. (Monad m) => ParserT s m {}
+consume = ParserT $ \s -> return { consumed: true, input: s, result: Right {} }
 
 fail :: forall m s a. (Monad m) => String -> ParserT s m a
-fail message = throwError (ParseError { message: message })
+fail message = ParserT $ \s -> return { input: s, consumed: false, result: Left (ParseError { message: message }) }
 

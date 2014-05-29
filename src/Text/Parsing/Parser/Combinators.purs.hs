@@ -17,12 +17,12 @@ import Control.Monad.State.Class
 import Text.Parsing.Parser
 
 fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
-fix f = ParserT (StateT (\s -> runStateT (unParserT (f (fix f))) s))
+fix f = ParserT $ \s -> unParserT (f (fix f)) s
 
 fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
 fix2 f = Tuple
-           (ParserT (StateT (\s -> runStateT (unParserT (fst (f (fix2 f)))) s)))
-           (ParserT (StateT (\s -> runStateT (unParserT (snd (f (fix2 f)))) s)))
+           (ParserT $ \s -> unParserT (fst (f (fix2 f))) s)
+           (ParserT $ \s -> unParserT (snd (f (fix2 f))) s)
 
 many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
 many p = many1 p <|> return []
@@ -49,14 +49,14 @@ optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m {}
 optional p = (do p
                  return {}) <|> return {}
 
-optionMaybe :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (Maybe a)
+optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
-try :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m a
-try p = catchError p $ \e -> do
-  Consumed consumed <- get
-  when consumed $ put (Consumed false)
-  throwError (e :: ParseError)
+try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
+try p = ParserT $ \s -> try' s <$> unParserT p s
+  where 
+  try' s o@{ result = Left _ } = { input: s, result: o.result, consumed: false }
+  try' _ o = o
 
 sepBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 sepBy p sep = sepBy1 p sep <|> return []

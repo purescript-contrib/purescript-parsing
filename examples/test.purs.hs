@@ -15,7 +15,7 @@ import Text.Parsing.Parser.String
 parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
-nested :: forall m. (Monad m) => ParserT String m Number
+nested :: forall m. (Functor m, Monad m) => ParserT String m Number
 nested = fix $ \p -> (do 
   string "a"
   return 0) <|> ((+) 1) <$> parens p
