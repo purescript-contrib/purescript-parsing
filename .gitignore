@@ -1,4 +1,7 @@
-/js/
-/externs/
-/node_modules/
+/.*
+!/.gitignore
+!/.travis.yml
 /bower_components/
+/node_modules/
+/output/
+/tmp/
