@@ -20,7 +20,7 @@ nested = fix $ \p -> (do
   string "a"
   return 0) <|> ((+) 1) <$> parens p
 
-parseTest :: forall s a eff. (Show a) => Parser s a -> s -> Eff (trace :: Trace | eff) {}
+parseTest :: forall s a eff. (Show a) => Parser s a -> s -> Eff (trace :: Trace | eff) Unit
 parseTest p input = case runParser input p of
   Left (ParseError err) -> print err.message
   Right result -> print result
