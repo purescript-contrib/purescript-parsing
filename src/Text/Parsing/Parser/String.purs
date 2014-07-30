@@ -37,7 +37,7 @@ satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 satisfy f = try do
     c <- char
     if f c then return c
-           else fail "Character did not satisfied predicate"
+           else fail "Character did not satisfy predicate"
 
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 whiteSpace = do
