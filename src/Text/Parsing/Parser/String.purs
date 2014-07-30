@@ -34,13 +34,10 @@ char = ParserT $ \s' ->
     _ -> { consumed: true, input: drop 1 s', result: Right (charAt 0 s') }
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
-satisfy f = ParserT $ \s' -> case s' of
-    "" -> return { consumed: false, input: s', result: Left (strMsg "Unexpected EOF") }
-    _  ->
-        let c = charAt 0 s'
-        in return $ if f c
-            then { consumed: true, input: drop 1 s', result: Right c }
-            else { consumed: false, input: s', result: Left (strMsg "Character did not satisfy predicate") }
+satisfy f = try do
+    c <- char
+    if f c then return c
+           else fail "Character did not satisfied predicate"
 
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 whiteSpace = do
