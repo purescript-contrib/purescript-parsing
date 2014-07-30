@@ -66,4 +66,4 @@ main = do
     return as) "a,a,a,"  
   parseTest opTest "a+b+c"
   parseTest exprTest "1*2+3/4-5"
-  parseTest manySatisfyTest "ab?" -- Should return "[a, b]" but it's not
+  parseTest manySatisfyTest "ab?"
