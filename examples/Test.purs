@@ -46,7 +46,13 @@ exprTest = buildExprParser [[Infix (string "/" >>= \_ -> return (/)) AssocRight]
                            ,[Infix (string "*" >>= \_ -> return (*)) AssocRight]
                            ,[Infix (string "-" >>= \_ -> return (-)) AssocRight]
                            ,[Infix (string "+" >>= \_ -> return (+)) AssocRight]] digit
-              
+
+manySatisfyTest :: Parser String [String]
+manySatisfyTest = do
+    r <- many1 $ satisfy (\s -> s /= "?")
+    string "?"
+    return r
+
 main = do
   parseTest nested "(((a)))"
   parseTest (many (string "a")) "aaa"
@@ -60,3 +66,4 @@ main = do
     return as) "a,a,a,"  
   parseTest opTest "a+b+c"
   parseTest exprTest "1*2+3/4-5"
+  parseTest manySatisfyTest "ab?"
