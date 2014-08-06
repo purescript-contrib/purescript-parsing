@@ -49,6 +49,11 @@
 
 ## Module Text.Parsing.Parser.Combinators
 
+### Type Class Instances
+
+    instance showParseError :: Show ParseError
+
+
 ### Values
 
     (<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
@@ -77,9 +82,15 @@
 
     fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
 
+    lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
+
     many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
 
     many1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
+
+    many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
+
+    manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
 
     option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
 
@@ -94,6 +105,10 @@
     sepEndBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
     sepEndBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+
+    skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {  }
+
+    skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {  }
 
     try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
 
@@ -144,7 +159,13 @@
 
     eof :: forall m. (Monad m) => ParserT String m {  }
 
+    noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+
+    oneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+
     satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
+
+    skipSpaces :: forall m. (Monad m) => ParserT String m {  }
 
     string :: forall m. (Monad m) => String -> ParserT String m String
 

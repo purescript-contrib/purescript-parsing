@@ -41,16 +41,16 @@ runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = runIdentity <<< runParserT s
 
 instance functorParserT :: (Functor m) => Functor (ParserT s m) where
-  (<$>) f p = ParserT $ \s -> f' <$> unParserT p s 
+  (<$>) f p = ParserT $ \s -> f' <$> unParserT p s
     where
     f' o = { input: o.input, result: f <$> o.result, consumed: o.consumed }
 
 instance applyParserT :: (Monad m) => Apply (ParserT s m) where
   (<*>) = ap
-  
+
 instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
   pure a = ParserT $ \s -> pure { input: s, result: Right a, consumed: false }
-  
+
 instance alternativeParserT :: (Monad m) => Alternative (ParserT s m) where
   empty = fail "No alternative"
   (<|>) p1 p2 = ParserT $ \s -> unParserT p1 s >>= \o ->
@@ -72,7 +72,7 @@ instance monadTransParserT :: MonadTrans (ParserT s) where
   lift m = ParserT $ \s -> (\a -> { input: s, consumed: false, result: Right a }) <$> m
 
 instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
-  state f = ParserT $ \s -> 
+  state f = ParserT $ \s ->
     return $ case f s of
       Tuple a s' -> { input: s', consumed: false, result: Right a }
 

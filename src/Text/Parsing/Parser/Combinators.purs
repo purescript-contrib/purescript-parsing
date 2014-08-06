@@ -39,7 +39,7 @@ between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m
 between open close p = do
   open
   a <- p
-  close 
+  close
   return a
 
 option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
@@ -54,7 +54,7 @@ optionMaybe p = option Nothing (Just <$> p)
 
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
 try p = ParserT $ \s -> try' s <$> unParserT p s
-  where 
+  where
   try' s o@{ result = Left _ } = { input: s, result: o.result, consumed: false }
   try' _ o = o
 
@@ -80,7 +80,7 @@ sepEndBy1 p sep = do
       return (a : as)) <|> return [a]
 
 endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
-endBy1 p sep = many1 $ do 
+endBy1 p sep = many1 $ do
   a <- p
   sep
   return a
@@ -121,4 +121,38 @@ choice :: forall m s a. (Monad m) => [ParserT s m a] -> ParserT s m a
 choice []   = fail "Nothing to parse"
 choice [x]  = x
 choice (x:xs) = x <|> choice xs
+
+skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {}
+skipMany p = skipMany1 p <|> return {}
+
+skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {}
+skipMany1 p = do
+  x <- p
+  xs <- skipMany p
+  return {}
+
+lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
+lookAhead (ParserT p) = ParserT \s -> do
+  state <- p s
+  return state{input = s, consumed = false}
+
+instance showParseError :: Show ParseError where
+  show (ParseError msg) = msg.message
+
+manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
+manyTill p end = scan
+  where
+    scan = (do
+              end
+              return [])
+       <|> (do
+              x <- p
+              xs <- scan
+              return (x:xs))
+
+many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
+many1Till p end = do
+  x <- p
+  xs <- manyTill p end
+  return (x:xs)
 
