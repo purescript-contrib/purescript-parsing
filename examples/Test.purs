@@ -1,12 +1,14 @@
 module Main where
 
-import Prelude
 import Data.Array
 import Data.Either
 import Data.Maybe
+
 import Control.Monad.Eff
 import Control.Monad.Identity
+
 import Debug.Trace
+
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Expr
@@ -16,7 +18,7 @@ parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
 nested :: forall m. (Functor m, Monad m) => ParserT String m Number
-nested = fix $ \p -> (do 
+nested = fix $ \p -> (do
   string "a"
   return 0) <|> ((+) 1) <$> parens p
 
@@ -30,23 +32,23 @@ opTest = chainl char (do string "+"
                          return (++)) ""
 
 digit :: Parser String Number
-digit = (string "0" >>= \_ -> return 0) 
-        <|> (string "1" >>= \_ -> return 1) 
-        <|> (string "2" >>= \_ -> return 2) 
-        <|> (string "3" >>= \_ -> return 3) 
-        <|> (string "4" >>= \_ -> return 4) 
-        <|> (string "5" >>= \_ -> return 5) 
-        <|> (string "6" >>= \_ -> return 6) 
-        <|> (string "7" >>= \_ -> return 7) 
-        <|> (string "8" >>= \_ -> return 8) 
-        <|> (string "9" >>= \_ -> return 9) 
+digit = (string "0" >>= \_ -> return 0)
+        <|> (string "1" >>= \_ -> return 1)
+        <|> (string "2" >>= \_ -> return 2)
+        <|> (string "3" >>= \_ -> return 3)
+        <|> (string "4" >>= \_ -> return 4)
+        <|> (string "5" >>= \_ -> return 5)
+        <|> (string "6" >>= \_ -> return 6)
+        <|> (string "7" >>= \_ -> return 7)
+        <|> (string "8" >>= \_ -> return 8)
+        <|> (string "9" >>= \_ -> return 9)
 
 exprTest :: Parser String Number
 exprTest = buildExprParser [[Infix (string "/" >>= \_ -> return (/)) AssocRight]
                            ,[Infix (string "*" >>= \_ -> return (*)) AssocRight]
                            ,[Infix (string "-" >>= \_ -> return (-)) AssocRight]
                            ,[Infix (string "+" >>= \_ -> return (+)) AssocRight]] digit
-              
+
 main = do
   parseTest nested "(((a)))"
   parseTest (many (string "a")) "aaa"
@@ -57,6 +59,6 @@ main = do
   parseTest (do
     as <- string "a" `endBy1` string ","
     eof
-    return as) "a,a,a,"  
+    return as) "a,a,a,"
   parseTest opTest "a+b+c"
   parseTest exprTest "1*2+3/4-5"

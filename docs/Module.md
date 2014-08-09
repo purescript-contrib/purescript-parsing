@@ -15,6 +15,8 @@
 
 ### Type Class Instances
 
+    instance altParserT :: (Monad m) => Alt (ParserT s m)
+
     instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
 
     instance applicativeParserT :: (Monad m) => Applicative (ParserT s m)
@@ -32,6 +34,8 @@
     instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m)
 
     instance monadTransParserT :: MonadTrans (ParserT s)
+
+    instance plusParserT :: (Monad m) => Plus (ParserT s m)
 
 
 ### Values

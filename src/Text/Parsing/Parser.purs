@@ -1,15 +1,15 @@
 module Text.Parsing.Parser where
 
-import Prelude
-
 import Data.Either
 import Data.Maybe
 import Data.Monoid
 import Data.Tuple
 
+import Control.Alt
+import Control.Alternative
+import Control.Plus
 import Control.Monad
 import Control.Monad.Identity
-
 import Control.Monad.Trans
 import Control.Monad.State.Class
 import Control.Monad.State.Trans
@@ -41,22 +41,26 @@ runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = runIdentity <<< runParserT s
 
 instance functorParserT :: (Functor m) => Functor (ParserT s m) where
-  (<$>) f p = ParserT $ \s -> f' <$> unParserT p s 
+  (<$>) f p = ParserT $ \s -> f' <$> unParserT p s
     where
     f' o = { input: o.input, result: f <$> o.result, consumed: o.consumed }
 
 instance applyParserT :: (Monad m) => Apply (ParserT s m) where
   (<*>) = ap
-  
+
 instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
   pure a = ParserT $ \s -> pure { input: s, result: Right a, consumed: false }
-  
-instance alternativeParserT :: (Monad m) => Alternative (ParserT s m) where
-  empty = fail "No alternative"
+
+instance altParserT :: (Monad m) => Alt (ParserT s m) where
   (<|>) p1 p2 = ParserT $ \s -> unParserT p1 s >>= \o ->
     case o.result of
       Left _ | not o.consumed -> unParserT p2 s
       _ -> return o
+
+instance plusParserT :: (Monad m) => Plus (ParserT s m) where
+  empty = fail "No alternative"
+
+instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
 
 instance bindParserT :: (Monad m) => Bind (ParserT s m) where
   (>>=) p f = ParserT $ \s -> unParserT p s >>= \o ->
@@ -72,7 +76,7 @@ instance monadTransParserT :: MonadTrans (ParserT s) where
   lift m = ParserT $ \s -> (\a -> { input: s, consumed: false, result: Right a }) <$> m
 
 instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
-  state f = ParserT $ \s -> 
+  state f = ParserT $ \s ->
     return $ case f s of
       Tuple a s' -> { input: s', consumed: false, result: Right a }
 

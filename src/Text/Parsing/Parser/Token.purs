@@ -1,7 +1,5 @@
 module Text.Parsing.Parser.Token where
 
-import Prelude
-
 import Data.String
 
 import Control.Monad.State.Class

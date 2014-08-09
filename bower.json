@@ -18,10 +18,10 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-transformers": "*",
+    "purescript-transformers": "~0.1.0",
     "purescript-either": "*",
-    "purescript-maybe": "*",
-    "purescript-arrays": "*",
+    "purescript-maybe": "~0.2.0",
+    "purescript-arrays": "~0.2.0",
     "purescript-strings": "*",
     "purescript-foldable-traversable": "*"
   }

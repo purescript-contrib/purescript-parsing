@@ -1,14 +1,12 @@
 module Text.Parsing.Parser.Combinators where
 
-import Prelude
-
 import Data.Maybe
 import Data.Array
 import Data.Tuple
 import Data.Either
 
+import Control.Alt
 import Control.Monad
-
 import Control.Monad.Error.Trans
 import Control.Monad.Error.Class
 import Control.Monad.State.Trans
@@ -39,7 +37,7 @@ between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m
 between open close p = do
   open
   a <- p
-  close 
+  close
   return a
 
 option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
@@ -54,7 +52,7 @@ optionMaybe p = option Nothing (Just <$> p)
 
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
 try p = ParserT $ \s -> try' s <$> unParserT p s
-  where 
+  where
   try' s o@{ result = Left _ } = { input: s, result: o.result, consumed: false }
   try' _ o = o
 
@@ -80,7 +78,7 @@ sepEndBy1 p sep = do
       return (a : as)) <|> return [a]
 
 endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
-endBy1 p sep = many1 $ do 
+endBy1 p sep = many1 $ do
   a <- p
   sep
   return a
