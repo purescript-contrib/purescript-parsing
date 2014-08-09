@@ -4,6 +4,7 @@ import Data.Array
 import Data.Either
 import Data.Maybe
 
+import Control.Alt
 import Control.Monad.Eff
 import Control.Monad.Identity
 
