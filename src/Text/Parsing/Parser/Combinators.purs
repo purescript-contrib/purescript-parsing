@@ -6,6 +6,7 @@ import Data.Tuple
 import Data.Either
 
 import Control.Alt
+import Control.Alternative
 import Control.Monad
 import Control.Monad.Error.Trans
 import Control.Monad.Error.Class
@@ -21,14 +22,6 @@ fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT
 fix2 f = Tuple
            (ParserT $ \s -> unParserT (fst (f (fix2 f))) s)
            (ParserT $ \s -> unParserT (snd (f (fix2 f))) s)
-
-many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
-many p = many1 p <|> return []
-
-many1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
-many1 p = do a <- p
-             as <- many p
-             return (a : as)
 
 (<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
 (<?>) p msg = p <|> fail ("Expected " ++ msg)
@@ -78,7 +71,7 @@ sepEndBy1 p sep = do
       return (a : as)) <|> return [a]
 
 endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
-endBy1 p sep = many1 $ do
+endBy1 p sep = some $ do
   a <- p
   sep
   return a

@@ -9,7 +9,7 @@
 
     type Parser s a = ParserT s Identity a
 
-    data ParserT s m a where
+    newtype ParserT s m a where
       ParserT :: s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s } -> ParserT s m a
 
 
@@ -29,6 +29,8 @@
 
     instance functorParserT :: (Functor m) => Functor (ParserT s m)
 
+    instance lazy1ParserT :: Lazy1 (ParserT s m)
+
     instance monadParserT :: (Monad m) => Monad (ParserT s m)
 
     instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
@@ -42,7 +44,7 @@
 
 ### Values
 
-    consume :: forall s m. (Monad m) => ParserT s m {  }
+    consume :: forall s m. (Monad m) => ParserT s m Unit
 
     fail :: forall m s a. (Monad m) => String -> ParserT s m a
 
@@ -82,10 +84,6 @@
     fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
 
     fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
-
-    many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
-
-    many1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
 
     option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
 

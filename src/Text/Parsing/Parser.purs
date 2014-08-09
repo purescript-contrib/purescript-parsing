@@ -7,7 +7,7 @@ import Data.Tuple
 
 import Control.Alt
 import Control.Alternative
-import Control.Plus
+import Control.Lazy
 import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.Trans
@@ -17,6 +17,7 @@ import Control.Monad.Error
 import Control.Monad.Error.Class
 import Control.Monad.Error.Trans
 import Control.MonadPlus
+import Control.Plus
 
 data ParseError = ParseError
   { message :: String
@@ -26,7 +27,7 @@ instance errorParseError :: Error ParseError where
   noMsg = ParseError { message: "" }
   strMsg msg = ParseError { message: msg }
 
-data ParserT s m a = ParserT (s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean })
+newtype ParserT s m a = ParserT (s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean })
 
 unParserT :: forall m s a. ParserT s m a -> s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean }
 unParserT (ParserT p) = p
@@ -83,8 +84,11 @@ instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
     return $ case f s of
       Tuple a s' -> { input: s', consumed: false, result: Right a }
 
-consume :: forall s m. (Monad m) => ParserT s m {}
-consume = ParserT $ \s -> return { consumed: true, input: s, result: Right {} }
+instance lazy1ParserT :: Lazy1 (ParserT s m) where
+  defer1 f = ParserT $ \s -> unParserT (f unit) s
+
+consume :: forall s m. (Monad m) => ParserT s m Unit
+consume = ParserT $ \s -> return { consumed: true, input: s, result: Right unit }
 
 fail :: forall m s a. (Monad m) => String -> ParserT s m a
 fail message = ParserT $ \s -> return { input: s, consumed: false, result: Left (ParseError { message: message }) }

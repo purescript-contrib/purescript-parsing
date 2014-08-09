@@ -5,6 +5,7 @@ import Data.Either
 import Data.Maybe
 
 import Control.Alt
+import Control.Alternative
 import Control.Monad.Eff
 import Control.Monad.Identity
 
@@ -52,7 +53,7 @@ exprTest = buildExprParser [[Infix (string "/" >>= \_ -> return (/)) AssocRight]
 
 manySatisfyTest :: Parser String [String]
 manySatisfyTest = do
-    r <- many1 $ satisfy (\s -> s /= "?")
+    r <- some $ satisfy (\s -> s /= "?")
     string "?"
     return r
 
