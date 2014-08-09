@@ -32,9 +32,10 @@ char = ParserT $ \s' ->
     _ -> { consumed: true, input: drop 1 s', result: Right (charAt 0 s') }
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
-satisfy f = do
-  p <- char
-  if f p then return p else fail "Character did not satisfy predicate"
+satisfy f = try do
+    c <- char
+    if f c then return c
+           else fail "Character did not satisfy predicate"
 
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 whiteSpace = do
