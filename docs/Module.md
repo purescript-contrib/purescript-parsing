@@ -31,6 +31,8 @@
 
     instance monadParserT :: (Monad m) => Monad (ParserT s m)
 
+    instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
+
     instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m)
 
     instance monadTransParserT :: MonadTrans (ParserT s)

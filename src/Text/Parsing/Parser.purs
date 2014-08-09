@@ -16,6 +16,7 @@ import Control.Monad.State.Trans
 import Control.Monad.Error
 import Control.Monad.Error.Class
 import Control.Monad.Error.Trans
+import Control.MonadPlus
 
 data ParseError = ParseError
   { message :: String
@@ -71,6 +72,8 @@ instance bindParserT :: (Monad m) => Bind (ParserT s m) where
     updateConsumedFlag c o = { input: o.input, consumed: c || o.consumed, result: o.result }
 
 instance monadParserT :: (Monad m) => Monad (ParserT s m)
+
+instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
 
 instance monadTransParserT :: MonadTrans (ParserT s) where
   lift m = ParserT $ \s -> (\a -> { input: s, consumed: false, result: Right a }) <$> m
