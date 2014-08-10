@@ -7,6 +7,7 @@ import Data.Either
 
 import Control.Alt
 import Control.Alternative
+import Control.Lazy
 import Control.Monad
 import Control.Monad.Error.Trans
 import Control.Monad.Error.Class
@@ -14,14 +15,6 @@ import Control.Monad.State.Trans
 import Control.Monad.State.Class
 
 import Text.Parsing.Parser
-
-fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
-fix f = ParserT $ \s -> unParserT (f (fix f)) s
-
-fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
-fix2 f = Tuple
-           (ParserT $ \s -> unParserT (fst (f (fix2 f))) s)
-           (ParserT $ \s -> unParserT (snd (f (fix2 f))) s)
 
 (<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
 (<?>) p msg = p <|> fail ("Expected " ++ msg)

@@ -31,6 +31,8 @@
 
     instance lazy1ParserT :: Lazy1 (ParserT s m)
 
+    instance lazyParserT :: Lazy (ParserT s m a)
+
     instance monadParserT :: (Monad m) => Monad (ParserT s m)
 
     instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
@@ -80,10 +82,6 @@
     endBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
     endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
-
-    fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
-
-    fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
 
     option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
 

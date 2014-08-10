@@ -8,6 +8,7 @@ import Control.Alt
 import Control.Alternative
 import Control.Monad.Eff
 import Control.Monad.Identity
+import Control.Lazy
 
 import Debug.Trace
 
@@ -20,7 +21,7 @@ parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
 nested :: forall m. (Functor m, Monad m) => ParserT String m Number
-nested = fix $ \p -> (do
+nested = fix1 $ \p -> (do
   string "a"
   return 0) <|> ((+) 1) <$> parens p
 
