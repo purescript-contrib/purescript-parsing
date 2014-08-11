@@ -1,9 +1,9 @@
 module Text.Parsing.Parser.Expr where
 
-import Prelude
-
 import Data.Either
 import Data.Foldable
+
+import Control.Alt
 
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
