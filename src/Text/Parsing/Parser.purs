@@ -84,9 +84,6 @@ instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
     return $ case f s of
       Tuple a s' -> { input: s', consumed: false, result: Right a }
 
-instance lazyParserT :: Lazy (ParserT s m a) where
-  defer f = ParserT $ \s -> unParserT (f unit) s
-
 instance lazy1ParserT :: Lazy1 (ParserT s m) where
   defer1 f = ParserT $ \s -> unParserT (f unit) s
 

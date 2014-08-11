@@ -31,8 +31,6 @@
 
     instance lazy1ParserT :: Lazy1 (ParserT s m)
 
-    instance lazyParserT :: Lazy (ParserT s m a)
-
     instance monadParserT :: (Monad m) => Monad (ParserT s m)
 
     instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
