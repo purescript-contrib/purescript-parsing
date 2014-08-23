@@ -1,16 +1,15 @@
 module Text.Parsing.Parser.String where
 
-import Prelude
-
 import Data.String
 import Data.Either
+import Data.Foldable
+import Data.Monoid
 
+import Control.Alt
+import Control.Alternative
 import Control.Monad.Error
 import Control.Monad.Error.Class
 import Control.Monad.State.Class
-
-import Data.Foldable
-import Data.Monoid
 
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators

@@ -9,11 +9,13 @@
 
     type Parser s a = ParserT s Identity a
 
-    data ParserT s m a where
+    newtype ParserT s m a where
       ParserT :: s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s } -> ParserT s m a
 
 
 ### Type Class Instances
+
+    instance altParserT :: (Monad m) => Alt (ParserT s m)
 
     instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
 
@@ -27,16 +29,22 @@
 
     instance functorParserT :: (Functor m) => Functor (ParserT s m)
 
+    instance lazy1ParserT :: Lazy1 (ParserT s m)
+
     instance monadParserT :: (Monad m) => Monad (ParserT s m)
+
+    instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
 
     instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m)
 
     instance monadTransParserT :: MonadTrans (ParserT s)
 
+    instance plusParserT :: (Monad m) => Plus (ParserT s m)
+
 
 ### Values
 
-    consume :: forall s m. (Monad m) => ParserT s m {  }
+    consume :: forall s m. (Monad m) => ParserT s m Unit
 
     fail :: forall m s a. (Monad m) => String -> ParserT s m a
 
@@ -78,15 +86,7 @@
 
     endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
-    fix :: forall m s a. (ParserT m s a -> ParserT m s a) -> ParserT m s a
-
-    fix2 :: forall m s a b. (Tuple (ParserT m s a) (ParserT m s b) -> Tuple (ParserT m s a) (ParserT m s b)) -> Tuple (ParserT m s a) (ParserT m s b)
-
     lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
-
-    many :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
-
-    many1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m [a]
 
     many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
 
