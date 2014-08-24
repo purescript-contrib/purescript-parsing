@@ -29,9 +29,9 @@ between open close p = do
 option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
 option a p = p <|> return a
 
-optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m {}
+optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m Unit
 optional p = (do p
-                 return {}) <|> return {}
+                 return unit) <|> return unit
 
 optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
@@ -106,14 +106,14 @@ choice []   = fail "Nothing to parse"
 choice [x]  = x
 choice (x:xs) = x <|> choice xs
 
-skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {}
-skipMany p = skipMany1 p <|> return {}
+skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+skipMany p = skipMany1 p <|> return unit
 
-skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {}
+skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
 skipMany1 p = do
   x <- p
   xs <- skipMany p
-  return {}
+  return unit
 
 lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
 lookAhead (ParserT p) = ParserT \s -> do
