@@ -96,7 +96,7 @@
 
     optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s m (Maybe a)
 
-    optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m {  }
+    optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m Unit
 
     sepBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
@@ -106,9 +106,9 @@
 
     sepEndBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
-    skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {  }
+    skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
 
-    skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m {  }
+    skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
 
     try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
 
@@ -157,7 +157,7 @@
 
     char :: forall m. (Monad m) => ParserT String m String
 
-    eof :: forall m. (Monad m) => ParserT String m {  }
+    eof :: forall m. (Monad m) => ParserT String m Unit
 
     noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
 
@@ -165,7 +165,7 @@
 
     satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 
-    skipSpaces :: forall m. (Monad m) => ParserT String m {  }
+    skipSpaces :: forall m. (Monad m) => ParserT String m Unit
 
     string :: forall m. (Monad m) => String -> ParserT String m String
 
