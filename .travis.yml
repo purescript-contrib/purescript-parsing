@@ -8,6 +8,7 @@ before_install:
   - mkdir -p $HOME/.local/share/purescript/prelude
 install:
   - wget -O $HOME/bin/psc https://github.com/joneshf/purescript/releases/download/v0.5.4.1/psc
+  - chmod a+x $HOME/bin/psc
   - wget -O $purescript_datadir/prelude/prelude.purs https://github.com/joneshf/purescript/releases/download/v0.5.4.1/prelude.purs
   - "npm install bower grunt-cli -g"
   - "npm install"
