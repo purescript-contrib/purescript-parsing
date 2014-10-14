@@ -4,6 +4,8 @@ import Data.String
 import Data.Either
 import Data.Foldable
 import Data.Monoid
+import Data.Maybe
+import Data.Char
 
 import Control.Alt
 import Control.Alternative
@@ -28,9 +30,9 @@ string s = ParserT $ \s'  ->
 
 char :: forall m. (Monad m) => ParserT String m String
 char = ParserT $ \s' ->
-  return $ case s' of
-    "" -> { consumed: false, input: s', result: Left (strMsg "Unexpected EOF") }
-    _ -> { consumed: true, input: drop 1 s', result: Right (charAt 0 s') }
+  return $ case charAt 0 s' of
+    Nothing -> { consumed: false, input: s', result: Left (strMsg "Unexpected EOF") }
+    Just c  -> { consumed: true, input: drop 1 s', result: Right (charString c) }
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 satisfy f = try do
