@@ -10,7 +10,7 @@
     type Parser s a = ParserT s Identity a
 
     newtype ParserT s m a where
-      ParserT :: s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s } -> ParserT s m a
+      ParserT :: (s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s }) -> ParserT s m a
 
 
 ### Type Class Instances
