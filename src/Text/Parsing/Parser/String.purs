@@ -16,10 +16,10 @@ import Control.Monad.State.Class
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 
-eof :: forall m. (Monad m) => ParserT String m {}
+eof :: forall m. (Monad m) => ParserT String m Unit
 eof = ParserT $ \s ->
   return $ case s of
-    "" -> { consumed: false, input: s, result: Right {} }
+    "" -> { consumed: false, input: s, result: Right unit }
     _ -> { consumed: false, input: s, result: Left (strMsg "Expected EOF") }
 
 string :: forall m. (Monad m) => String -> ParserT String m String
@@ -45,3 +45,13 @@ whiteSpace = do
   list <- many $ string "\n" <|> string "\r" <|> string " " <|> string "\t"
   return $ foldMap id list
 
+skipSpaces :: forall m. (Monad m) => ParserT String m Unit
+skipSpaces = do
+  whiteSpace
+  return unit
+
+oneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+oneOf ss = satisfy (flip elem ss)
+
+noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+noneOf ss = satisfy (flip notElem ss)

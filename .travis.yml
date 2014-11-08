@@ -1,12 +1,16 @@
 language: node_js
 node_js:
   - "0.10"
+env:
+  - PATH=$HOME/bin:$PATH purescript_datadir=$HOME/.local/share/purescript
+before_install:
+  - mkdir -p $HOME/bin
+  - mkdir -p $HOME/.local/share/purescript/prelude
 install:
-  - "sudo apt-get install cabal-install"
-  - "cabal update"
-  - "cabal install Cabal cabal-install"
-  - "export PATH=~/.cabal/bin:$PATH"
-  - "cabal install purescript --force-reinstalls"
+  - wget https://github.com/purescript/purescript/releases/download/v0.5.7.1/linux64.tar.gz
+  - tar zxvf linux64.tar.gz
+  - cp purescript/{docgen,psc,psci,psc-make} $HOME/bin
+  - cp purescript/prelude.purs $purescript_datadir/prelude/prelude.purs
   - "npm install bower grunt-cli -g"
   - "npm install"
   - "bower install"
