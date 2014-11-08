@@ -27,6 +27,9 @@ instance errorParseError :: Error ParseError where
   noMsg = ParseError { message: "" }
   strMsg msg = ParseError { message: msg }
 
+instance showParseError :: Show ParseError where
+  show (ParseError msg) = "ParseError { message: " ++ msg.message ++ " }"
+
 newtype ParserT s m a = ParserT (s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean })
 
 unParserT :: forall m s a. ParserT s m a -> s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean }

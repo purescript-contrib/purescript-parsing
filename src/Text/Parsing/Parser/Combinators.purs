@@ -120,9 +120,6 @@ lookAhead (ParserT p) = ParserT \s -> do
   state <- p s
   return state{input = s, consumed = false}
 
-instance showParseError :: Show ParseError where
-  show (ParseError msg) = msg.message
-
 manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
 manyTill p end = scan
   where
