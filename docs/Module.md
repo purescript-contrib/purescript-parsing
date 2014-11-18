@@ -41,6 +41,8 @@
 
     instance plusParserT :: (Monad m) => Plus (ParserT s m)
 
+    instance showParseError :: Show ParseError
+
 
 ### Values
 
@@ -56,11 +58,6 @@
 
 
 ## Module Text.Parsing.Parser.Combinators
-
-### Type Class Instances
-
-    instance showParseError :: Show ParseError
-
 
 ### Values
 
