@@ -1,6 +1,7 @@
 module Text.Parsing.Parser where
 
 import Data.Either
+import Data.Identity
 import Data.Maybe
 import Data.Monoid
 import Data.Tuple
@@ -9,7 +10,6 @@ import Control.Alt
 import Control.Alternative
 import Control.Lazy
 import Control.Monad
-import Control.Monad.Identity
 import Control.Monad.Trans
 import Control.Monad.State.Class
 import Control.Monad.State.Trans
