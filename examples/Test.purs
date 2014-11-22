@@ -2,12 +2,12 @@ module Main where
 
 import Data.Array
 import Data.Either
+import Data.Identity
 import Data.Maybe
 
 import Control.Alt
 import Control.Alternative
 import Control.Monad.Eff
-import Control.Monad.Identity
 import Control.Lazy
 
 import Debug.Trace
