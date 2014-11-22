@@ -13,7 +13,7 @@ module.exports = function(grunt) {
   
     pscMake: ["<%=libFiles%>"],
     dotPsci: ["<%=libFiles%>"],
-    docgen: {
+    pscDocs: {
         readme: {
             src: "src/**/*.purs",
             dest: "docs/Module.md"
@@ -43,7 +43,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks("grunt-execute");
   
   grunt.registerTask("exampleTest", ["psc:exampleTest", "execute:exampleTest"]);
-  grunt.registerTask("make", ["pscMake", "dotPsci", "docgen"]);
+  grunt.registerTask("make", ["pscMake", "dotPsci", "pscDocs"]);
   grunt.registerTask("test", ["exampleTest"]);
   grunt.registerTask("default", ["make"]);
 };
