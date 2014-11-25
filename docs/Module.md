@@ -89,6 +89,8 @@
 
     manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
 
+    notFollowedBy :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+
     option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
 
     optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s m (Maybe a)
