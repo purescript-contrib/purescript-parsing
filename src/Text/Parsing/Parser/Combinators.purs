@@ -7,6 +7,7 @@ import Data.Either
 
 import Control.Alt
 import Control.Alternative
+import Control.Apply
 import Control.Lazy
 import Control.Monad
 import Control.Monad.Error.Trans
@@ -119,6 +120,9 @@ lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
 lookAhead (ParserT p) = ParserT \s -> do
   state <- p s
   return state{input = s, consumed = false}
+
+notFollowedBy :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> return unit
 
 manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
 manyTill p end = scan
