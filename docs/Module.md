@@ -2,179 +2,504 @@
 
 ## Module Text.Parsing.Parser
 
-### Types
+#### `ParseError`
 
-    data ParseError where
-      ParseError :: { message :: String } -> ParseError
-
-    type Parser s a = ParserT s Identity a
-
-    newtype ParserT s m a where
-      ParserT :: (s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s }) -> ParserT s m a
+``` purescript
+data ParseError
+  = ParseError { message :: String }
+```
 
 
-### Type Class Instances
+#### `errorParseError`
 
-    instance altParserT :: (Monad m) => Alt (ParserT s m)
-
-    instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
-
-    instance applicativeParserT :: (Monad m) => Applicative (ParserT s m)
-
-    instance applyParserT :: (Monad m) => Apply (ParserT s m)
-
-    instance bindParserT :: (Monad m) => Bind (ParserT s m)
-
-    instance errorParseError :: Error ParseError
-
-    instance functorParserT :: (Functor m) => Functor (ParserT s m)
-
-    instance lazy1ParserT :: Lazy1 (ParserT s m)
-
-    instance monadParserT :: (Monad m) => Monad (ParserT s m)
-
-    instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
-
-    instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m)
-
-    instance monadTransParserT :: MonadTrans (ParserT s)
-
-    instance plusParserT :: (Monad m) => Plus (ParserT s m)
-
-    instance showParseError :: Show ParseError
+``` purescript
+instance errorParseError :: Error ParseError
+```
 
 
-### Values
+#### `showParseError`
 
-    consume :: forall s m. (Monad m) => ParserT s m Unit
+``` purescript
+instance showParseError :: Show ParseError
+```
 
-    fail :: forall m s a. (Monad m) => String -> ParserT s m a
 
-    runParser :: forall s a. s -> Parser s a -> Either ParseError a
+#### `ParserT`
 
-    runParserT :: forall m s a. (Monad m) => s -> ParserT s m a -> m (Either ParseError a)
+``` purescript
+newtype ParserT s m a
+  = ParserT (s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s })
+```
 
-    unParserT :: forall m s a. ParserT s m a -> s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s }
+
+#### `unParserT`
+
+``` purescript
+unParserT :: forall m s a. ParserT s m a -> s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s }
+```
+
+
+#### `runParserT`
+
+``` purescript
+runParserT :: forall m s a. (Monad m) => s -> ParserT s m a -> m (Either ParseError a)
+```
+
+
+#### `Parser`
+
+``` purescript
+type Parser s a = ParserT s Identity a
+```
+
+
+#### `runParser`
+
+``` purescript
+runParser :: forall s a. s -> Parser s a -> Either ParseError a
+```
+
+
+#### `functorParserT`
+
+``` purescript
+instance functorParserT :: (Functor m) => Functor (ParserT s m)
+```
+
+
+#### `applyParserT`
+
+``` purescript
+instance applyParserT :: (Monad m) => Apply (ParserT s m)
+```
+
+
+#### `applicativeParserT`
+
+``` purescript
+instance applicativeParserT :: (Monad m) => Applicative (ParserT s m)
+```
+
+
+#### `altParserT`
+
+``` purescript
+instance altParserT :: (Monad m) => Alt (ParserT s m)
+```
+
+
+#### `plusParserT`
+
+``` purescript
+instance plusParserT :: (Monad m) => Plus (ParserT s m)
+```
+
+
+#### `alternativeParserT`
+
+``` purescript
+instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
+```
+
+
+#### `bindParserT`
+
+``` purescript
+instance bindParserT :: (Monad m) => Bind (ParserT s m)
+```
+
+
+#### `monadParserT`
+
+``` purescript
+instance monadParserT :: (Monad m) => Monad (ParserT s m)
+```
+
+
+#### `monadPlusParserT`
+
+``` purescript
+instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
+```
+
+
+#### `monadTransParserT`
+
+``` purescript
+instance monadTransParserT :: MonadTrans (ParserT s)
+```
+
+
+#### `monadStateParserT`
+
+``` purescript
+instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m)
+```
+
+
+#### `lazy1ParserT`
+
+``` purescript
+instance lazy1ParserT :: Lazy1 (ParserT s m)
+```
+
+
+#### `consume`
+
+``` purescript
+consume :: forall s m. (Monad m) => ParserT s m Unit
+```
+
+
+#### `fail`
+
+``` purescript
+fail :: forall m s a. (Monad m) => String -> ParserT s m a
+```
+
 
 
 ## Module Text.Parsing.Parser.Combinators
 
-### Values
+#### `(<?>)`
 
-    (<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
+``` purescript
+(<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
+```
 
-    between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 
-    chainl :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+#### `between`
 
-    chainl1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+``` purescript
+between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
+```
 
-    chainl1' :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 
-    chainr :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+#### `option`
 
-    chainr1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+``` purescript
+option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
+```
 
-    chainr1' :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 
-    choice :: forall m s a. (Monad m) => [ParserT s m a] -> ParserT s m a
+#### `optional`
 
-    endBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+``` purescript
+optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m Unit
+```
 
-    endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
-    lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
+#### `optionMaybe`
 
-    many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
+``` purescript
+optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s m (Maybe a)
+```
 
-    manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
 
-    notFollowedBy :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+#### `try`
 
-    option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
+``` purescript
+try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
+```
 
-    optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s m (Maybe a)
 
-    optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m Unit
+#### `sepBy`
 
-    sepBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+``` purescript
+sepBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+```
 
-    sepBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 
-    sepEndBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+#### `sepBy1`
 
-    sepEndBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+``` purescript
+sepBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+```
 
-    skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
 
-    skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+#### `sepEndBy`
 
-    try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
+``` purescript
+sepEndBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+```
+
+
+#### `sepEndBy1`
+
+``` purescript
+sepEndBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+```
+
+
+#### `endBy1`
+
+``` purescript
+endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+```
+
+
+#### `endBy`
+
+``` purescript
+endBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
+```
+
+
+#### `chainr`
+
+``` purescript
+chainr :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+```
+
+
+#### `chainl`
+
+``` purescript
+chainl :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+```
+
+
+#### `chainl1`
+
+``` purescript
+chainl1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+```
+
+
+#### `chainl1'`
+
+``` purescript
+chainl1' :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+```
+
+
+#### `chainr1`
+
+``` purescript
+chainr1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+```
+
+
+#### `chainr1'`
+
+``` purescript
+chainr1' :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+```
+
+
+#### `choice`
+
+``` purescript
+choice :: forall m s a. (Monad m) => [ParserT s m a] -> ParserT s m a
+```
+
+
+#### `skipMany`
+
+``` purescript
+skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+```
+
+
+#### `skipMany1`
+
+``` purescript
+skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+```
+
+
+#### `lookAhead`
+
+``` purescript
+lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
+```
+
+
+#### `notFollowedBy`
+
+``` purescript
+notFollowedBy :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+```
+
+
+#### `manyTill`
+
+``` purescript
+manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
+```
+
+
+#### `many1Till`
+
+``` purescript
+many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m [a]
+```
+
 
 
 ## Module Text.Parsing.Parser.Expr
 
-### Types
+#### `Assoc`
 
-    data Assoc where
-      AssocNone :: Assoc
-      AssocLeft :: Assoc
-      AssocRight :: Assoc
-
-    data Operator m s a where
-      Infix :: ParserT s m (a -> a -> a) -> Assoc -> Operator m s a
-      Prefix :: ParserT s m (a -> a) -> Operator m s a
-      Postfix :: ParserT s m (a -> a) -> Operator m s a
-
-    type OperatorTable m s a = [[Operator m s a]]
-
-    type SplitAccum m s a = { postfix :: [ParserT s m (a -> a)], prefix :: [ParserT s m (a -> a)], nassoc :: [ParserT s m (a -> a -> a)], lassoc :: [ParserT s m (a -> a -> a)], rassoc :: [ParserT s m (a -> a -> a)] }
+``` purescript
+data Assoc
+  = AssocNone 
+  | AssocLeft 
+  | AssocRight 
+```
 
 
-### Values
+#### `Operator`
 
-    buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m a -> ParserT s m a
+``` purescript
+data Operator m s a
+  = Infix (ParserT s m (a -> a -> a)) Assoc
+  | Prefix (ParserT s m (a -> a))
+  | Postfix (ParserT s m (a -> a))
+```
 
-    lassocP :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
 
-    lassocP1 :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+#### `OperatorTable`
 
-    nassocP :: forall m a b c d e s. (Monad m) => a -> ParserT s m (a -> d -> e) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> d) -> ParserT s m e
+``` purescript
+type OperatorTable m s a = [[Operator m s a]]
+```
 
-    rassocP :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
 
-    rassocP1 :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+#### `SplitAccum`
 
-    splitOp :: forall m s a. Operator m s a -> SplitAccum m s a -> SplitAccum m s a
+``` purescript
+type SplitAccum m s a = { postfix :: [ParserT s m (a -> a)], prefix :: [ParserT s m (a -> a)], nassoc :: [ParserT s m (a -> a -> a)], lassoc :: [ParserT s m (a -> a -> a)], rassoc :: [ParserT s m (a -> a -> a)] }
+```
 
-    termP :: forall m s a b c. (Monad m) => ParserT s m (a -> b) -> ParserT s m a -> ParserT s m (b -> c) -> ParserT s m c
+
+#### `splitOp`
+
+``` purescript
+splitOp :: forall m s a. Operator m s a -> SplitAccum m s a -> SplitAccum m s a
+```
+
+
+#### `rassocP`
+
+``` purescript
+rassocP :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+```
+
+
+#### `rassocP1`
+
+``` purescript
+rassocP1 :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+```
+
+
+#### `lassocP`
+
+``` purescript
+lassocP :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+```
+
+
+#### `lassocP1`
+
+``` purescript
+lassocP1 :: forall m a b c s. (Monad m) => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+```
+
+
+#### `nassocP`
+
+``` purescript
+nassocP :: forall m a b c d e s. (Monad m) => a -> ParserT s m (a -> d -> e) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> d) -> ParserT s m e
+```
+
+
+#### `termP`
+
+``` purescript
+termP :: forall m s a b c. (Monad m) => ParserT s m (a -> b) -> ParserT s m a -> ParserT s m (b -> c) -> ParserT s m c
+```
+
+
+#### `buildExprParser`
+
+``` purescript
+buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m a -> ParserT s m a
+```
+
 
 
 ## Module Text.Parsing.Parser.String
 
-### Values
+#### `eof`
 
-    char :: forall m. (Monad m) => ParserT String m String
+``` purescript
+eof :: forall m. (Monad m) => ParserT String m Unit
+```
 
-    eof :: forall m. (Monad m) => ParserT String m Unit
 
-    noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+#### `string`
 
-    oneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+``` purescript
+string :: forall m. (Monad m) => String -> ParserT String m String
+```
 
-    satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 
-    skipSpaces :: forall m. (Monad m) => ParserT String m Unit
+#### `char`
 
-    string :: forall m. (Monad m) => String -> ParserT String m String
+``` purescript
+char :: forall m. (Monad m) => ParserT String m String
+```
 
-    whiteSpace :: forall m. (Monad m) => ParserT String m String
+
+#### `satisfy`
+
+``` purescript
+satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
+```
+
+
+#### `whiteSpace`
+
+``` purescript
+whiteSpace :: forall m. (Monad m) => ParserT String m String
+```
+
+
+#### `skipSpaces`
+
+``` purescript
+skipSpaces :: forall m. (Monad m) => ParserT String m Unit
+```
+
+
+#### `oneOf`
+
+``` purescript
+oneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+```
+
+
+#### `noneOf`
+
+``` purescript
+noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+```
+
 
 
 ## Module Text.Parsing.Parser.Token
 
-### Types
+#### `LanguageDef`
 
-    type LanguageDef s m = { caseSensitive :: Boolean, reservedOpNames :: [String], reservedNames :: [String], opLetter :: ParserT s m String, opStart :: ParserT s m String, identLetter :: ParserT s m String, identStart :: ParserT s m String, nestedComments :: Boolean, commentLine :: String, commentEnd :: String, commentStart :: String }
+``` purescript
+type LanguageDef s m = { caseSensitive :: Boolean, reservedOpNames :: [String], reservedNames :: [String], opLetter :: ParserT s m String, opStart :: ParserT s m String, identLetter :: ParserT s m String, identStart :: ParserT s m String, nestedComments :: Boolean, commentLine :: String, commentEnd :: String, commentStart :: String }
+```
 
-    type TokenParser s m = { commaSep1 :: forall a. ParserT s m a -> ParserT s m [a], commaSep :: forall a. ParserT s m a -> ParserT s m [a], semiSep1 :: forall a. ParserT s m a -> ParserT s m [a], semiSep :: forall a. ParserT s m a -> ParserT s m [a], dot :: ParserT s m String, colon :: ParserT s m String, comma :: ParserT s m String, semi :: ParserT s m String, brackets :: forall a. ParserT s m a -> ParserT s m a, angles :: forall a. ParserT s m a -> ParserT s m a, braces :: forall a. ParserT s m a -> ParserT s m a, parens :: forall a. ParserT s m a -> ParserT s m a, whiteSpace :: ParserT s m {  }, lexme :: forall a. ParserT s m a -> ParserT s m a, symbol :: String -> ParserT s m Number, octal :: ParserT s m Number, hexadecimal :: ParserT s m Number, decimal :: ParserT s m Number, naturalOrFloat :: ParserT s m Number, float :: ParserT s m Number, integer :: ParserT s m Number, natural :: ParserT s m Number, stringLiteral :: ParserT s m String, charLiteral :: ParserT s m String, reservedOp :: String -> ParserT s m String, operator :: ParserT s m String, reserved :: String -> ParserT s m String, identifier :: ParserT s m String }
+
+#### `TokenParser`
+
+``` purescript
+type TokenParser s m = { commaSep1 :: forall a. ParserT s m a -> ParserT s m [a], commaSep :: forall a. ParserT s m a -> ParserT s m [a], semiSep1 :: forall a. ParserT s m a -> ParserT s m [a], semiSep :: forall a. ParserT s m a -> ParserT s m [a], dot :: ParserT s m String, colon :: ParserT s m String, comma :: ParserT s m String, semi :: ParserT s m String, brackets :: forall a. ParserT s m a -> ParserT s m a, angles :: forall a. ParserT s m a -> ParserT s m a, braces :: forall a. ParserT s m a -> ParserT s m a, parens :: forall a. ParserT s m a -> ParserT s m a, whiteSpace :: ParserT s m {  }, lexme :: forall a. ParserT s m a -> ParserT s m a, symbol :: String -> ParserT s m Number, octal :: ParserT s m Number, hexadecimal :: ParserT s m Number, decimal :: ParserT s m Number, naturalOrFloat :: ParserT s m Number, float :: ParserT s m Number, integer :: ParserT s m Number, natural :: ParserT s m Number, stringLiteral :: ParserT s m String, charLiteral :: ParserT s m String, reservedOp :: String -> ParserT s m String, operator :: ParserT s m String, reserved :: String -> ParserT s m String, identifier :: ParserT s m String }
+```

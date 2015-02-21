@@ -18,12 +18,12 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-transformers":  "~0.4.0",
-    "purescript-either":        "~0.1.4",
-    "purescript-identity":      "~0.2.0",
-    "purescript-maybe":         "~0.2.1",
-    "purescript-arrays":        "~0.3.0",
-    "purescript-strings":       "~0.4.2",
-    "purescript-foldable-traversable": "~0.2.1"
+    "purescript-transformers": "~0.5.0",
+    "purescript-either": "~0.1.4",
+    "purescript-identity": "~0.3.0",
+    "purescript-maybe": "~0.2.1",
+    "purescript-arrays": "~0.3.0",
+    "purescript-strings": "~0.4.2",
+    "purescript-foldable-traversable": "~0.3.0"
   }
 }
