@@ -2,6 +2,8 @@
 
 ## Module Text.Parsing.Parser
 
+
+
 #### `ParseError`
 
 ``` purescript
@@ -159,7 +161,12 @@ fail :: forall m s a. (Monad m) => String -> ParserT s m a
 
 
 
+
+# Module Documentation
+
 ## Module Text.Parsing.Parser.Combinators
+
+
 
 #### `(<?>)`
 
@@ -337,7 +344,12 @@ many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> Pars
 
 
 
+
+# Module Documentation
+
 ## Module Text.Parsing.Parser.Expr
+
+
 
 #### `Assoc`
 
@@ -430,7 +442,12 @@ buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m
 
 
 
+
+# Module Documentation
+
 ## Module Text.Parsing.Parser.String
+
+
 
 #### `eof`
 
@@ -489,7 +506,33 @@ noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
 
 
 
+
+# Module Documentation
+
 ## Module Text.Parsing.Parser.Token
+
+
+
+#### `takeTok`
+
+``` purescript
+takeTok :: forall m a. (Monad m) => ParserT [a] m a
+```
+
+
+#### `when`
+
+``` purescript
+when :: forall m a. (Monad m) => (a -> Boolean) -> ParserT [a] m a
+```
+
+
+#### `get`
+
+``` purescript
+get :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
+```
+
 
 #### `LanguageDef`
 
@@ -503,3 +546,7 @@ type LanguageDef s m = { caseSensitive :: Boolean, reservedOpNames :: [String], 
 ``` purescript
 type TokenParser s m = { commaSep1 :: forall a. ParserT s m a -> ParserT s m [a], commaSep :: forall a. ParserT s m a -> ParserT s m [a], semiSep1 :: forall a. ParserT s m a -> ParserT s m [a], semiSep :: forall a. ParserT s m a -> ParserT s m [a], dot :: ParserT s m String, colon :: ParserT s m String, comma :: ParserT s m String, semi :: ParserT s m String, brackets :: forall a. ParserT s m a -> ParserT s m a, angles :: forall a. ParserT s m a -> ParserT s m a, braces :: forall a. ParserT s m a -> ParserT s m a, parens :: forall a. ParserT s m a -> ParserT s m a, whiteSpace :: ParserT s m {  }, lexme :: forall a. ParserT s m a -> ParserT s m a, symbol :: String -> ParserT s m Number, octal :: ParserT s m Number, hexadecimal :: ParserT s m Number, decimal :: ParserT s m Number, naturalOrFloat :: ParserT s m Number, float :: ParserT s m Number, integer :: ParserT s m Number, natural :: ParserT s m Number, stringLiteral :: ParserT s m String, charLiteral :: ParserT s m String, reservedOp :: String -> ParserT s m String, operator :: ParserT s m String, reserved :: String -> ParserT s m String, identifier :: ParserT s m String }
 ```
+
+
+
+
