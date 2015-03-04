@@ -3,7 +3,7 @@ module Text.Parsing.Parser.Token where
 import Data.String
 import Data.Either
 
-import Control.Monad.State.Class
+import Control.Monad.State.Class hiding (get)
 import Control.Monad.Error.Class
 
 import Text.Parsing.Parser
