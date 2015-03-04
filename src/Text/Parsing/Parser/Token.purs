@@ -4,30 +4,28 @@ import Data.String
 import Data.Either
 
 import Control.Monad.State.Class hiding (get)
+import Control.Monad.Error
 import Control.Monad.Error.Class
+import Control.MonadPlus
 
 import Text.Parsing.Parser
 import Text.Parsing.Parser.String
 import Text.Parsing.Parser.Combinators
 
-takeTok :: forall m a. (Monad m) => ParserT [a] m a
-takeTok = ParserT $ \s ->
+token :: forall m a. (Monad m) => ParserT [a] m a
+token = ParserT $ \s ->
   return $ case s of
-    x:xs -> {consumed: true,
-             input: xs,
-             result: Right x}
-    _ -> {consumed: false,
-          input: s,
-          result: Left (ParseError {message: "there is nothing in 'takeTok'"})}
+    x:xs -> { consumed: true, input: xs, result: Right x }
+    _ -> { consumed: false, input: s, result: Left (strMsg "expected token, met EOF") }
 
 when :: forall m a. (Monad m) => (a -> Boolean) -> ParserT [a] m a
 when f = try $ do
-  a <- takeTok
-  if f a then return a
-    else fail "token doesn't satisfy when test"
+  a <- token
+  guard $ f a
+  return a
 
-get :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
-get token = when ((==) token)
+match :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
+match token = when ((==) token)
 
 
 type LanguageDef s m = {

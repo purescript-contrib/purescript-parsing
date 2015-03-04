@@ -16,6 +16,7 @@ import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Expr
 import Text.Parsing.Parser.String
+import Text.Parsing.Parser.Token
 
 parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -58,6 +59,23 @@ manySatisfyTest = do
     string "?"
     return r
 
+data TestToken = A | B
+
+instance showTestTokens :: Show TestToken where
+  show A = "A"
+  show B = "B"
+
+instance testTokensEq :: Eq TestToken where
+  (==) A A = true
+  (==) B B = true
+  (==) _ _ = false
+  (/=) a b = not $ a == b
+
+isA :: TestToken -> Boolean
+isA A = true
+isA _ = false
+
+
 main = do
   parseTest nested "(((a)))"
   parseTest (many (string "a")) "aaa"
@@ -72,3 +90,22 @@ main = do
   parseTest opTest "a+b+c"
   parseTest exprTest "1*2+3/4-5"
   parseTest manySatisfyTest "ab?"
+
+  print "should be A"
+  parseTest token [A, B]
+  print "should be B"
+  parseTest token [B, A]
+
+  print "should be A"
+  parseTest (when isA) [A, B]
+  print "should fail"
+  parseTest (when isA) [B, B]
+
+  print "should be A"
+  parseTest (match A) [A]
+  print "should be B"
+  parseTest (match B) [B]
+  print "should be A"
+  parseTest (match A) [A, B]
+  print "should fail"
+  parseTest (match B) [A, B]
