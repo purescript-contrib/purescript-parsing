@@ -2,6 +2,8 @@
 
 ## Module Text.Parsing.Parser
 
+
+
 #### `ParseError`
 
 ``` purescript
@@ -160,6 +162,8 @@ fail :: forall m s a. (Monad m) => String -> ParserT s m a
 
 
 ## Module Text.Parsing.Parser.Combinators
+
+
 
 #### `(<?>)`
 
@@ -339,6 +343,8 @@ many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> Pars
 
 ## Module Text.Parsing.Parser.Expr
 
+
+
 #### `Assoc`
 
 ``` purescript
@@ -432,6 +438,8 @@ buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m
 
 ## Module Text.Parsing.Parser.String
 
+
+
 #### `eof`
 
 ``` purescript
@@ -490,6 +498,29 @@ noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
 
 
 ## Module Text.Parsing.Parser.Token
+
+
+
+#### `token`
+
+``` purescript
+token :: forall m a. (Monad m) => ParserT [a] m a
+```
+
+
+#### `when`
+
+``` purescript
+when :: forall m a. (Monad m) => (a -> Boolean) -> ParserT [a] m a
+```
+
+
+#### `match`
+
+``` purescript
+match :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
+```
+
 
 #### `LanguageDef`
 
