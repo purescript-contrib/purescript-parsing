@@ -1,19 +1,14 @@
 module Text.Parsing.Parser.Token where
 
-import Data.String
-import Data.Either
-
-import Control.Monad.State.Class hiding (get)
-import Control.Monad.Error
-import Control.Monad.Error.Class
-import Control.MonadPlus
-
+import Control.Monad.Error (strMsg)
+import Control.MonadPlus (guard)
+import Data.Either (Either(..))
 import Text.Parsing.Parser
-import Text.Parsing.Parser.String
 import Text.Parsing.Parser.Combinators
+import Text.Parsing.Parser.String
 
 token :: forall m a. (Monad m) => ParserT [a] m a
-token = ParserT $ \s ->
+token = ParserT \s ->
   return $ case s of
     x:xs -> { consumed: true, input: xs, result: Right x }
     _ -> { consumed: false, input: s, result: Left (strMsg "expected token, met EOF") }
@@ -26,7 +21,6 @@ when f = try $ do
 
 match :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
 match token = when ((==) token)
-
 
 type LanguageDef s m = {
     commentStart    :: String,
