@@ -1,10 +1,7 @@
 module Text.Parsing.Parser.Expr where
 
-import Data.Either
-import Data.Foldable
-
-import Control.Alt
-
+import Control.Alt ((<|>))
+import Data.Foldable (foldr, foldl)
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 

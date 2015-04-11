@@ -1,17 +1,11 @@
 module Main where
 
-import Data.Array
-import Data.Either
-import Data.Identity
-import Data.Maybe
-
-import Control.Alt
-import Control.Alternative
-import Control.Monad.Eff
-import Control.Lazy
-
-import Debug.Trace
-
+import Control.Alt ((<|>))
+import Control.Alternative (some, many)
+import Control.Lazy (fix)
+import Control.Monad.Eff (Eff())
+import Data.Either (Either(..))
+import Debug.Trace (Trace(), trace)
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Expr
@@ -22,14 +16,14 @@ parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
 nested :: forall m. (Functor m, Monad m) => ParserT String m Number
-nested = fix1 $ \p -> (do
+nested = fix $ \p -> (do
   string "a"
   return 0) <|> ((+) 1) <$> parens p
 
 parseTest :: forall s a eff. (Show a) => Parser s a -> s -> Eff (trace :: Trace | eff) Unit
 parseTest p input = case runParser input p of
-  Left (ParseError err) -> print err.message
-  Right result -> print result
+  Left (ParseError err) -> trace $ "> " ++ err
+  Right result -> trace $ "> " ++ (show result)
 
 opTest :: Parser String String
 opTest = chainl char (do string "+"
@@ -75,7 +69,6 @@ isA :: TestToken -> Boolean
 isA A = true
 isA _ = false
 
-
 main = do
   parseTest nested "(((a)))"
   parseTest (many (string "a")) "aaa"
@@ -91,21 +84,21 @@ main = do
   parseTest exprTest "1*2+3/4-5"
   parseTest manySatisfyTest "ab?"
 
-  print "should be A"
+  trace "should be A"
   parseTest token [A, B]
-  print "should be B"
+  trace "should be B"
   parseTest token [B, A]
 
-  print "should be A"
+  trace "should be A"
   parseTest (when isA) [A, B]
-  print "should fail"
+  trace "should fail"
   parseTest (when isA) [B, B]
 
-  print "should be A"
+  trace "should be A"
   parseTest (match A) [A]
-  print "should be B"
+  trace "should be B"
   parseTest (match B) [B]
-  print "should be A"
+  trace "should be A"
   parseTest (match A) [A, B]
-  print "should fail"
+  trace "should fail"
   parseTest (match B) [A, B]
