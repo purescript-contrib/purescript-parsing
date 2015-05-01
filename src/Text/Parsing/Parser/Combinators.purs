@@ -38,10 +38,10 @@ optionMaybe :: forall m s a. (Functor m, Monad m) => ParserT s m a -> ParserT s 
 optionMaybe p = option Nothing (Just <$> p)
 
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
-try p = ParserT $ \s -> try' s <$> unParserT p s
+try p = ParserT $ \(PState { input: s, position: pos }) -> try' s pos <$> unParserT p (PState { input: s, position: pos })
   where
-  try' s o@{ result = Left _ } = { input: s, result: o.result, consumed: false }
-  try' _ o = o
+  try' s pos o@{ result = Left _ } = { input: s, result: o.result, consumed: false, position: pos }
+  try' _ _   o = o
 
 sepBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m [a]
 sepBy p sep = sepBy1 p sep <|> return []
@@ -117,9 +117,9 @@ skipMany1 p = do
   return unit
 
 lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
-lookAhead (ParserT p) = ParserT \s -> do
-  state <- p s
-  return state{input = s, consumed = false}
+lookAhead (ParserT p) = ParserT \(PState { input: s, position: pos }) -> do
+  state <- p (PState { input: s, position: pos })
+  return state{input = s, consumed = false, position = pos}
 
 notFollowedBy :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
 notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> return unit

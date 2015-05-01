@@ -2,13 +2,11 @@
 
 ## Module Text.Parsing.Parser
 
-
-
 #### `ParseError`
 
 ``` purescript
 data ParseError
-  = ParseError { message :: String }
+  = ParseError { position :: Position, message :: String }
 ```
 
 
@@ -26,25 +24,34 @@ instance showParseError :: Show ParseError
 ```
 
 
+#### `PState`
+
+``` purescript
+data PState s
+  = PState { position :: Position, input :: s }
+```
+
+`PState` contains the remaining input and current position.
+
 #### `ParserT`
 
 ``` purescript
 newtype ParserT s m a
-  = ParserT (s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s })
+  = ParserT (PState s -> m { position :: Position, consumed :: Boolean, result :: Either ParseError a, input :: s })
 ```
 
 
 #### `unParserT`
 
 ``` purescript
-unParserT :: forall m s a. ParserT s m a -> s -> m { consumed :: Boolean, result :: Either ParseError a, input :: s }
+unParserT :: forall m s a. ParserT s m a -> PState s -> m { position :: Position, consumed :: Boolean, result :: Either ParseError a, input :: s }
 ```
 
 
 #### `runParserT`
 
 ``` purescript
-runParserT :: forall m s a. (Monad m) => s -> ParserT s m a -> m (Either ParseError a)
+runParserT :: forall m s a. (Monad m) => PState s -> ParserT s m a -> m (Either ParseError a)
 ```
 
 
@@ -160,10 +167,18 @@ fail :: forall m s a. (Monad m) => String -> ParserT s m a
 ```
 
 
+#### `parseFailed`
+
+``` purescript
+parseFailed :: forall s a. s -> Position -> String -> { position :: Position, consumed :: Boolean, result :: Either ParseError a, input :: s }
+```
+
+Creates a failed parser state for the remaining input `s` and current position
+with an error message.
+Most of the time, `fail` should be used instead.
+
 
 ## Module Text.Parsing.Parser.Combinators
-
-
 
 #### `(<?>)`
 
@@ -343,8 +358,6 @@ many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> Pars
 
 ## Module Text.Parsing.Parser.Expr
 
-
-
 #### `Assoc`
 
 ``` purescript
@@ -436,9 +449,51 @@ buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m
 
 
 
+## Module Text.Parsing.Parser.Pos
+
+#### `Position`
+
+``` purescript
+data Position
+  = Position { column :: Number, line :: Number }
+```
+
+`Position` represents the position of the parser in the input.
+- `line` is the current line in the input
+- `column` is the column of the next character in the current line that will be parsed
+
+#### `showPosition`
+
+``` purescript
+instance showPosition :: Show Position
+```
+
+
+#### `eqPosition`
+
+``` purescript
+instance eqPosition :: Eq Position
+```
+
+
+#### `initialPos`
+
+``` purescript
+initialPos :: Position
+```
+
+The `Position` before any input has been parsed.
+
+#### `updatePosString`
+
+``` purescript
+updatePosString :: Position -> String -> Position
+```
+
+Updates a `Position` by adding the columns and lines in `String`.
+
+
 ## Module Text.Parsing.Parser.String
-
-
 
 #### `eof`
 
@@ -499,26 +554,24 @@ noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
 
 ## Module Text.Parsing.Parser.Token
 
-
-
 #### `token`
 
 ``` purescript
-token :: forall m a. (Monad m) => ParserT [a] m a
+token :: forall m a. (Monad m) => (a -> Position) -> ParserT [a] m a
 ```
 
 
 #### `when`
 
 ``` purescript
-when :: forall m a. (Monad m) => (a -> Boolean) -> ParserT [a] m a
+when :: forall m a. (Monad m) => (a -> Position) -> (a -> Boolean) -> ParserT [a] m a
 ```
 
 
 #### `match`
 
 ``` purescript
-match :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
+match :: forall a m. (Monad m, Eq a) => (a -> Position) -> a -> ParserT [a] m a
 ```
 
 

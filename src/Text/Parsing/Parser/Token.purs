@@ -11,21 +11,22 @@ import Control.MonadPlus
 import Text.Parsing.Parser
 import Text.Parsing.Parser.String
 import Text.Parsing.Parser.Combinators
+import Text.Parsing.Parser.Pos
 
-token :: forall m a. (Monad m) => ParserT [a] m a
-token = ParserT $ \s ->
-  return $ case s of
-    x:xs -> { consumed: true, input: xs, result: Right x }
-    _ -> { consumed: false, input: s, result: Left (strMsg "expected token, met EOF") }
+token :: forall m a. (Monad m) => (a -> Position) -> ParserT [a] m a
+token tokpos = ParserT $ \(PState { input: toks, position: pos }) ->
+  return $ case toks of
+    x:xs -> { consumed: true, input: xs, result: Right x, position:tokpos x }
+    _ -> parseFailed toks pos "expected token, met EOF"
 
-when :: forall m a. (Monad m) => (a -> Boolean) -> ParserT [a] m a
-when f = try $ do
-  a <- token
+when :: forall m a. (Monad m) => (a -> Position) -> (a -> Boolean) -> ParserT [a] m a
+when tokpos f = try $ do
+  a <- token tokpos
   guard $ f a
   return a
 
-match :: forall a m. (Monad m, Eq a) => a -> ParserT [a] m a
-match token = when ((==) token)
+match :: forall a m. (Monad m, Eq a) => (a -> Position) -> a -> ParserT [a] m a
+match tokpos token = when tokpos ((==) token)
 
 
 type LanguageDef s m = {

@@ -15,24 +15,25 @@ import Control.Monad.State.Class
 
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
+import Text.Parsing.Parser.Pos
 
 eof :: forall m. (Monad m) => ParserT String m Unit
-eof = ParserT $ \s ->
+eof = ParserT $ \(PState { input: s, position: pos }) ->
   return $ case s of
-    "" -> { consumed: false, input: s, result: Right unit }
-    _ -> { consumed: false, input: s, result: Left (strMsg "Expected EOF") }
+    "" -> { consumed: false, input: s, result: Right unit, position: pos }
+    _  -> parseFailed s pos "Expected EOF"
 
 string :: forall m. (Monad m) => String -> ParserT String m String
-string s = ParserT $ \s'  ->
-  return $ case indexOf s s' of
-    0 -> { consumed: true, input: drop (length s) s', result: Right s }
-    _ -> { consumed: false, input: s', result: Left (strMsg ("Expected " ++ show s)) }
+string str = ParserT $ \(PState { input: s, position: pos })  ->
+  return $ case indexOf str s of
+    0 -> { consumed: true, input: drop (length str) s, result: Right str, position: updatePosString pos str }
+    _ -> parseFailed s pos ("Expected " ++ str)
 
 char :: forall m. (Monad m) => ParserT String m String
-char = ParserT $ \s' ->
-  return $ case charAt 0 s' of
-    Nothing -> { consumed: false, input: s', result: Left (strMsg "Unexpected EOF") }
-    Just c  -> { consumed: true, input: drop 1 s', result: Right (charString c) }
+char = ParserT $ \(PState { input: s, position: pos }) ->
+  return $ case charAt 0 s of
+    Nothing -> parseFailed s pos "Unexpected EOF"
+    Just c  -> { consumed: true, input: drop 1 s, result: Right (charString c), position: updatePosString pos (charString c) }
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 satisfy f = try do
