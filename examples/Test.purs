@@ -7,6 +7,7 @@ import Data.Maybe
 
 import Control.Alt
 import Control.Alternative
+import Control.Apply ((*>))
 import Control.Monad.Eff
 import Control.Lazy
 
@@ -17,6 +18,7 @@ import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Expr
 import Text.Parsing.Parser.String
 import Text.Parsing.Parser.Token
+import Text.Parsing.Parser.Pos
 
 parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -30,6 +32,15 @@ parseTest :: forall s a eff. (Show a) => Parser s a -> s -> Eff (trace :: Trace 
 parseTest p input = case runParser input p of
   Left (ParseError err) -> print err.message
   Right result -> print result
+
+parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (trace :: Trace | eff) Unit
+parseErrorTestPosition p input expected = case runParser input p of
+  Right _ -> print "error: ParseError expected!"
+  Left (ParseError { position: pos }) -> case expected == pos of
+    true  -> print $ "ok, as expected: " ++ show pos
+    false -> print $ "error: got " ++ show pos ++ " instead of " ++ show expected
+
+
 
 opTest :: Parser String String
 opTest = chainl char (do string "+"
@@ -91,21 +102,27 @@ main = do
   parseTest exprTest "1*2+3/4-5"
   parseTest manySatisfyTest "ab?"
 
+  let tokpos = const initialPos
   print "should be A"
-  parseTest token [A, B]
+  parseTest (token tokpos) [A, B]
   print "should be B"
-  parseTest token [B, A]
+  parseTest (token tokpos) [B, A]
 
   print "should be A"
-  parseTest (when isA) [A, B]
+  parseTest (when tokpos isA) [A, B]
   print "should fail"
-  parseTest (when isA) [B, B]
+  parseTest (when tokpos isA) [B, B]
 
   print "should be A"
-  parseTest (match A) [A]
+  parseTest (match tokpos A) [A]
   print "should be B"
-  parseTest (match B) [B]
+  parseTest (match tokpos B) [B]
   print "should be A"
-  parseTest (match A) [A, B]
+  parseTest (match tokpos A) [A, B]
   print "should fail"
-  parseTest (match B) [A, B]
+  parseTest (match tokpos B) [A, B]
+
+  parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
+  parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
+  parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
+  parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
