@@ -1,3 +1,5 @@
+-- | Primitive parsers for working with an input stream of type `String`.
+
 module Text.Parsing.Parser.String where
 
 import Prelude
@@ -8,7 +10,8 @@ import Data.Foldable
 import Data.Monoid
 import Data.Maybe
 import Data.Char
-import Data.List (List(..), (:), many, some)
+import Data.Array (many)
+import Data.List (List(..), (:), fromList)
 
 import Control.Alt
 import Control.Alternative
@@ -20,42 +23,54 @@ import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Pos
 
+-- | Match end-of-file.
 eof :: forall m. (Monad m) => ParserT String m Unit
 eof = ParserT $ \(PState { input: s, position: pos }) ->
   return $ case s of
     "" -> { consumed: false, input: s, result: Right unit, position: pos }
     _  -> parseFailed s pos "Expected EOF"
 
+-- | Match the specified string.
 string :: forall m. (Monad m) => String -> ParserT String m String
 string str = ParserT $ \(PState { input: s, position: pos })  ->
   return $ case indexOf str s of
     Just 0 -> { consumed: true, input: drop (length str) s, result: Right str, position: updatePosString pos str }
     _ -> parseFailed s pos ("Expected " ++ str)
 
-char :: forall m. (Monad m) => ParserT String m String
-char = ParserT $ \(PState { input: s, position: pos }) ->
+-- | Match any character.
+anyChar :: forall m. (Monad m) => ParserT String m Char
+anyChar = ParserT $ \(PState { input: s, position: pos }) ->
   return $ case charAt 0 s of
     Nothing -> parseFailed s pos "Unexpected EOF"
-    Just c  -> { consumed: true, input: drop 1 s, result: Right (toString c), position: updatePosString pos (toString c) }
+    Just c  -> { consumed: true, input: drop 1 s, result: Right c, position: updatePosString pos (toString c) }
 
-satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
+-- | Match a character satisfying the specified predicate.
+satisfy :: forall m. (Monad m) => (Char -> Boolean) -> ParserT String m Char
 satisfy f = try do
-  c <- char
+  c <- anyChar
   if f c then return c
          else fail "Character did not satisfy predicate"
 
+-- | Match the specified character
+char :: forall m. (Monad m) => Char -> ParserT String m Char
+char c = satisfy (== c)
+
+-- | Match a whitespace character.
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 whiteSpace = do
-  list <- many $ string "\n" <|> string "\r" <|> string " " <|> string "\t"
-  return $ foldMap id list
+  cs <- many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
+  return $ fromCharArray cs
 
+-- | Skip whitespace characters.
 skipSpaces :: forall m. (Monad m) => ParserT String m Unit
 skipSpaces = do
   whiteSpace
   return unit
 
-oneOf :: forall s m a. (Monad m) => Array String -> ParserT String m String
+-- | Match one of the characters in the array.
+oneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
 oneOf ss = satisfy (flip elem ss)
 
-noneOf :: forall s m a. (Monad m) => Array String -> ParserT String m String
+-- | Match any character not in the array.
+noneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
 noneOf ss = satisfy (flip notElem ss)

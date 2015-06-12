@@ -24,16 +24,22 @@ data Operator m s a
 type OperatorTable m s a = Array (Array (Operator m s a))
 ```
 
-#### `SplitAccum`
-
-``` purescript
-type SplitAccum m s a = { rassoc :: List (ParserT s m (a -> a -> a)), lassoc :: List (ParserT s m (a -> a -> a)), nassoc :: List (ParserT s m (a -> a -> a)), prefix :: List (ParserT s m (a -> a)), postfix :: List (ParserT s m (a -> a)) }
-```
-
 #### `buildExprParser`
 
 ``` purescript
 buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m a -> ParserT s m a
+```
+
+Build a parser from an `OperatorTable`.
+
+For example:
+
+```purescript
+buildExprParser [ [ Infix (string "/" $> div) AssocRight ]
+                , [ Infix (string "*" $> mul) AssocRight ]
+                , [ Infix (string "-" $> sub) AssocRight ]
+                , [ Infix (string "+" $> add) AssocRight ]
+                ] digit
 ```
 
 

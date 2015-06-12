@@ -8,6 +8,7 @@ data Position
 ```
 
 `Position` represents the position of the parser in the input.
+
 - `line` is the current line in the input
 - `column` is the column of the next character in the current line that will be parsed
 

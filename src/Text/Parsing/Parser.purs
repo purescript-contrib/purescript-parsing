@@ -23,6 +23,7 @@ import Control.Plus
 
 import Text.Parsing.Parser.Pos
 
+-- | A parsing error, consisting of a message and position information.
 data ParseError = ParseError
   { message :: String
   , position :: Position
@@ -41,18 +42,25 @@ data PState s = PState
   , position :: Position
   }
 
+-- | The Parser monad transformer.
+-- |
+-- | The first type argument is the stream type. Typically, this is either `String`, or some sort of token stream.
 newtype ParserT s m a = ParserT (PState s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean, position :: Position })
 
+-- | Apply a parser by providing an initial state.
 unParserT :: forall m s a. ParserT s m a -> PState s -> m { input :: s, result :: Either ParseError a, consumed :: Boolean, position :: Position }
 unParserT (ParserT p) = p
 
+-- | Apply a parser, keeping only the parsed result.
 runParserT :: forall m s a. (Monad m) => PState s -> ParserT s m a -> m (Either ParseError a)
 runParserT s p = do
   o <- unParserT p s
   return o.result
 
+-- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
 type Parser s a = ParserT s Identity a
 
+-- | Apply a parser, keeping only the parsed result.
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = runIdentity <<< runParserT (PState { input: s, position: initialPos })
 
@@ -101,15 +109,17 @@ instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
 instance lazyParserT :: Lazy (ParserT s m a) where
   defer f = ParserT $ \s -> unParserT (f unit) s
 
+-- | Set the consumed flag.
 consume :: forall s m. (Monad m) => ParserT s m Unit
 consume = ParserT $ \(PState { input: s, position: pos }) -> return { consumed: true, input: s, result: Right unit, position: pos }
 
+-- | Fail with a message.
 fail :: forall m s a. (Monad m) => String -> ParserT s m a
 fail message = ParserT $ \(PState { input: s, position: pos }) -> return $ parseFailed s pos message
 
 -- | Creates a failed parser state for the remaining input `s` and current position
 -- | with an error message.
+-- |
 -- | Most of the time, `fail` should be used instead.
 parseFailed :: forall s a. s -> Position -> String -> { input :: s, result :: Either ParseError a, consumed :: Boolean, position :: Position }
 parseFailed s pos message = { input: s, consumed: false, result: Left (ParseError { message: message, position: pos }), position: pos }
-

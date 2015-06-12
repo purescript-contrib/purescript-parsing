@@ -2,11 +2,14 @@ module Test.Main where
 
 import Prelude
 
-import Data.Array ()
+import Data.Array (some)
 import Data.Either
 import Data.Identity
 import Data.Maybe
-import Data.List (List(..), some, many, toList)
+import Data.Char (toString)
+import Data.String (fromCharArray)
+import Data.List (List(..), many, toList)
+import Data.Functor (($>))
 
 import Control.Alt
 import Control.Alternative
@@ -44,8 +47,7 @@ parseErrorTestPosition p input expected = case runParser input p of
   Left (ParseError { position: pos }) -> assert (expected == pos)
 
 opTest :: Parser String String
-opTest = chainl char (do string "+"
-                         return (++)) ""
+opTest = chainl (toString <$> anyChar) (char '+' $> append) ""
 
 digit :: Parser String Int
 digit = (string "0" >>= \_ -> return 0)
@@ -66,11 +68,11 @@ exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> return (/)) AssocRigh
                            , [ Infix (string "+" >>= \_ -> return (+)) AssocRight ]
                            ] digit
 
-manySatisfyTest :: Parser String (List String)
+manySatisfyTest :: Parser String String
 manySatisfyTest = do
-  r <- some $ satisfy (\s -> s /= "?")
-  string "?"
-  return r
+  r <- some $ satisfy (\s -> s /= '?')
+  char '?'
+  return (fromCharArray r)
 
 data TestToken = A | B
 
@@ -100,7 +102,7 @@ main = do
     return as
   parseTest "a+b+c" "abc" opTest
   parseTest "1*2+3/4-5" (-3) exprTest
-  parseTest "ab?" (Cons "a" (Cons "b" Nil)) manySatisfyTest
+  parseTest "ab?" "ab" manySatisfyTest
 
   let tokpos = const initialPos
   parseTest (toList [A, B]) A (token tokpos)

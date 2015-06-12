@@ -1,4 +1,9 @@
-module Text.Parsing.Parser.Expr where
+module Text.Parsing.Parser.Expr 
+  ( Assoc(..)
+  , Operator(..)
+  , OperatorTable()
+  , buildExprParser
+  ) where
 
 import Prelude
 
@@ -25,6 +30,17 @@ type SplitAccum m s a = { rassoc  :: List (ParserT s m (a -> a -> a))
                         , prefix  :: List (ParserT s m (a -> a))
                         , postfix :: List (ParserT s m (a -> a)) }
 
+-- | Build a parser from an `OperatorTable`.
+-- |
+-- | For example:
+-- | 
+-- | ```purescript
+-- | buildExprParser [ [ Infix (string "/" $> div) AssocRight ]
+-- |                 , [ Infix (string "*" $> mul) AssocRight ]
+-- |                 , [ Infix (string "-" $> sub) AssocRight ]
+-- |                 , [ Infix (string "+" $> add) AssocRight ]
+-- |                 ] digit
+-- | ```
 buildExprParser :: forall m s a. (Monad m) => OperatorTable m s a -> ParserT s m a -> ParserT s m a
 buildExprParser operators simpleExpr = foldl makeParser simpleExpr operators
   

@@ -1,10 +1,14 @@
 ## Module Text.Parsing.Parser.String
 
+Primitive parsers for working with an input stream of type `String`.
+
 #### `eof`
 
 ``` purescript
 eof :: forall m. (Monad m) => ParserT String m Unit
 ```
+
+Match end-of-file.
 
 #### `string`
 
@@ -12,17 +16,31 @@ eof :: forall m. (Monad m) => ParserT String m Unit
 string :: forall m. (Monad m) => String -> ParserT String m String
 ```
 
-#### `char`
+Match the specified string.
+
+#### `anyChar`
 
 ``` purescript
-char :: forall m. (Monad m) => ParserT String m String
+anyChar :: forall m. (Monad m) => ParserT String m Char
 ```
+
+Match any character.
 
 #### `satisfy`
 
 ``` purescript
-satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
+satisfy :: forall m. (Monad m) => (Char -> Boolean) -> ParserT String m Char
 ```
+
+Match a character satisfying the specified predicate.
+
+#### `char`
+
+``` purescript
+char :: forall m. (Monad m) => Char -> ParserT String m Char
+```
+
+Match the specified character
 
 #### `whiteSpace`
 
@@ -30,22 +48,30 @@ satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 ```
 
+Match a whitespace character.
+
 #### `skipSpaces`
 
 ``` purescript
 skipSpaces :: forall m. (Monad m) => ParserT String m Unit
 ```
 
+Skip whitespace characters.
+
 #### `oneOf`
 
 ``` purescript
-oneOf :: forall s m a. (Monad m) => Array String -> ParserT String m String
+oneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
 ```
+
+Match one of the characters in the array.
 
 #### `noneOf`
 
 ``` purescript
-noneOf :: forall s m a. (Monad m) => Array String -> ParserT String m String
+noneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
 ```
+
+Match any character not in the array.
 
 
