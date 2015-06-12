@@ -17,13 +17,22 @@
     "Gruntfile.js",
     "package.json"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:purescript-contrib/purescript-parsing.git"
+  },
   "dependencies": {
-    "purescript-transformers": "~0.5.0",
-    "purescript-either": "~0.1.4",
-    "purescript-identity": "~0.3.0",
-    "purescript-maybe": "~0.2.1",
-    "purescript-arrays": "~0.3.0",
-    "purescript-strings": "~0.4.2",
-    "purescript-foldable-traversable": "~0.3.0"
+    "purescript-transformers": "^0.6.0",
+    "purescript-either": "^0.2.0",
+    "purescript-identity": "^0.4.0",
+    "purescript-maybe": "^0.3.0",
+    "purescript-arrays": "^0.4.0",
+    "purescript-strings": "^0.5.0",
+    "purescript-foldable-traversable": "^0.4.0",
+    "purescript-lists": "^0.7.0"
+  },
+  "devDependencies": {
+    "purescript-console": "^0.1.0",
+    "purescript-assert": "^0.1.0"
   }
 }

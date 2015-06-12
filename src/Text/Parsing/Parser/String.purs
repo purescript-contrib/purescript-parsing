@@ -1,11 +1,14 @@
 module Text.Parsing.Parser.String where
 
+import Prelude
+
 import Data.String
 import Data.Either
 import Data.Foldable
 import Data.Monoid
 import Data.Maybe
 import Data.Char
+import Data.List (List(..), (:), many, some)
 
 import Control.Alt
 import Control.Alternative
@@ -26,20 +29,20 @@ eof = ParserT $ \(PState { input: s, position: pos }) ->
 string :: forall m. (Monad m) => String -> ParserT String m String
 string str = ParserT $ \(PState { input: s, position: pos })  ->
   return $ case indexOf str s of
-    0 -> { consumed: true, input: drop (length str) s, result: Right str, position: updatePosString pos str }
+    Just 0 -> { consumed: true, input: drop (length str) s, result: Right str, position: updatePosString pos str }
     _ -> parseFailed s pos ("Expected " ++ str)
 
 char :: forall m. (Monad m) => ParserT String m String
 char = ParserT $ \(PState { input: s, position: pos }) ->
   return $ case charAt 0 s of
     Nothing -> parseFailed s pos "Unexpected EOF"
-    Just c  -> { consumed: true, input: drop 1 s, result: Right (charString c), position: updatePosString pos (charString c) }
+    Just c  -> { consumed: true, input: drop 1 s, result: Right (toString c), position: updatePosString pos (toString c) }
 
 satisfy :: forall m. (Monad m) => (String -> Boolean) -> ParserT String m String
 satisfy f = try do
-    c <- char
-    if f c then return c
-           else fail "Character did not satisfy predicate"
+  c <- char
+  if f c then return c
+         else fail "Character did not satisfy predicate"
 
 whiteSpace :: forall m. (Monad m) => ParserT String m String
 whiteSpace = do
@@ -51,8 +54,8 @@ skipSpaces = do
   whiteSpace
   return unit
 
-oneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+oneOf :: forall s m a. (Monad m) => Array String -> ParserT String m String
 oneOf ss = satisfy (flip elem ss)
 
-noneOf :: forall s m a. (Monad m) => [String] -> ParserT String m String
+noneOf :: forall s m a. (Monad m) => Array String -> ParserT String m String
 noneOf ss = satisfy (flip notElem ss)

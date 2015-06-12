@@ -1,5 +1,7 @@
 module Text.Parsing.Parser where
 
+import Prelude
+
 import Data.Either
 import Data.Identity
 import Data.Maybe
@@ -55,18 +57,18 @@ runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = runIdentity <<< runParserT (PState { input: s, position: initialPos })
 
 instance functorParserT :: (Functor m) => Functor (ParserT s m) where
-  (<$>) f p = ParserT $ \s -> f' <$> unParserT p s
+  map f p = ParserT $ \s -> f' <$> unParserT p s
     where
     f' o = { input: o.input, result: f <$> o.result, consumed: o.consumed, position: o.position }
 
 instance applyParserT :: (Monad m) => Apply (ParserT s m) where
-  (<*>) = ap
+  apply = ap
 
 instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
   pure a = ParserT $ \(PState { input: s, position: pos }) -> pure { input: s, result: Right a, consumed: false, position: pos }
 
 instance altParserT :: (Monad m) => Alt (ParserT s m) where
-  (<|>) p1 p2 = ParserT $ \s -> unParserT p1 s >>= \o ->
+  alt p1 p2 = ParserT $ \s -> unParserT p1 s >>= \o ->
     case o.result of
       Left _ | not o.consumed -> unParserT p2 s
       _ -> return o
@@ -77,7 +79,7 @@ instance plusParserT :: (Monad m) => Plus (ParserT s m) where
 instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
 
 instance bindParserT :: (Monad m) => Bind (ParserT s m) where
-  (>>=) p f = ParserT $ \s -> unParserT p s >>= \o ->
+  bind p f = ParserT $ \s -> unParserT p s >>= \o ->
     case o.result of
       Left err -> return { input: o.input, result: Left err, consumed: o.consumed, position: o.position }
       Right a -> updateConsumedFlag o.consumed <$> unParserT (f a) (PState { input: o.input, position: o.position })
@@ -96,8 +98,8 @@ instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
     return $ case f s of
       Tuple a s' -> { input: s', consumed: false, result: Right a, position: pos }
 
-instance lazy1ParserT :: Lazy1 (ParserT s m) where
-  defer1 f = ParserT $ \s -> unParserT (f unit) s
+instance lazyParserT :: Lazy (ParserT s m a) where
+  defer f = ParserT $ \s -> unParserT (f unit) s
 
 consume :: forall s m. (Monad m) => ParserT s m Unit
 consume = ParserT $ \(PState { input: s, position: pos }) -> return { consumed: true, input: s, result: Right unit, position: pos }

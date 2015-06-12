@@ -3,7 +3,7 @@ purescript-parsing
 
 [![Build Status](https://travis-ci.org/purescript-contrib/purescript-parsing.svg?branch=master)](https://travis-ci.org/purescript-contrib/purescript-parsing)
 
-A work-in-progress parser combinator library written in PureScript.
+A parser combinator library based on Parsec
 
-- [Module documentation](docs/Module.md)
-- [Example usage](examples/Test.purs)
+- [Module documentation](docs/)
+- [Example usage](test/Main.purs)
