@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "postinstall": "pulp dep install",
+    "build": "pulp build && pulp test && rimraf docs && pulp docs"
+  },
+  "devDependencies": {
+    "pulp": "^4.0.1",
+    "rimraf": "^2.4.1"
+  }
+}
