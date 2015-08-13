@@ -34,4 +34,4 @@ when tokpos f = try $ do
 
 -- | Match the specified token at the head of the stream.
 match :: forall a m. (Monad m, Eq a) => (a -> Position) -> a -> ParserT (List a) m a
-match tokpos token = when tokpos (== token)
+match tokpos tok = when tokpos (== tok)

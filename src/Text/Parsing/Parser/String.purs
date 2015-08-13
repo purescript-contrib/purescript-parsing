@@ -9,7 +9,7 @@ import Data.Either
 import Data.Foldable
 import Data.Monoid
 import Data.Maybe
-import Data.Char
+import Data.Char (toString)
 import Data.Array (many)
 import Data.List (List(..), (:), fromList)
 
