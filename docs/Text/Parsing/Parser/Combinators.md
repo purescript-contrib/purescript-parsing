@@ -2,6 +2,25 @@
 
 Combinators for creating parsers.
 
+### Notes:
+A few of the known combinators from Parsec are missing in this module. That
+is because they have already been defined in other libraries.
+
+```purescript
+Text.Parsec.many  = Data.(Array|List).many
+Text.Parsec.many1 = Data.(Array|List).some
+Text.Parsec.(<|>) = Control.Alt.alt (<|>)
+```
+
+Because Strings are not Char Arrays in PureScript `many` and `some` on Char Parsers need to
+be used in conjunction with `Data.String.fromCharArray` to achieve "Parsec-like" results.
+
+```purescript
+Text.Parsec.many  (char 'x') <=> fromCharArray <$> Data.Array.many (char 'x')
+```
+
+===
+
 #### `(<?>)`
 
 ``` purescript
