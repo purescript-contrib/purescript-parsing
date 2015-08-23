@@ -15,9 +15,8 @@ import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.State.Class
 import Control.Monad.State.Trans
-import Control.Monad.Error
 import Control.Monad.Error.Class
-import Control.Monad.Error.Trans
+import Control.Monad.Except.Trans
 import Control.MonadPlus
 import Control.Plus
 
@@ -28,10 +27,6 @@ data ParseError = ParseError
   { message :: String
   , position :: Position
   }
-
-instance errorParseError :: Error ParseError where
-  noMsg = ParseError { message: "", position: initialPos }
-  strMsg msg = ParseError { message: msg, position: initialPos }
 
 instance showParseError :: Show ParseError where
   show (ParseError msg) = "ParseError { message: " ++ msg.message ++ ", position: " ++ show msg.position ++ " }"

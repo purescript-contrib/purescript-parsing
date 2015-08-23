@@ -22,12 +22,11 @@
     "url": "git://github.com/purescript-contrib/purescript-parsing.git"
   },
   "dependencies": {
-    "purescript-transformers": "^0.6.0",
+    "purescript-transformers": "^0.7.0",
     "purescript-either": "^0.2.0",
     "purescript-identity": "^0.4.0",
     "purescript-maybe": "^0.3.0",
     "purescript-arrays": "^0.4.0",
-    "purescript-strings": "^0.7.0",
     "purescript-foldable-traversable": "^0.4.0",
     "purescript-lists": "^0.7.0"
   },

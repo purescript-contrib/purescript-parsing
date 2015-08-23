@@ -9,7 +9,6 @@ import Data.Either
 import Data.List (List(..), (:), many, some)
 
 import Control.Monad.State.Class hiding (get)
-import Control.Monad.Error
 import Control.Monad.Error.Class
 import Control.MonadPlus
 

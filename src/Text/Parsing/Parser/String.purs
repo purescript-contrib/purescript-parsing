@@ -15,7 +15,6 @@ import Data.List (List(..), (:), fromList)
 
 import Control.Alt
 import Control.Alternative
-import Control.Monad.Error
 import Control.Monad.Error.Class
 import Control.Monad.State.Class
 

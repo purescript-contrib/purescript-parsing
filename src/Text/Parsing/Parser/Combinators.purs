@@ -35,7 +35,6 @@ import Control.Alternative
 import Control.Apply
 import Control.Lazy
 import Control.Monad
-import Control.Monad.Error.Trans
 import Control.Monad.Error.Class
 import Control.Monad.State.Trans
 import Control.Monad.State.Class
