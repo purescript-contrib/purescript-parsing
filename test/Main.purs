@@ -90,6 +90,9 @@ isA A = true
 isA _ = false
 
 main = do
+
+  parseTest "\n" Nil $ many $ char '\n' *> char '\n'
+
   parseTest "(((a)))" 3 nested
   parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (string "a")
   parseTest "(ab)" (Just "b") $ parens do
