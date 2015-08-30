@@ -39,15 +39,11 @@ nested = fix \p -> (do
 parseTest :: forall s a eff. (Show a, Eq a) => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseTest input expected p = case runParser input p of
   Right actual -> assert (expected == actual)
-  Left err -> do
-    print $ "error: " ++ show err
-    assert false
+  Left err -> assert' ("error: " ++ show err) false
 
 parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseErrorTestPosition p input expected = case runParser input p of
-  Right _ -> do
-    print "error: ParseError expected!"
-    assert false
+  Right _ -> assert' "error: ParseError expected!" false
   Left (ParseError { position: pos }) -> assert (expected == pos)
 
 opTest :: Parser String String
@@ -95,14 +91,15 @@ isA _ = false
 
 main = do
 
-  parseTest "" Nil $ many $ char '\n' *> char '\n'
-  parseTest "" Nil $ many $ string "\n\n"
+  parseErrorTestPosition
+    (many $ char 'f' *> char '?')
+    "foo"
+    (Position { column: 3, line: 1 })
 
-  parseTest "\n" (Cons '\n' Nil) $ many $ char '\n'
-  parseTest "\n" (Cons "\n" Nil) $ many $ string "\n"
-
-  parseTest "\n" Nil $ many $ string "\n\n"
-  parseTest "\n" Nil $ many $ char '\n' *> char '\n'
+  parseTest
+    "foo"
+    Nil
+    (many $ try $ char 'f' *> char '?')
 
   parseTest "(((a)))" 3 nested
   parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (string "a")
