@@ -71,5 +71,6 @@ oneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
 oneOf ss = satisfy (flip elem ss)
 
 -- | Match any character not in the array.
-noneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
+noneOf :: forall m. (Monad m) => Array Char -> ParserT String m Char
 noneOf ss = satisfy (flip notElem ss)
+
