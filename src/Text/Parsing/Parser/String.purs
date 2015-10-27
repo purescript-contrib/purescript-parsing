@@ -48,7 +48,7 @@ satisfy :: forall m. (Monad m) => (Char -> Boolean) -> ParserT String m Char
 satisfy f = try do
   c <- anyChar
   if f c then return c
-         else fail $ "Character '" ++ (fromChar c) ++ "' did not satisfy predicate"
+         else fail $ "Character '" ++ fromChar c ++ "' did not satisfy predicate"
 
 -- | Match the specified character
 char :: forall m. (Monad m) => Char -> ParserT String m Char
