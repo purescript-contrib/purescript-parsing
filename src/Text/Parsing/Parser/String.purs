@@ -67,7 +67,7 @@ skipSpaces = do
   return unit
 
 -- | Match one of the characters in the array.
-oneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
+oneOf :: forall m. (Monad m) => Array Char -> ParserT String m Char
 oneOf ss = satisfy (flip elem ss)
 
 -- | Match any character not in the array.
