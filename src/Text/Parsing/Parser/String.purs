@@ -48,7 +48,7 @@ satisfy :: forall m. (Monad m) => (Char -> Boolean) -> ParserT String m Char
 satisfy f = try do
   c <- anyChar
   if f c then return c
-         else fail "Character did not satisfy predicate"
+         else fail $ "Character '" ++ fromChar c ++ "' did not satisfy predicate"
 
 -- | Match the specified character
 char :: forall m. (Monad m) => Char -> ParserT String m Char
@@ -67,7 +67,7 @@ skipSpaces = do
   return unit
 
 -- | Match one of the characters in the array.
-oneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
+oneOf :: forall m. (Monad m) => Array Char -> ParserT String m Char
 oneOf ss = satisfy (flip elem ss)
 
 -- | Match any character not in the array.
