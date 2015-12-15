@@ -4,19 +4,13 @@ import Prelude
 
 import Data.Either
 import Data.Identity
-import Data.Maybe
-import Data.Monoid
 import Data.Tuple
 
 import Control.Alt
 import Control.Alternative
 import Control.Lazy
-import Control.Monad
-import Control.Monad.Trans
-import Control.Monad.State.Class
-import Control.Monad.State.Trans
-import Control.Monad.Error.Class
-import Control.Monad.Except.Trans
+import Control.Monad.State.Class (MonadState)
+import Control.Monad.Trans (MonadTrans)
 import Control.MonadPlus
 import Control.Plus
 

@@ -4,16 +4,13 @@ module Text.Parsing.Parser.Token where
 
 import Prelude
 
-import Data.String
 import Data.Either
-import Data.List (List(..), (:), many, some)
+import Data.List (List(..))
 
 import Control.Monad.State.Class hiding (get)
-import Control.Monad.Error.Class
 import Control.MonadPlus
 
 import Text.Parsing.Parser
-import Text.Parsing.Parser.String
 import Text.Parsing.Parser.Combinators
 import Text.Parsing.Parser.Pos
 

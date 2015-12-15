@@ -7,16 +7,9 @@ import Prelude
 import Data.String
 import Data.Either
 import Data.Foldable
-import Data.Monoid
 import Data.Maybe
 import Data.Char (toString)
 import Data.Array (many)
-import Data.List (List(..), (:), fromList)
-
-import Control.Alt
-import Control.Alternative
-import Control.Monad.Error.Class
-import Control.Monad.State.Class
 
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Combinators

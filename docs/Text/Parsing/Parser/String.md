@@ -61,7 +61,7 @@ Skip whitespace characters.
 #### `oneOf`
 
 ``` purescript
-oneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
+oneOf :: forall m. (Monad m) => Array Char -> ParserT String m Char
 ```
 
 Match one of the characters in the array.
@@ -69,7 +69,7 @@ Match one of the characters in the array.
 #### `noneOf`
 
 ``` purescript
-noneOf :: forall s m a. (Monad m) => Array Char -> ParserT String m Char
+noneOf :: forall m. (Monad m) => Array Char -> ParserT String m Char
 ```
 
 Match any character not in the array.
