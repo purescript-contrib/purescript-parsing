@@ -11,8 +11,7 @@ A parsing error, consisting of a message and position information.
 
 ##### Instances
 ``` purescript
-instance errorParseError :: Error ParseError
-instance showParseError :: Show ParseError
+Show ParseError
 ```
 
 #### `PState`
@@ -37,18 +36,18 @@ The first type argument is the stream type. Typically, this is either `String`, 
 
 ##### Instances
 ``` purescript
-instance functorParserT :: (Functor m) => Functor (ParserT s m)
-instance applyParserT :: (Monad m) => Apply (ParserT s m)
-instance applicativeParserT :: (Monad m) => Applicative (ParserT s m)
-instance altParserT :: (Monad m) => Alt (ParserT s m)
-instance plusParserT :: (Monad m) => Plus (ParserT s m)
-instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
-instance bindParserT :: (Monad m) => Bind (ParserT s m)
-instance monadParserT :: (Monad m) => Monad (ParserT s m)
-instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
-instance monadTransParserT :: MonadTrans (ParserT s)
-instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m)
-instance lazyParserT :: Lazy (ParserT s m a)
+(Functor m) => Functor (ParserT s m)
+(Monad m) => Apply (ParserT s m)
+(Monad m) => Applicative (ParserT s m)
+(Monad m) => Alt (ParserT s m)
+(Monad m) => Plus (ParserT s m)
+(Monad m) => Alternative (ParserT s m)
+(Monad m) => Bind (ParserT s m)
+(Monad m) => Monad (ParserT s m)
+(Monad m) => MonadPlus (ParserT s m)
+MonadTrans (ParserT s)
+(Monad m) => MonadState s (ParserT s m)
+Lazy (ParserT s m a)
 ```
 
 #### `unParserT`

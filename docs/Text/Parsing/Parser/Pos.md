@@ -14,8 +14,8 @@ data Position
 
 ##### Instances
 ``` purescript
-instance showPosition :: Show Position
-instance eqPosition :: Eq Position
+Show Position
+Eq Position
 ```
 
 #### `initialPos`

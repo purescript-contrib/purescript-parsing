@@ -24,20 +24,13 @@ module Text.Parsing.Parser.Combinators where
 import Prelude
 
 import Data.Maybe
-import Data.Tuple
 import Data.Either
 import Data.List (List(..), (:), many, some, singleton)
 import Data.Foldable (Foldable, foldl)
 
 import Control.Alt
 import Control.Plus
-import Control.Alternative
 import Control.Apply
-import Control.Lazy
-import Control.Monad
-import Control.Monad.Error.Class
-import Control.Monad.State.Trans
-import Control.Monad.State.Class
 
 import Text.Parsing.Parser
 
