@@ -69,41 +69,41 @@ match tokpos tok = when tokpos (== tok)
 
 type LanguageDef = GenLanguageDef String Identity
 
--- | The @GenLanguageDef@ type is a record that contains all parameterizable
--- features of the "Text.Parsec.Token" module. The module "Text.Parsec.Language"
--- contains some default definitions.
+-- | The `GenLanguageDef` type is a record that contains all parameterizable
+-- | features of the "Text.Parsec.Token" module. The module `Text.Parsec.Languager`
+-- | contains some default definitions.
 newtype GenLanguageDef s m
     = LanguageDef {
     -- | Describes the start of a block comment. Use the empty string if the
-    -- language doesn't support block comments. For example \"\/*\".
+    -- | language doesn't support block comments. For example `/*`.
     commentStart   :: String,
     -- | Describes the end of a block comment. Use the empty string if the
-    -- language doesn't support block comments. For example \"*\/\".
+    -- | language doesn't support block comments. For example `*/`.
     commentEnd     :: String,
     -- | Describes the start of a line comment. Use the empty string if the
-    -- language doesn't support line comments. For example \"\/\/\".
+    -- | language doesn't support line comments. For example `//`.
     commentLine    :: String,
-    -- | Set to 'True' if the language supports nested block comments.
+    -- | Set to `true` if the language supports nested block comments.
     nestedComments :: Boolean,
     -- | This parser should accept any start characters of identifiers. For
-    -- example @letter \<|> char \'_\'@.
+    -- | example `letter <|> char '_'`.
     identStart     :: ParserT s m Char,
     -- | This parser should accept any legal tail characters of identifiers.
-    -- For example @alphaNum \<|> char \'_\'@.
+    -- | For example `alphaNum <|> char '_'`.
     identLetter    :: ParserT s m Char,
     -- | This parser should accept any start characters of operators. For
-    -- example @oneOf \":!#$%&*+.\/\<=>?\@\\\\^|-~\"@
+    -- | example `oneOf [':', '+', '=']`.
     opStart        :: ParserT s m Char,
     -- | This parser should accept any legal tail characters of operators.
-    -- Note that this parser should even be defined if the language doesn't
-    -- support user-defined operators, or otherwise the 'reservedOp'
-    -- parser won't work correctly.
+    -- | Note that this parser should even be defined if the language doesn't
+    -- | support user-defined operators, or otherwise the `reservedOp`
+    -- | parser won't work correctly.
     opLetter       :: ParserT s m Char,
     -- | The list of reserved identifiers.
     reservedNames  :: Array String,
     -- | The list of reserved operators.
     reservedOpNames:: Array String,
-    -- | Set to 'True' if the language is case sensitive.
+    -- | Set to `true` if the language is case sensitive.
     caseSensitive  :: Boolean
     }
 
@@ -128,142 +128,143 @@ unGenLanguageDef (LanguageDef langDef) = langDef
 type TokenParser = GenTokenParser String Identity
 
 -- | The type of the record that holds lexical parsers that work on
--- @s@ streams over a monad @m@.
-
+-- | `s` streams over a monad `m`.
 type GenTokenParser s m
     = {
         -- | This lexeme parser parses a legal identifier. Returns the identifier
-        -- string. This parser will fail on identifiers that are reserved
-        -- words. Legal identifier (start) characters and reserved words are
-        -- defined in the 'LanguageDef' that is passed to
-        -- 'makeTokenParser'. An @identifier@ is treated as
-        -- a single token using 'try'.
+        -- | string. This parser will fail on identifiers that are reserved
+        -- | words. Legal identifier (start) characters and reserved words are
+        -- | defined in the `LanguageDef` that is passed to
+        -- | `makeTokenParser`. An `identifier` is treated as
+        -- | a single token using `try`.
         identifier       :: ParserT s m String,
-        -- | The lexeme parser @reserved name@ parses @symbol
-        -- name@, but it also checks that the @name@ is not a prefix of a
-        -- valid identifier. A @reserved@ word is treated as a single token
-        -- using 'try'.
+        -- | The lexeme parser `reserved name` parses `symbol
+        -- | name`, but it also checks that the `name` is not a prefix of a
+        -- | valid identifier. A `reserved` word is treated as a single token
+        -- | using `try`.
         reserved         :: String -> ParserT s m Unit,
         -- | This lexeme parser parses a legal operator. Returns the name of the
-        -- operator. This parser will fail on any operators that are reserved
-        -- operators. Legal operator (start) characters and reserved operators
-        -- are defined in the 'LanguageDef' that is passed to
-        -- 'makeTokenParser'. An @operator@ is treated as a
-        -- single token using 'try'.
+        -- | operator. This parser will fail on any operators that are reserved
+        -- | operators. Legal operator (start) characters and reserved operators
+        -- | are defined in the `LanguageDef` that is passed to
+        -- | `makeTokenParser`. An `operator` is treated as a
+        -- | single token using `try`.
         operator         :: ParserT s m String,
-        -- |The lexeme parser @reservedOp name@ parses @symbol
-        -- name@, but it also checks that the @name@ is not a prefix of a
-        -- valid operator. A @reservedOp@ is treated as a single token using
-        -- 'try'.
+        -- |The lexeme parser `reservedOp name` parses `symbol
+        -- | name`, but it also checks that the `name` is not a prefix of a
+        -- | valid operator. A `reservedOp` is treated as a single token using
+        -- | `try`.
         reservedOp       :: String -> ParserT s m Unit,
         -- | This lexeme parser parses a single literal character. Returns the
-        -- literal character value. This parsers deals correctly with escape
-        -- sequences. The literal character is parsed according to the grammar
-        -- rules defined in the Haskell report (which matches most programming
-        -- languages quite closely).
+        -- | literal character value. This parsers deals correctly with escape
+        -- | sequences. The literal character is parsed according to the grammar
+        -- | rules defined in the Haskell report (which matches most programming
+        -- | languages quite closely).
         charLiteral      :: ParserT s m Char,
         -- | This lexeme parser parses a literal string. Returns the literal
-        -- string value. This parsers deals correctly with escape sequences and
-        -- gaps. The literal string is parsed according to the grammar rules
-        -- defined in the Haskell report (which matches most programming
-        -- languages quite closely).
+        -- | string value. This parsers deals correctly with escape sequences and
+        -- | gaps. The literal string is parsed according to the grammar rules
+        -- | defined in the Haskell report (which matches most programming
+        -- | languages quite closely).
         stringLiteral    :: ParserT s m String,
         -- | This lexeme parser parses a natural number (a positive whole
-        -- number). Returns the value of the number. The number can be
-        -- specified in 'decimal', 'hexadecimal' or
-        -- 'octal'. The number is parsed according to the grammar
-        -- rules in the Haskell report.
+        -- | number). Returns the value of the number. The number can be
+        -- | specified in `decimal`, `hexadecimal` or
+        -- | `octal`. The number is parsed according to the grammar
+        -- | rules in the Haskell report.
         natural          :: ParserT s m Int,
         -- | This lexeme parser parses an integer (a whole number). This parser
-        -- is like 'natural' except that it can be prefixed with
-        -- sign (i.e. \'-\' or \'+\'). Returns the value of the number. The
-        -- number can be specified in 'decimal', 'hexadecimal'
-        -- or 'octal'. The number is parsed according
-        -- to the grammar rules in the Haskell report.
+        -- | is like `natural` except that it can be prefixed with
+        -- | sign (i.e. `-` or `+`). Returns the value of the number. The
+        -- | number can be specified in `decimal`, `hexadecimal`
+        -- | or `octal`. The number is parsed according
+        -- | to the grammar rules in the Haskell report.
         integer          :: ParserT s m Int,
         -- | This lexeme parser parses a floating point value. Returns the value
-        -- of the number. The number is parsed according to the grammar rules
-        -- defined in the Haskell report.
+        -- | of the number. The number is parsed according to the grammar rules
+        -- | defined in the Haskell report.
         float            :: ParserT s m Number,
-        -- | This lexeme parser parses either 'natural' or a 'float'.
-        -- Returns the value of the number. This parsers deals with
-        -- any overlap in the grammar rules for naturals and floats. The number
-        -- is parsed according to the grammar rules defined in the Haskell report.
+        -- | This lexeme parser parses either `natural` or a `float`.
+        -- | Returns the value of the number. This parsers deals with
+        -- | any overlap in the grammar rules for naturals and floats. The number
+        -- | is parsed according to the grammar rules defined in the Haskell report.
         naturalOrFloat   :: ParserT s m (Either Int Number),
         -- | Parses a positive whole number in the decimal system. Returns the
-        -- value of the number.
+        -- | value of the number.
         decimal          :: ParserT s m Int,
         -- | Parses a positive whole number in the hexadecimal system. The number
-        -- should be prefixed with \"0x\" or \"0X\". Returns the value of the
-        -- number.
+        -- | should be prefixed with `0x` or `0X`. Returns the value of the
+        -- | number.
         hexadecimal      :: ParserT s m Int,
         -- | Parses a positive whole number in the octal system. The number
-        -- should be prefixed with \"0o\" or \"0O\". Returns the value of the
-        -- number.
+        -- | should be prefixed with `0o` or `0O`. Returns the value of the
+        -- | number.
         octal            :: ParserT s m Int,
-        -- | Lexeme parser @symbol s@ parses 'string' @s@ and skips
-        -- trailing white space.
+        -- | Lexeme parser `symbol s` parses `string` `s` and skips
+        -- | trailing white space.
         symbol           :: String -> ParserT s m String,
-        -- | @lexeme p@ first applies parser @p@ and than the 'whiteSpace'
-        -- parser, returning the value of @p@. Every lexical
-        -- token (lexeme) is defined using @lexeme@, this way every parse
-        -- starts at a point without white space. Parsers that use @lexeme@ are
-        -- called /lexeme/ parsers in this document.
-        --
-        -- The only point where the 'whiteSpace' parser should be
-        -- called explicitly is the start of the main parser in order to skip
-        -- any leading white space.
-        --
-        -- >    mainParser  = do{ whiteSpace
-        -- >                     ; ds <- many (lexeme digit)
-        -- >                     ; eof
-        -- >                     ; return (sum ds)
-        -- >                     }
+        -- | `lexeme p` first applies parser `p` and than the `whiteSpace`
+        -- | parser, returning the value of `p`. Every lexical
+        -- | token (lexeme) is defined using `lexeme`, this way every parse
+        -- | starts at a point without white space. Parsers that use `lexeme` are
+        -- | called *lexeme* parsers in this document.
+        -- |
+        -- | The only point where the `whiteSpace` parser should be
+        -- | called explicitly is the start of the main parser in order to skip
+        -- | any leading white space.
+        -- |
+        -- | ```purescript
+        -- | mainParser = do
+        -- |   whiteSpace
+        -- |   ds <- many (lexeme digit)
+        -- |   eof
+        -- |   return (sum ds)
+        -- | ```
         lexeme           :: forall a. ParserT s m a -> ParserT s m a,
-        -- | Parses any white space. White space consists of /zero/ or more
-        -- occurrences of a 'space', a line comment or a block (multi
-        -- line) comment. Block comments may be nested. How comments are
-        -- started and ended is defined in the 'LanguageDef'
-        -- that is passed to 'makeTokenParser'.
+        -- | Parses any white space. White space consists of *zero* or more
+        -- | occurrences of a `space`, a line comment or a block (multi
+        -- | line) comment. Block comments may be nested. How comments are
+        -- | started and ended is defined in the `LanguageDef`
+        -- | that is passed to `makeTokenParser`.
         whiteSpace       :: ParserT s m Unit,
-        -- | Lexeme parser @parens p@ parses @p@ enclosed in parenthesis,
-        -- returning the value of @p@.
+        -- | Lexeme parser `parens p` parses `p` enclosed in parenthesis,
+        -- | returning the value of `p`.
         parens           :: forall a. ParserT s m a -> ParserT s m a,
-        -- | Lexeme parser @braces p@ parses @p@ enclosed in braces (\'{\' and
-        -- \'}\'), returning the value of @p@.
+        -- | Lexeme parser `braces p` parses `p` enclosed in braces (`{` and
+        -- | `}`), returning the value of `p`.
         braces           :: forall a. ParserT s m a -> ParserT s m a,
-        -- | Lexeme parser @angles p@ parses @p@ enclosed in angle brackets (\'\<\'
-        -- and \'>\'), returning the value of @p@.
+        -- | Lexeme parser `angles p` parses `p` enclosed in angle brackets (`<`
+        -- | and `>`), returning the value of `p`.
         angles           :: forall a. ParserT s m a -> ParserT s m a,
-        -- | Lexeme parser @brackets p@ parses @p@ enclosed in brackets (\'[\'
-        -- and \']\'), returning the value of @p@.
+        -- | Lexeme parser `brackets p` parses `p` enclosed in brackets (`[`
+        -- | and `]`), returning the value of `p`.
         brackets         :: forall a. ParserT s m a -> ParserT s m a,
-        -- | Lexeme parser |semi| parses the character \';\' and skips any
-        -- trailing white space. Returns the string \";\".
+        -- | Lexeme parser `semi` parses the character `;` and skips any
+        -- | trailing white space. Returns the string `;`.
         semi             :: ParserT s m String,
-        -- | Lexeme parser @comma@ parses the character \',\' and skips any
-        -- trailing white space. Returns the string \",\".
+        -- | Lexeme parser `comma` parses the character `,` and skips any
+        -- | trailing white space. Returns the string `,`.
         comma            :: ParserT s m String,
-        -- | Lexeme parser @colon@ parses the character \':\' and skips any
-        -- trailing white space. Returns the string \":\".
+        -- | Lexeme parser `colon` parses the character `:` and skips any
+        -- | trailing white space. Returns the string `:`.
         colon            :: ParserT s m String,
-        -- | Lexeme parser @dot@ parses the character \'.\' and skips any
-        -- trailing white space. Returns the string \".\".
+        -- | Lexeme parser `dot` parses the character `.` and skips any
+        -- | trailing white space. Returns the string `.`.
         dot              :: ParserT s m String,
-        -- | Lexeme parser @semiSep p@ parses /zero/ or more occurrences of @p@
-        -- separated by 'semi'. Returns a list of values returned by
-        -- @p@.
+        -- | Lexeme parser `semiSep p` parses *zero* or more occurrences of `p`
+        -- | separated by `semi`. Returns a list of values returned by
+        -- | `p`.
         semiSep          :: forall a . ParserT s m a -> ParserT s m (List a),
-        -- | Lexeme parser @semiSep1 p@ parses /one/ or more occurrences of @p@
-        -- separated by 'semi'. Returns a list of values returned by @p@.
+        -- | Lexeme parser `semiSep1 p` parses *one* or more occurrences of `p`
+        -- | separated by `semi`. Returns a list of values returned by `p`.
         semiSep1         :: forall a . ParserT s m a -> ParserT s m (List a),
-        -- | Lexeme parser @commaSep p@ parses /zero/ or more occurrences of
-        -- @p@ separated by 'comma'. Returns a list of values returned
-        -- by @p@.
+        -- | Lexeme parser `commaSep p` parses *zero* or more occurrences of
+        -- | `p` separated by `comma`. Returns a list of values returned
+        -- | by `p`.
         commaSep         :: forall a . ParserT s m a -> ParserT s m (List a),
-        -- | Lexeme parser @commaSep1 p@ parses /one/ or more occurrences of
-        -- @p@ separated by 'comma'. Returns a list of values returned
-        -- by @p@.
+        -- | Lexeme parser `commaSep1 p` parses *one* or more occurrences of
+        -- | `p` separated by `comma`. Returns a list of values returned
+        -- | by `p`.
         commaSep1        :: forall a . ParserT s m a -> ParserT s m (List a)
     }
 
@@ -271,36 +272,34 @@ type GenTokenParser s m
 -- Given a LanguageDef, create a token parser.
 -----------------------------------------------------------
 
--- | The expression @makeTokenParser language@ creates a 'GenTokenParser'
--- record that contains lexical parsers that are
--- defined using the definitions in the @language@ record.
---
--- The use of this function is quite stylized - one imports the
--- appropiate language definition and selects the lexical parsers that
--- are needed from the resulting 'GenTokenParser'.
---
--- >  module Main where
--- >
--- >  import Text.Parsec
--- >  import qualified Text.Parsec.Token as P
--- >  import Text.Parsec.Language (haskellDef)
--- >
--- >  -- The parser
--- >  ...
--- >
--- >  expr  =   parens expr
--- >        <|> identifier
--- >        <|> ...
--- >
--- >
--- >  -- The lexer
--- >  lexer       = P.makeTokenParser haskellDef
--- >
--- >  parens      = P.parens lexer
--- >  braces      = P.braces lexer
--- >  identifier  = P.identifier lexer
--- >  reserved    = P.reserved lexer
--- >  ...
+-- | The expression `makeTokenParser language` creates a `GenTokenParser`
+-- | record that contains lexical parsers that are
+-- | defined using the definitions in the `language` record.
+-- |
+-- | The use of this function is quite stylized - one imports the
+-- | appropiate language definition and selects the lexical parsers that
+-- | are needed from the resulting `GenTokenParser`.
+-- |
+-- | ```purescript
+-- | module Main where
+-- |
+-- | import Text.Parsing.Parser.Language (haskellDef)
+-- | import Text.Parsing.Parser.Token (makeTokenParser)
+-- |
+-- | -- The parser
+-- | expr = parens expr
+-- |    <|> identifier
+-- |    <|> ...
+-- |
+-- |
+-- | -- The lexer
+-- | tokenParser = makeTokenParser haskellDef
+-- | parens      = tokenParser.parens
+-- | braces      = tokenParser.braces
+-- | identifier  = tokenParser.identifier
+-- | reserved    = tokenParser.reserved
+-- | ...
+-- | ```
 makeTokenParser :: forall m . (Monad m) => GenLanguageDef String m -> GenTokenParser String m
 makeTokenParser (LanguageDef languageDef)
     = { identifier: identifier
@@ -692,7 +691,8 @@ makeTokenParser (LanguageDef languageDef)
 
 
 -- ================================================================================ --
--- The following functions should really be in the where-clause of makeTokenParser. --
+-- The following functions should really be in the where-clause of makeTokenParser, --
+-- but they can't go there because they are mutually recursive.                     --
 -- ================================================================================ --
 
 -----------------------------------------------------------
@@ -775,23 +775,31 @@ inCommentSingle (LanguageDef languageDef) =
 -- Helper functions that should maybe go in Text.Parsing.Parser.String --
 -------------------------------------------------------------------------
 
+-- | Parse a digit.  Matches any char that satisfies `Data.Char.Unicode.isDigit`.
 digit :: forall m . (Monad m) => ParserT String m Char
 digit = satisfy isDigit <?> "digit"
 
+-- | Parse a hex digit.  Matches any char that satisfies `Data.Char.Unicode.isHexDigit`.
 hexDigit :: forall m . (Monad m) => ParserT String m Char
 hexDigit = satisfy isHexDigit <?> "hex digit"
 
+-- | Parse an octal digit.  Matches any char that satisfies `Data.Char.Unicode.isOctDigit`.
 octDigit :: forall m . (Monad m) => ParserT String m Char
 octDigit = satisfy isOctDigit <?> "oct digit"
 
+-- | Parse an uppercase letter.  Matches any char that satisfies `Data.Char.Unicode.isUpper`.
 upper :: forall m . (Monad m) => ParserT String m Char
 upper = satisfy isUpper <?> "uppercase letter"
 
+-- | Parse a space character.  Matches any char that satisfies `Data.Char.Unicode.isSpace`.
 space :: forall m . (Monad m) => ParserT String m Char
 space = satisfy isSpace <?> "space"
 
+-- | Parse an alphabetical character.  Matches any char that satisfies `Data.Char.Unicode.isAlpha`.
 letter :: forall m . (Monad m) => ParserT String m Char
 letter = satisfy isAlpha <?> "letter"
 
+-- | Parse an alphabetical or numerical character.
+-- | Matches any char that satisfies `Data.Char.Unicode.isAlphaNum`.
 alphaNum :: forall m . (Monad m) => ParserT String m Char
 alphaNum = satisfy isAlphaNum <?> "letter or digit"

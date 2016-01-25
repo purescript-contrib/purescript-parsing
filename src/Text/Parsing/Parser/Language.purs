@@ -21,9 +21,8 @@ import Text.Parsing.Parser.Token
 -----------------------------------------------------------
 
 -- | This is a minimal token definition for Haskell style languages. It
--- defines the style of comments, valid identifiers and case
--- sensitivity. It does not define any reserved words or operators.
-
+-- | defines the style of comments, valid identifiers and case
+-- | sensitivity. It does not define any reserved words or operators.
 haskellStyle :: LanguageDef
 haskellStyle = LanguageDef (unGenLanguageDef emptyDef)
                 { commentStart    = "{-"
@@ -43,9 +42,8 @@ haskellStyle = LanguageDef (unGenLanguageDef emptyDef)
     op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
 
 -- | This is a minimal token definition for Java style languages. It
--- defines the style of comments, valid identifiers and case
--- sensitivity. It does not define any reserved words or operators.
-
+-- | defines the style of comments, valid identifiers and case
+-- | sensitivity. It does not define any reserved words or operators.
 javaStyle  :: LanguageDef
 javaStyle   = LanguageDef (unGenLanguageDef emptyDef)
                 { commentStart    = "/*"
@@ -64,10 +62,9 @@ javaStyle   = LanguageDef (unGenLanguageDef emptyDef)
 --------------------------------------------------------
 
 -- | This is the most minimal token definition. It is recommended to use
--- this definition as the basis for other definitions. `emptyDef` has
--- no reserved names or operators, is case sensitive and doesn't accept
--- comments, identifiers or operators.
-
+-- | this definition as the basis for other definitions. `emptyDef` has
+-- | no reserved names or operators, is case sensitive and doesn't accept
+-- | comments, identifiers or operators.
 emptyDef :: LanguageDef
 emptyDef = LanguageDef
             { commentStart:    ""
@@ -90,13 +87,11 @@ emptyDef = LanguageDef
 -- -- Haskell
 -- -----------------------------------------------------------
 
--- -- | A lexer for the haskell language.
-
+-- | A lexer for the haskell language.
 haskell :: TokenParser
 haskell = makeTokenParser haskellDef
 
--- -- | The language definition for the Haskell language.
-
+-- | The language definition for the Haskell language.
 haskellDef  :: LanguageDef
 haskellDef   =
     case haskell98Def of
@@ -109,8 +104,7 @@ haskellDef   =
                                    ]
                 }
 
--- -- | The language definition for the language Haskell98.
-
+-- | The language definition for the language Haskell98.
 haskell98Def :: LanguageDef
 haskell98Def = LanguageDef (unGenLanguageDef haskellStyle)
                 { reservedOpNames = ["::","..","=","\\","|","<-","->","@","~","=>"]
