@@ -1,11 +1,11 @@
 
 module Text.Parsing.Parser.Language
-    -- ( haskellDef, haskell
-    -- , mondrianDef, mondrian
-    -- , emptyDef
-    -- , haskellStyle
-    -- , javaStyle
-    -- )
+    ( haskellDef
+    , haskell
+    , emptyDef
+    , haskellStyle
+    , javaStyle
+    )
       where
 
 import Prelude

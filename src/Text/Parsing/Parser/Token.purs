@@ -1,6 +1,25 @@
 -- | Functions for working with streams of tokens.
 
-module Text.Parsing.Parser.Token where
+module Text.Parsing.Parser.Token
+  ( token
+  , when
+  , match
+  , LanguageDef()
+  , GenLanguageDef(LanguageDef)
+  , unGenLanguageDef
+  , TokenParser()
+  , GenTokenParser()
+  , makeTokenParser
+  -- should these be exported?  Maybe they should go in a different module?
+  , digit
+  , hexDigit
+  , octDigit
+  , upper
+  , space
+  , letter
+  , alphaNum
+  )
+    where
 
 import Prelude
 
