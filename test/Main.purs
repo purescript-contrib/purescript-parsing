@@ -389,6 +389,31 @@ tokenParserCommaSep1Test = do
     -- no parse on empty string
     parseErrorTestPosition (testTokenParser.commaSep1 $ string "foo") "" $ mkPos 1
 
+haskellStyleTest :: TestM
+haskellStyleTest = do
+    let haskellTokParser = makeTokenParser haskellStyle
+
+    -- make sure haskell-style comments work
+    parseTest "hello {- comment\n -} fo_" "fo_" $ haskellTokParser.identifier *> haskellTokParser.identifier
+
+    -- make sure java-style comments do not work
+    parseErrorTestPosition
+        (haskellTokParser.identifier *> haskellTokParser.identifier)
+        "hello /* comment\n */ foo"
+        (mkPos 7)
+
+javaStyleTest :: TestM
+javaStyleTest = do
+    let javaTokParser = makeTokenParser javaStyle
+    -- make sure java-style comments work
+    parseTest "hello /* comment\n */ fo_" "fo_" $ javaTokParser.identifier *> javaTokParser.identifier
+
+    -- make sure haskell-style comments do not work
+    parseErrorTestPosition
+        (javaTokParser.identifier *> javaTokParser.identifier)
+        "hello {- comment\n -} foo"
+        (mkPos 7)
+
 main :: forall eff . Eff (console :: CONSOLE, assert :: ASSERT |eff) Unit
 main = do
 
@@ -462,3 +487,6 @@ main = do
   tokenParserSemiSep1Test
   tokenParserCommaSepTest
   tokenParserCommaSep1Test
+
+  haskellStyleTest
+  javaStyleTest
