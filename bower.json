@@ -30,7 +30,7 @@
     "purescript-maybe": "^0.3.0",
     "purescript-strings": "~0.7.0",
     "purescript-transformers": "^0.8.1",
-    "purescript-unicode": "git://github.com/purescript-contrib/purescript-unicode#unicode",
+    "purescript-unicode": "^0.0.1",
     "purescript-integers": "^0.2.0"
   },
   "devDependencies": {
