@@ -5,15 +5,15 @@ module Text.Parsing.Parser.Expr
   , buildExprParser
   ) where
 
-import Prelude
+import Prelude (class Monad, return, bind, id)
 
-import Data.Foldable
+import Data.Foldable (foldr, foldl)
 import Data.List (List(..), (:))
 
-import Control.Alt
+import Control.Alt ((<|>))
 
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Combinators
+import Text.Parsing.Parser (ParserT)
+import Text.Parsing.Parser.Combinators ((<?>), choice)
 
 data Assoc = AssocNone | AssocLeft | AssocRight
 

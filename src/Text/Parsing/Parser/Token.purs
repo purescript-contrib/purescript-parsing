@@ -2,17 +2,16 @@
 
 module Text.Parsing.Parser.Token where
 
-import Prelude
+import Prelude (class Eq, class Monad, (==), return, ($), bind)
 
-import Data.Either
+import Data.Either (Either(Right))
 import Data.List (List(..))
 
-import Control.Monad.State.Class hiding (get)
-import Control.MonadPlus
+import Control.MonadPlus (guard)
 
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Combinators
-import Text.Parsing.Parser.Pos
+import Text.Parsing.Parser (PState(PState), ParserT(ParserT), parseFailed)
+import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Pos (Position)
 
 -- | Create a parser which returns the first token in the stream.
 token :: forall m a. (Monad m) => (a -> Position) -> ParserT (List a) m a

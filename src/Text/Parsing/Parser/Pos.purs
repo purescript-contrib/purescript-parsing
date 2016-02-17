@@ -1,6 +1,6 @@
 module Text.Parsing.Parser.Pos where
 
-import Prelude
+import Prelude (class Eq, class Show, (+), (-), mod, (==), (&&), show, (++))
 
 import Data.String (split)
 import Data.Foldable (foldl)

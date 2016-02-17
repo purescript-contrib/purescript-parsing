@@ -21,22 +21,24 @@
 
 module Text.Parsing.Parser.Combinators where
 
-import Prelude
+import Prelude (class Monad, class Functor, Unit, return, bind, unit, ($), (<$>), (++))
 
-import Data.Maybe
-import Data.Either
+import Data.Maybe (Maybe(Just, Nothing))
+import Data.Either (Either(Left))
 import Data.List (List(..), (:), many, some, singleton)
-import Data.Foldable (Foldable, foldl)
+import Data.Foldable (class Foldable, foldl)
 
-import Control.Alt
-import Control.Plus
-import Control.Apply
+import Control.Alt ((<|>))
+import Control.Plus (empty)
+import Control.Apply ((*>))
 
-import Text.Parsing.Parser
+import Text.Parsing.Parser (PState(PState), ParserT(ParserT), fail, unParserT)
 
 -- | Provide an error message in the case of failure.
-(<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
-(<?>) p msg = p <|> fail ("Expected " ++ msg)
+withHelp :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
+withHelp p msg = p <|> fail ("Expected " ++ msg)
+
+infix 2 withHelp as <?>
 
 -- | Wrap a parser with opening and closing markers.
 -- |
@@ -196,4 +198,3 @@ many1Till p end = do
   x <- p
   xs <- manyTill p end
   return (x:xs)
-

@@ -1,20 +1,20 @@
 module Text.Parsing.Parser where
 
-import Prelude
+import Prelude (class Monad, class Bind, class Applicative, class Apply, class Functor, class Show, Unit, return, ($), unit, (<$>), (>>=), (||), not, pure, ap, (<<<), bind, show, (++))
 
-import Data.Either
-import Data.Identity
-import Data.Tuple
+import Data.Either (Either(Left, Right))
+import Data.Identity (Identity, runIdentity)
+import Data.Tuple (Tuple(Tuple))
 
-import Control.Alt
-import Control.Alternative
-import Control.Lazy
-import Control.Monad.State.Class (MonadState)
-import Control.Monad.Trans (MonadTrans)
-import Control.MonadPlus
-import Control.Plus
+import Control.Alt (class Alt)
+import Control.Alternative (class Alternative)
+import Control.Lazy (class Lazy)
+import Control.Monad.State.Class (class MonadState)
+import Control.Monad.Trans (class MonadTrans)
+import Control.MonadPlus (class MonadPlus)
+import Control.Plus (class Plus)
 
-import Text.Parsing.Parser.Pos
+import Text.Parsing.Parser.Pos (Position, initialPos)
 
 -- | A parsing error, consisting of a message and position information.
 data ParseError = ParseError

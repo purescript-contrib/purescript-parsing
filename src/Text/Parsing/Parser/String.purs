@@ -2,18 +2,18 @@
 
 module Text.Parsing.Parser.String where
 
-import Prelude
+import Prelude (class Monad, Unit, flip, unit, return, bind, ($), (==), (||), (++))
 
-import Data.String
-import Data.Either
-import Data.Foldable
-import Data.Maybe
+import Data.String (fromCharArray, fromChar, drop, charAt, length, indexOf)
+import Data.Either (Either(Right))
+import Data.Foldable (notElem, elem)
+import Data.Maybe (Maybe(Just, Nothing))
 import Data.Char (toString)
 import Data.Array (many)
 
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Combinators
-import Text.Parsing.Parser.Pos
+import Text.Parsing.Parser (PState(PState), ParserT(ParserT), fail, parseFailed)
+import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Pos (updatePosString)
 
 -- | Match end-of-file.
 eof :: forall m. (Monad m) => ParserT String m Unit
@@ -66,4 +66,3 @@ oneOf ss = satisfy (flip elem ss)
 -- | Match any character not in the array.
 noneOf :: forall m. (Monad m) => Array Char -> ParserT String m Char
 noneOf ss = satisfy (flip notElem ss)
-
