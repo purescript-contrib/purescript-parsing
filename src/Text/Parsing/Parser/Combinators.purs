@@ -38,6 +38,10 @@ import Text.Parsing.Parser
 (<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
 (<?>) p msg = p <|> fail ("Expected " ++ msg)
 
+-- | Flipped `(<?>)`.
+(<??>) :: forall m s a. (Monad m) => String -> ParserT s m a -> ParserT s m a
+(<??>) = flip (<?>)
+
 -- | Wrap a parser with opening and closing markers.
 -- |
 -- | For example:
@@ -196,4 +200,3 @@ many1Till p end = do
   x <- p
   xs <- manyTill p end
   return (x:xs)
-
