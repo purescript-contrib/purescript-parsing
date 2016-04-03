@@ -21,10 +21,11 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Prelude hiding (between, when)
+import Prelude
 
 import Control.Lazy (fix)
 import Control.MonadPlus (guard, (<|>))
+
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
 import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
@@ -34,10 +35,13 @@ import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
 import Data.Int (toNumber)
 import Data.List (List(..))
+import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
 import Data.Tuple (Tuple(..))
+
 import Math (pow)
+
 import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
@@ -391,13 +395,12 @@ makeTokenParser (LanguageDef languageDef)
       where
         go :: ParserT String m String
         go = do
-            maybeCharArray <- between (char '"') (char '"' <?> "end of string") (Array.many stringChar)
-            pure $ fromCharArray $ foldr folder [] maybeCharArray
+            maybeChars <- between (char '"') (char '"' <?> "end of string") (List.many stringChar)
+            pure $ fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
 
-        folder :: Maybe Char -> Array Char -> Array Char
-        folder Nothing charArray = charArray
-        -- TODO: This is O(n).
-        folder (Just c) charArray = Array.cons c charArray
+        folder :: Maybe Char -> List Char -> List Char
+        folder Nothing chars = chars
+        folder (Just c) chars = Cons c chars
 
 
     stringChar :: ParserT String m (Maybe Char)
