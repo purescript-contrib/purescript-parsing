@@ -34,6 +34,7 @@ import Data.Functor
 import Data.Identity
 import Data.Int
 import Data.List (List(..))
+import Data.List (many, toUnfoldable) as List
 import Data.Maybe
 import Data.Tuple
 
@@ -397,13 +398,12 @@ makeTokenParser (LanguageDef languageDef)
       where
         go :: ParserT String m String
         go = do
-            maybeCharArray <- between (char '"') (char '"' <?> "end of string") (Array.many stringChar)
-            pure $ fromCharArray $ foldr folder [] maybeCharArray
+            maybeChars <- between (char '"') (char '"' <?> "end of string") (List.many stringChar)
+            pure $ fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
 
-        folder :: Maybe Char -> Array Char -> Array Char
-        folder Nothing charArray = charArray
-        -- TODO: This is O(n).
-        folder (Just c) charArray = Array.cons c charArray
+        folder :: Maybe Char -> List Char -> List Char
+        folder Nothing chars = chars
+        folder (Just c) chars = Cons c chars
 
 
     stringChar :: ParserT String m (Maybe Char)
