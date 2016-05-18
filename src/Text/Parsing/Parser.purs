@@ -25,6 +25,9 @@ data ParseError = ParseError
 instance showParseError :: Show ParseError where
   show (ParseError msg) = "ParseError { message: " ++ msg.message ++ ", position: " ++ show msg.position ++ " }"
 
+instance eqParseError :: Eq ParseError where
+  eq (ParseError {message : m1, position : p1}) (ParseError {message : m2, position : p2}) = m1 == m2 && p1 == p2
+
 -- | `PState` contains the remaining input and current position.
 data PState s = PState
   { input :: s
