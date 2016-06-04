@@ -10,11 +10,10 @@ module Text.Parsing.Parser.Language
 
 import Prelude
 
-import Control.Alt
-
-import Text.Parsing.Parser
-import Text.Parsing.Parser.String
-import Text.Parsing.Parser.Token
+import Control.Alt ((<|>))
+import Text.Parsing.Parser (ParserT)
+import Text.Parsing.Parser.String (char, oneOf)
+import Text.Parsing.Parser.Token (LanguageDef, TokenParser, GenLanguageDef(..), unGenLanguageDef, makeTokenParser, alphaNum, letter)
 
 -----------------------------------------------------------
 -- Styles: haskellStyle, javaStyle

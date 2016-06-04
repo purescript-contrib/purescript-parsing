@@ -22,19 +22,19 @@
     "url": "git://github.com/purescript-contrib/purescript-parsing.git"
   },
   "dependencies": {
-    "purescript-arrays": "^0.4.0",
-    "purescript-either": "^0.2.0",
-    "purescript-foldable-traversable": "^0.4.0",
-    "purescript-identity": "^0.4.0",
-    "purescript-lists": "^0.7.0",
-    "purescript-maybe": "^0.3.0",
-    "purescript-strings": "~0.7.0",
-    "purescript-transformers": "^0.8.1",
-    "purescript-unicode": "^0.0.1",
-    "purescript-integers": "^0.2.0"
+    "purescript-arrays": "^1.0.0",
+    "purescript-either": "^1.0.0",
+    "purescript-foldable-traversable": "^1.0.0",
+    "purescript-identity": "^1.0.0",
+    "purescript-lists": "^1.0.0",
+    "purescript-maybe": "^1.0.0",
+    "purescript-strings": "^1.0.0",
+    "purescript-transformers": "^1.0.0",
+    "purescript-unicode": "1.0-dependencies",
+    "purescript-integers": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-console": "^0.1.0",
-    "purescript-assert": "^0.1.0"
+    "purescript-console": "^1.0.0",
+    "purescript-assert": "^1.0.0"
   }
 }

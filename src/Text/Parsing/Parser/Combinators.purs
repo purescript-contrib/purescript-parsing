@@ -21,26 +21,26 @@
 
 module Text.Parsing.Parser.Combinators where
 
-import Prelude
+import Prelude (class Functor, class Monad, Unit, ($), (*>), (<>), (<$>), bind, flip, pure, unit)
 
-import Data.Maybe
-import Data.Either
+import Control.Plus (empty, (<|>))
+import Data.Either (Either(..))
+import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
-import Data.Foldable (Foldable, foldl)
-
-import Control.Alt
-import Control.Plus
-import Control.Apply
-
-import Text.Parsing.Parser
+import Data.Maybe (Maybe(..))
+import Text.Parsing.Parser (PState(..), ParserT(..), fail, unParserT)
 
 -- | Provide an error message in the case of failure.
-(<?>) :: forall m s a. (Monad m) => ParserT s m a -> String -> ParserT s m a
-(<?>) p msg = p <|> fail ("Expected " ++ msg)
+withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
+withErrorMessage p msg = p <|> fail ("Expected " <> msg)
+
+infix 3 withErrorMessage as <?>
 
 -- | Flipped `(<?>)`.
-(<??>) :: forall m s a. (Monad m) => String -> ParserT s m a -> ParserT s m a
-(<??>) = flip (<?>)
+asErrorMessage :: forall m s a. Monad m => String -> ParserT s m a -> ParserT s m a
+asErrorMessage = flip (<?>)
+
+infix 3 asErrorMessage as <??>
 
 -- | Wrap a parser with opening and closing markers.
 -- |
@@ -49,31 +49,31 @@ import Text.Parsing.Parser
 -- | ```purescript
 -- | parens = between (string "(") (string ")")
 -- | ```
-between :: forall m s a open close. (Monad m) => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
+between :: forall m s a open close. Monad m => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 between open close p = do
   open
   a <- p
   close
-  return a
+  pure a
 
 -- | Provide a default result in the case where a parser fails without consuming input.
-option :: forall m s a. (Monad m) => a -> ParserT s m a -> ParserT s m a
-option a p = p <|> return a
+option :: forall m s a. Monad m => a -> ParserT s m a -> ParserT s m a
+option a p = p <|> pure a
 
 -- | Optionally parse something, failing quietly.
-optional :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m Unit
+optional :: forall m s a. Monad m => ParserT s m a -> ParserT s m Unit
 optional p = (do p
-                 return unit) <|> return unit
+                 pure unit) <|> pure unit
 
--- | Return `Nothing` in the case where a parser fails without consuming input.
-optionMaybe :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (Maybe a)
+-- | pure `Nothing` in the case where a parser fails without consuming input.
+optionMaybe :: forall m s a. Monad m => ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
 try p = ParserT $ \(PState { input: s, position: pos }) -> try' s pos <$> unParserT p (PState { input: s, position: pos })
   where
-  try' s pos o@{ result = Left _ } = { input: s, result: o.result, consumed: false, position: pos }
+  try' s pos o@{ result: Left _ } = { input: s, result: o.result, consumed: false, position: pos }
   try' _ _   o = o
 
 -- | Parse phrases delimited by a separator.
@@ -83,43 +83,43 @@ try p = ParserT $ \(PState { input: s, position: pos }) -> try' s pos <$> unPars
 -- | ```purescript
 -- | digit `sepBy` string ","
 -- | ```
-sepBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepBy p sep = sepBy1 p sep <|> return Nil
+sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepBy p sep = sepBy1 p sep <|> pure Nil
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
-sepBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepBy1 p sep = do
   a <- p
   as <- many $ do
     sep
     p
-  return (a : as)
+  pure (a : as)
 
 -- | Parse phrases delimited and optionally terminated by a separator.
-sepEndBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepEndBy p sep = sepEndBy1 p sep <|> return Nil
+sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepEndBy p sep = sepEndBy1 p sep <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
-sepEndBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndBy1 p sep = do
   a <- p
   (do sep
       as <- sepEndBy p sep
-      return (a : as)) <|> return (singleton a)
+      pure (a : as)) <|> pure (singleton a)
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
-endBy1 :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endBy1 p sep = some $ do
   a <- p
   sep
-  return a
+  pure a
 
 -- | Parse phrases delimited and terminated by a separator.
-endBy :: forall m s a sep. (Monad m) => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endBy p sep = many $ do
   a <- p
   sep
-  return a
+  pure a
 
 -- | Parse phrases delimited by a right-associative operator.
 -- |
@@ -128,75 +128,75 @@ endBy p sep = many $ do
 -- | ```purescript
 -- | chainr digit (string "+" *> add) 0
 -- | ```
-chainr :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
-chainr p f a = chainr1 p f <|> return a
+chainr :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainr p f a = chainr1 p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator.
-chainl :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
-chainl p f a = chainl1 p f <|> return a
+chainl :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainl p f a = chainl1 p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator, requiring at least one match.
-chainl1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainl1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainl1 p f = do
   a <- p
   chainl1' p f a
 
-chainl1' :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainl1' :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainl1' p f a = (do f' <- f
                      a' <- p
-                     chainl1' p f (f' a a')) <|> return a
+                     chainl1' p f (f' a a')) <|> pure a
 
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
-chainr1 :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainr1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainr1 p f = do
   a <- p
   chainr1' p f a
 
-chainr1' :: forall m s a. (Monad m) => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainr1' :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainr1' p f a = (do f' <- f
                      a' <- chainr1 p f
-                     return $ f' a a') <|> return a
+                     pure $ f' a a') <|> pure a
 
 -- | Parse one of a set of alternatives.
 choice :: forall f m s a. (Foldable f, Monad m) => f (ParserT s m a) -> ParserT s m a
 choice = foldl (<|>) empty
 
 -- | Skip many instances of a phrase.
-skipMany :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
-skipMany p = skipMany1 p <|> return unit
+skipMany :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
+skipMany p = skipMany1 p <|> pure unit
 
 -- | Skip at least one instance of a phrase.
-skipMany1 :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
+skipMany1 :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
 skipMany1 p = do
   x <- p
   xs <- skipMany p
-  return unit
+  pure unit
 
 -- | Parse a phrase, without modifying the consumed state or stream position.
-lookAhead :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m a
+lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
 lookAhead (ParserT p) = ParserT \(PState { input: s, position: pos }) -> do
   state <- p (PState { input: s, position: pos })
-  return state{input = s, consumed = false, position = pos}
+  pure state{input = s, consumed = false, position = pos}
 
 -- | Fail if the specified parser matches.
-notFollowedBy :: forall s a m. (Monad m) => ParserT s m a -> ParserT s m Unit
-notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> return unit
+notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
+notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 
 -- | Parse several phrases until the specified terminator matches.
-manyTill :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
+manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTill p end = scan
   where
     scan = (do
               end
-              return Nil)
+              pure Nil)
        <|> (do
               x <- p
               xs <- scan
-              return (x:xs))
+              pure (x:xs))
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
-many1Till :: forall s a m e. (Monad m) => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
+many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 many1Till p end = do
   x <- p
   xs <- manyTill p end
-  return (x:xs)
+  pure (x:xs)

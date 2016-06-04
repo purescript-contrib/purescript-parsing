@@ -21,51 +21,45 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Prelude
+import Prelude hiding (between, when)
 
+import Control.Lazy (fix)
+import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
 import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
 import Data.Char.Unicode as Unicode
-import Data.String
-import Data.Either
-import Data.Foldable
-import Data.Functor
-import Data.Identity
-import Data.Int
+import Data.Either (Either(..))
+import Data.Foldable (foldl, foldr)
+import Data.Identity (Identity)
+import Data.Int (toNumber)
 import Data.List (List(..))
-import Data.Maybe
-import Data.Tuple
-
-import Control.Alt
-import Control.Apply
-import Control.Lazy
-import Control.Monad.State.Class hiding (get)
-import Control.MonadPlus
+import Data.Maybe (Maybe(..), maybe)
+import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
+import Data.Tuple (Tuple(..))
 import Math (pow)
+import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
+import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
+import Text.Parsing.Parser.Pos (Position)
+import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
 
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Combinators
-import Text.Parsing.Parser.Pos
-import Text.Parsing.Parser.String
-
--- | Create a parser which returns the first token in the stream.
-token :: forall m a. (Monad m) => (a -> Position) -> ParserT (List a) m a
+-- | Create a parser which Returns the first token in the stream.
+token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
 token tokpos = ParserT $ \(PState { input: toks, position: pos }) ->
-  return $ case toks of
+  pure $ case toks of
     Cons x xs -> { consumed: true, input: xs, result: Right x, position: tokpos x }
     _ -> parseFailed toks pos "expected token, met EOF"
 
 -- | Create a parser which matches any token satisfying the predicate.
-when :: forall m a. (Monad m) => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
+when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
 when tokpos f = try $ do
   a <- token tokpos
   guard $ f a
-  return a
+  pure a
 
 -- | Match the specified token at the head of the stream.
 match :: forall a m. (Monad m, Eq a) => (a -> Position) -> a -> ParserT (List a) m a
-match tokpos tok = when tokpos (== tok)
+match tokpos tok = when tokpos (_ == tok)
 
 type LanguageDef = GenLanguageDef String Identity
 
@@ -204,7 +198,7 @@ type GenTokenParser s m
         -- | trailing white space.
         symbol           :: String -> ParserT s m String,
         -- | `lexeme p` first applies parser `p` and than the `whiteSpace`
-        -- | parser, returning the value of `p`. Every lexical
+        -- | parser, pureing the value of `p`. Every lexical
         -- | token (lexeme) is defined using `lexeme`, this way every parse
         -- | starts at a point without white space. Parsers that use `lexeme` are
         -- | called *lexeme* parsers in this document.
@@ -218,7 +212,7 @@ type GenTokenParser s m
         -- |   whiteSpace
         -- |   ds <- many (lexeme digit)
         -- |   eof
-        -- |   return (sum ds)
+        -- |   pure (sum ds)
         -- | ```
         lexeme           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Parses any white space. White space consists of *zero* or more
@@ -228,16 +222,16 @@ type GenTokenParser s m
         -- | that is passed to `makeTokenParser`.
         whiteSpace       :: ParserT s m Unit,
         -- | Lexeme parser `parens p` parses `p` enclosed in parenthesis,
-        -- | returning the value of `p`.
+        -- | pureing the value of `p`.
         parens           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `braces p` parses `p` enclosed in braces (`{` and
-        -- | `}`), returning the value of `p`.
+        -- | `}`), pureing the value of `p`.
         braces           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `angles p` parses `p` enclosed in angle brackets (`<`
-        -- | and `>`), returning the value of `p`.
+        -- | and `>`), pureing the value of `p`.
         angles           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `brackets p` parses `p` enclosed in brackets (`[`
-        -- | and `]`), returning the value of `p`.
+        -- | and `]`), pureing the value of `p`.
         brackets         :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `semi` parses the character `;` and skips any
         -- | trailing white space. Returns the string `;`.
@@ -252,18 +246,18 @@ type GenTokenParser s m
         -- | trailing white space. Returns the string `.`.
         dot              :: ParserT s m String,
         -- | Lexeme parser `semiSep p` parses *zero* or more occurrences of `p`
-        -- | separated by `semi`. Returns a list of values returned by
+        -- | separated by `semi`. Returns a list of values pureed by
         -- | `p`.
         semiSep          :: forall a . ParserT s m a -> ParserT s m (List a),
         -- | Lexeme parser `semiSep1 p` parses *one* or more occurrences of `p`
-        -- | separated by `semi`. Returns a list of values returned by `p`.
+        -- | separated by `semi`. Returns a list of values pureed by `p`.
         semiSep1         :: forall a . ParserT s m a -> ParserT s m (List a),
         -- | Lexeme parser `commaSep p` parses *zero* or more occurrences of
-        -- | `p` separated by `comma`. Returns a list of values returned
+        -- | `p` separated by `comma`. Returns a list of values pureed
         -- | by `p`.
         commaSep         :: forall a . ParserT s m a -> ParserT s m (List a),
         -- | Lexeme parser `commaSep1 p` parses *one* or more occurrences of
-        -- | `p` separated by `comma`. Returns a list of values returned
+        -- | `p` separated by `comma`. Returns a list of values pureed
         -- | by `p`.
         commaSep1        :: forall a . ParserT s m a -> ParserT s m (List a)
     }
@@ -300,7 +294,7 @@ type GenTokenParser s m
 -- | reserved    = tokenParser.reserved
 -- | ...
 -- | ```
-makeTokenParser :: forall m . (Monad m) => GenLanguageDef String m -> GenTokenParser String m
+makeTokenParser :: forall m . Monad m => GenLanguageDef String m -> GenTokenParser String m
 makeTokenParser (LanguageDef languageDef)
     = { identifier: identifier
       , reserved: reserved
@@ -595,7 +589,7 @@ makeTokenParser (LanguageDef languageDef)
       where
         folder :: Maybe Int -> Char -> Maybe Int
         folder Nothing _ = Nothing
-        folder (Just x) d = ((base*x) +) <$> digitToInt d
+        folder (Just x) d = ((base * x) + _) <$> digitToInt d
 
     -----------------------------------------------------------
     -- Operators & reserved ops
@@ -626,7 +620,7 @@ makeTokenParser (LanguageDef languageDef)
         go = do
             c <- languageDef.opStart
             cs <- Array.many languageDef.opLetter
-            pure $ fromChar c <> fromCharArray cs
+            pure $ singleton c <> fromCharArray cs
 
     isReservedOp :: String -> Boolean
     isReservedOp name = isReserved (Array.sort languageDef.reservedOpNames) name
@@ -666,7 +660,7 @@ makeTokenParser (LanguageDef languageDef)
         go = do
             name <- ident
             if (isReservedName (LanguageDef languageDef) name)
-               then fail ("reserved word " ++ show name)
+               then fail ("reserved word " <> show name)
                else pure name
 
 
@@ -677,7 +671,7 @@ makeTokenParser (LanguageDef languageDef)
         go = do
             c <- languageDef.identStart
             cs <- Array.many languageDef.identLetter
-            pure $ fromChar c <> fromCharArray cs
+            pure $ singleton c <> fromCharArray cs
 
 
     -----------------------------------------------------------
@@ -699,7 +693,7 @@ makeTokenParser (LanguageDef languageDef)
 -- Identifiers & Reserved words
 -----------------------------------------------------------
 
-isReservedName :: forall m . (Monad m) => GenLanguageDef String m -> String -> Boolean
+isReservedName :: forall m . Monad m => GenLanguageDef String m -> String -> Boolean
 isReservedName langDef@(LanguageDef languageDef) name =
     isReserved (theReservedNames langDef) caseName
   where
@@ -715,7 +709,7 @@ isReserved names name =
                                         EQ  -> true
                                         GT  -> false
 
-theReservedNames :: forall m . (Monad m) => GenLanguageDef String m -> Array String
+theReservedNames :: forall m . Monad m => GenLanguageDef String m -> Array String
 theReservedNames (LanguageDef languageDef)
     | languageDef.caseSensitive = Array.sort languageDef.reservedNames
     | otherwise                 = Array.sort $ map toLower languageDef.reservedNames
@@ -724,7 +718,7 @@ theReservedNames (LanguageDef languageDef)
 -- White space & symbols
 -----------------------------------------------------------
 
-whiteSpace' :: forall m . (Monad m) => GenLanguageDef String m -> ParserT String m Unit
+whiteSpace' :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 whiteSpace' langDef@(LanguageDef languageDef)
     | null languageDef.commentLine && null languageDef.commentStart =
         skipMany (simpleSpace <?> "")
@@ -735,22 +729,22 @@ whiteSpace' langDef@(LanguageDef languageDef)
     | otherwise =
         skipMany (simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef <?> "")
 
-simpleSpace :: forall m . (Monad m) => ParserT String m Unit
+simpleSpace :: forall m . Monad m => ParserT String m Unit
 simpleSpace = skipMany1 (satisfy isSpace)
 
-oneLineComment :: forall m . (Monad m) => GenLanguageDef String m -> ParserT String m Unit
+oneLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 oneLineComment (LanguageDef languageDef) =
-    try (string languageDef.commentLine) *> skipMany (satisfy (/= '\n'))
+    try (string languageDef.commentLine) *> skipMany (satisfy (_ /= '\n'))
 
-multiLineComment :: forall m . (Monad m) => GenLanguageDef String m -> ParserT String m Unit
+multiLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 multiLineComment langDef@(LanguageDef languageDef) =
     try (string languageDef.commentStart) *> inComment langDef
 
-inComment :: forall m . (Monad m) => GenLanguageDef String m -> ParserT String m Unit
+inComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inComment langDef@(LanguageDef languageDef) =
     if languageDef.nestedComments then inCommentMulti langDef else inCommentSingle langDef
 
-inCommentMulti :: forall m . (Monad m) => GenLanguageDef String m -> ParserT String m Unit
+inCommentMulti :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentMulti langDef@(LanguageDef languageDef) =
     fix \p -> ( void $ try (string languageDef.commentEnd) )
           <|> ( multiLineComment langDef    *>  p )
@@ -761,7 +755,7 @@ inCommentMulti langDef@(LanguageDef languageDef) =
     startEnd :: Array Char
     startEnd   = toCharArray languageDef.commentEnd <> toCharArray languageDef.commentStart
 
-inCommentSingle :: forall m . (Monad m) => GenLanguageDef String m -> ParserT String m Unit
+inCommentSingle :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentSingle (LanguageDef languageDef) =
     fix \p -> ( void $ try (string languageDef.commentEnd) )
           <|> ( skipMany1 (noneOf startEnd) *> p )
@@ -776,30 +770,30 @@ inCommentSingle (LanguageDef languageDef) =
 -------------------------------------------------------------------------
 
 -- | Parse a digit.  Matches any char that satisfies `Data.Char.Unicode.isDigit`.
-digit :: forall m . (Monad m) => ParserT String m Char
+digit :: forall m . Monad m => ParserT String m Char
 digit = satisfy isDigit <?> "digit"
 
 -- | Parse a hex digit.  Matches any char that satisfies `Data.Char.Unicode.isHexDigit`.
-hexDigit :: forall m . (Monad m) => ParserT String m Char
+hexDigit :: forall m . Monad m => ParserT String m Char
 hexDigit = satisfy isHexDigit <?> "hex digit"
 
 -- | Parse an octal digit.  Matches any char that satisfies `Data.Char.Unicode.isOctDigit`.
-octDigit :: forall m . (Monad m) => ParserT String m Char
+octDigit :: forall m . Monad m => ParserT String m Char
 octDigit = satisfy isOctDigit <?> "oct digit"
 
 -- | Parse an uppercase letter.  Matches any char that satisfies `Data.Char.Unicode.isUpper`.
-upper :: forall m . (Monad m) => ParserT String m Char
+upper :: forall m . Monad m => ParserT String m Char
 upper = satisfy isUpper <?> "uppercase letter"
 
 -- | Parse a space character.  Matches any char that satisfies `Data.Char.Unicode.isSpace`.
-space :: forall m . (Monad m) => ParserT String m Char
+space :: forall m . Monad m => ParserT String m Char
 space = satisfy isSpace <?> "space"
 
 -- | Parse an alphabetical character.  Matches any char that satisfies `Data.Char.Unicode.isAlpha`.
-letter :: forall m . (Monad m) => ParserT String m Char
+letter :: forall m . Monad m => ParserT String m Char
 letter = satisfy isAlpha <?> "letter"
 
 -- | Parse an alphabetical or numerical character.
 -- | Matches any char that satisfies `Data.Char.Unicode.isAlphaNum`.
-alphaNum :: forall m . (Monad m) => ParserT String m Char
+alphaNum :: forall m . Monad m => ParserT String m Char
 alphaNum = satisfy isAlphaNum <?> "letter or digit"

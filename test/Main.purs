@@ -1,45 +1,40 @@
 module Test.Main where
 
-import Prelude
+import Prelude hiding (between, when)
 
-import Data.Array (some)
-import Data.Either
-import Data.Maybe
-import Data.Char (toString)
-import Data.String (fromCharArray)
-import Data.List (List(..), fromFoldable, many, toList)
-import Data.Functor (($>))
-import Data.Tuple
-
-import Control.Alt
+import Control.Alt ((<|>))
 import Control.Apply ((*>))
-import Control.Lazy
+import Control.Lazy (fix)
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (CONSOLE)
+import Data.Array (some)
+import Data.Either (Either(..))
+import Data.Functor (($>))
+import Data.List (List(..), fromFoldable, many)
+import Data.Maybe (Maybe(..))
+import Data.String (fromCharArray, singleton)
+import Data.Tuple (Tuple(..))
+import Test.Assert (ASSERT, assert')
+import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser)
+import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
+import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
+import Text.Parsing.Parser.Pos (Position(..), initialPos)
+import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
+import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
 
-import Control.Monad.Eff
-import Control.Monad.Eff.Console
-
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Combinators
-import Text.Parsing.Parser.Expr
-import Text.Parsing.Parser.Language
-import Text.Parsing.Parser.String
-import Text.Parsing.Parser.Token hiding (digit)
-import Text.Parsing.Parser.Pos
-
-import Test.Assert
-
-parens :: forall m a. (Monad m) => ParserT String m a -> ParserT String m a
+parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
 nested :: forall m. (Functor m, Monad m) => ParserT String m Int
 nested = fix \p -> (do
   string "a"
-  return 0) <|> ((+) 1) <$> parens p
+  pure 0) <|> ((+) 1) <$> parens p
 
 parseTest :: forall s a eff. (Show a, Eq a) => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseTest input expected p = case runParser input p of
   Right actual -> assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
-  Left err -> assert' ("error: " ++ show err) false
+  Left err -> assert' ("error: " <> show err) false
 
 parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseErrorTestPosition p input expected = case runParser input p of
@@ -47,25 +42,25 @@ parseErrorTestPosition p input expected = case runParser input p of
   Left (ParseError { position: pos }) -> assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
 
 opTest :: Parser String String
-opTest = chainl (toString <$> anyChar) (char '+' $> append) ""
+opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
 
 digit :: Parser String Int
-digit = (string "0" >>= \_ -> return 0)
-        <|> (string "1" >>= \_ -> return 1)
-        <|> (string "2" >>= \_ -> return 2)
-        <|> (string "3" >>= \_ -> return 3)
-        <|> (string "4" >>= \_ -> return 4)
-        <|> (string "5" >>= \_ -> return 5)
-        <|> (string "6" >>= \_ -> return 6)
-        <|> (string "7" >>= \_ -> return 7)
-        <|> (string "8" >>= \_ -> return 8)
-        <|> (string "9" >>= \_ -> return 9)
+digit = (string "0" >>= \_ -> pure 0)
+        <|> (string "1" >>= \_ -> pure 1)
+        <|> (string "2" >>= \_ -> pure 2)
+        <|> (string "3" >>= \_ -> pure 3)
+        <|> (string "4" >>= \_ -> pure 4)
+        <|> (string "5" >>= \_ -> pure 5)
+        <|> (string "6" >>= \_ -> pure 6)
+        <|> (string "7" >>= \_ -> pure 7)
+        <|> (string "8" >>= \_ -> pure 8)
+        <|> (string "9" >>= \_ -> pure 9)
 
 exprTest :: Parser String Int
-exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> return (/)) AssocRight ]
-                           , [ Infix (string "*" >>= \_ -> return (*)) AssocRight ]
-                           , [ Infix (string "-" >>= \_ -> return (-)) AssocRight ]
-                           , [ Infix (string "+" >>= \_ -> return (+)) AssocRight ]
+exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> pure (/)) AssocRight ]
+                           , [ Infix (string "*" >>= \_ -> pure (*)) AssocRight ]
+                           , [ Infix (string "-" >>= \_ -> pure (-)) AssocRight ]
+                           , [ Infix (string "+" >>= \_ -> pure (+)) AssocRight ]
                            ] digit
 
 
@@ -73,7 +68,7 @@ manySatisfyTest :: Parser String String
 manySatisfyTest = do
   r <- some $ satisfy (\s -> s /= '?')
   char '?'
-  return (fromCharArray r)
+  pure (fromCharArray r)
 
 data TestToken = A | B
 
@@ -148,7 +143,7 @@ tokenParserReservedTest = do
 tokenParserOperatorTest :: TestM
 tokenParserOperatorTest = do
     -- parse operator
-    parseTest "++" "++" testTokenParser.operator
+    parseTest "<>" "<>" testTokenParser.operator
 
     -- fail on nonoperator
     parseErrorTestPosition testTokenParser.operator "foo" $ mkPos 1
@@ -436,20 +431,20 @@ main = do
   parseTest "a,a,a," (Cons "a" (Cons "a" (Cons "a" Nil))) $ do
     as <- string "a" `endBy1` string ","
     eof
-    return as
+    pure as
   parseTest "a+b+c" "abc" opTest
   parseTest "1*2+3/4-5" (-3) exprTest
   parseTest "ab?" "ab" manySatisfyTest
 
   let tokpos = const initialPos
-  parseTest (toList [A, B]) A (token tokpos)
-  parseTest (toList [B, A]) B (token tokpos)
+  parseTest (fromFoldable [A, B]) A (token tokpos)
+  parseTest (fromFoldable [B, A]) B (token tokpos)
 
-  parseTest (toList [A, B]) A (when tokpos isA)
+  parseTest (fromFoldable [A, B]) A (when tokpos isA)
 
-  parseTest (toList [A]) A (match tokpos A)
-  parseTest (toList [B]) B (match tokpos B)
-  parseTest (toList [A, B]) A (match tokpos A)
+  parseTest (fromFoldable [A]) A (match tokpos A)
+  parseTest (fromFoldable [B]) B (match tokpos B)
+  parseTest (fromFoldable [A, B]) A (match tokpos A)
 
   parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })

@@ -16,7 +16,7 @@ data Position = Position
 
 instance showPosition :: Show Position where
   show (Position { line: line, column: column }) =
-    "Position { line: " ++ show line ++ ", column: " ++ show column ++ " }"
+    "Position { line: " <> show line <> ", column: " <> show column <> " }"
 
 instance eqPosition :: Eq Position where
   eq (Position { line: l1, column: c1 }) (Position { line: l2, column: c2 }) =

@@ -2,19 +2,15 @@ module Text.Parsing.Parser where
 
 import Prelude
 
-import Data.Either
-import Data.Identity
-import Data.Tuple
-
-import Control.Alt
-import Control.Alternative
-import Control.Lazy
-import Control.Monad.State.Class (MonadState)
-import Control.Monad.Trans (MonadTrans)
-import Control.MonadPlus
-import Control.Plus
-
-import Text.Parsing.Parser.Pos
+import Control.Lazy (class Lazy)
+import Control.Monad.State.Class (class MonadState)
+import Control.Monad.Trans (class MonadTrans)
+import Control.MonadPlus (class MonadPlus, class MonadZero, class Alternative)
+import Control.Plus (class Plus, class Alt)
+import Data.Either (Either(..))
+import Data.Identity (Identity, runIdentity)
+import Data.Tuple (Tuple(..))
+import Text.Parsing.Parser.Pos (Position, initialPos)
 
 -- | A parsing error, consisting of a message and position information.
 data ParseError = ParseError
@@ -23,7 +19,7 @@ data ParseError = ParseError
   }
 
 instance showParseError :: Show ParseError where
-  show (ParseError msg) = "ParseError { message: " ++ msg.message ++ ", position: " ++ show msg.position ++ " }"
+  show (ParseError msg) = "ParseError { message: " <> msg.message <> ", position: " <> show msg.position <> " }"
 
 instance eqParseError :: Eq ParseError where
   eq (ParseError {message : m1, position : p1}) (ParseError {message : m2, position : p2}) = m1 == m2 && p1 == p2
@@ -44,10 +40,10 @@ unParserT :: forall m s a. ParserT s m a -> PState s -> m { input :: s, result :
 unParserT (ParserT p) = p
 
 -- | Apply a parser, keeping only the parsed result.
-runParserT :: forall m s a. (Monad m) => PState s -> ParserT s m a -> m (Either ParseError a)
+runParserT :: forall m s a. Monad m => PState s -> ParserT s m a -> m (Either ParseError a)
 runParserT s p = do
   o <- unParserT p s
-  return o.result
+  pure o.result
 
 -- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
 type Parser s a = ParserT s Identity a
@@ -61,53 +57,55 @@ instance functorParserT :: (Functor m) => Functor (ParserT s m) where
     where
     f' o = { input: o.input, result: f <$> o.result, consumed: o.consumed, position: o.position }
 
-instance applyParserT :: (Monad m) => Apply (ParserT s m) where
+instance applyParserT :: Monad m => Apply (ParserT s m) where
   apply = ap
 
-instance applicativeParserT :: (Monad m) => Applicative (ParserT s m) where
+instance applicativeParserT :: Monad m => Applicative (ParserT s m) where
   pure a = ParserT $ \(PState { input: s, position: pos }) -> pure { input: s, result: Right a, consumed: false, position: pos }
 
-instance altParserT :: (Monad m) => Alt (ParserT s m) where
+instance altParserT :: Monad m => Alt (ParserT s m) where
   alt p1 p2 = ParserT $ \s -> unParserT p1 s >>= \o ->
     case o.result of
       Left _ | not o.consumed -> unParserT p2 s
-      _ -> return o
+      _ -> pure o
 
-instance plusParserT :: (Monad m) => Plus (ParserT s m) where
+instance plusParserT :: Monad m => Plus (ParserT s m) where
   empty = fail "No alternative"
 
-instance alternativeParserT :: (Monad m) => Alternative (ParserT s m)
+instance alternativeParserT :: Monad m => Alternative (ParserT s m)
 
-instance bindParserT :: (Monad m) => Bind (ParserT s m) where
+instance bindParserT :: Monad m => Bind (ParserT s m) where
   bind p f = ParserT $ \s -> unParserT p s >>= \o ->
     case o.result of
-      Left err -> return { input: o.input, result: Left err, consumed: o.consumed, position: o.position }
+      Left err -> pure { input: o.input, result: Left err, consumed: o.consumed, position: o.position }
       Right a -> updateConsumedFlag o.consumed <$> unParserT (f a) (PState { input: o.input, position: o.position })
     where
     updateConsumedFlag c o = { input: o.input, consumed: c || o.consumed, result: o.result, position: o.position }
 
-instance monadParserT :: (Monad m) => Monad (ParserT s m)
+instance monadParserT :: Monad m => Monad (ParserT s m)
 
-instance monadPlusParserT :: (Monad m) => MonadPlus (ParserT s m)
+instance monadZeroParserT :: Monad m => MonadZero (ParserT s m)
+
+instance monadPlusParserT :: Monad m => MonadPlus (ParserT s m)
 
 instance monadTransParserT :: MonadTrans (ParserT s) where
   lift m = ParserT $ \(PState { input: s, position: pos }) -> (\a -> { input: s, consumed: false, result: Right a, position: pos }) <$> m
 
-instance monadStateParserT :: (Monad m) => MonadState s (ParserT s m) where
+instance monadStateParserT :: Monad m => MonadState s (ParserT s m) where
   state f = ParserT $ \(PState { input: s, position: pos }) ->
-    return $ case f s of
+    pure $ case f s of
       Tuple a s' -> { input: s', consumed: false, result: Right a, position: pos }
 
 instance lazyParserT :: Lazy (ParserT s m a) where
   defer f = ParserT $ \s -> unParserT (f unit) s
 
 -- | Set the consumed flag.
-consume :: forall s m. (Monad m) => ParserT s m Unit
-consume = ParserT $ \(PState { input: s, position: pos }) -> return { consumed: true, input: s, result: Right unit, position: pos }
+consume :: forall s m. Monad m => ParserT s m Unit
+consume = ParserT $ \(PState { input: s, position: pos }) -> pure { consumed: true, input: s, result: Right unit, position: pos }
 
 -- | Fail with a message.
-fail :: forall m s a. (Monad m) => String -> ParserT s m a
-fail message = ParserT $ \(PState { input: s, position: pos }) -> return $ parseFailed s pos message
+fail :: forall m s a. Monad m => String -> ParserT s m a
+fail message = ParserT $ \(PState { input: s, position: pos }) -> pure $ parseFailed s pos message
 
 -- | Creates a failed parser state for the remaining input `s` and current position
 -- | with an error message.
