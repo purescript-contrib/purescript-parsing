@@ -4,11 +4,11 @@ module Text.Parsing.Parser.Token
   ( token
   , when
   , match
-  , LanguageDef()
+  , LanguageDef
   , GenLanguageDef(LanguageDef)
   , unGenLanguageDef
-  , TokenParser()
-  , GenTokenParser()
+  , TokenParser
+  , GenTokenParser
   , makeTokenParser
   -- should these be exported?  Maybe they should go in a different module?
   , digit
@@ -21,7 +21,7 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Prelude
+import Prelude hiding (when, between)
 
 import Control.Lazy (fix)
 import Control.MonadPlus (guard, (<|>))
