@@ -202,7 +202,7 @@ type GenTokenParser s m
         -- | trailing white space.
         symbol           :: String -> ParserT s m String,
         -- | `lexeme p` first applies parser `p` and than the `whiteSpace`
-        -- | parser, pureing the value of `p`. Every lexical
+        -- | parser, returning the value of `p`. Every lexical
         -- | token (lexeme) is defined using `lexeme`, this way every parse
         -- | starts at a point without white space. Parsers that use `lexeme` are
         -- | called *lexeme* parsers in this document.
@@ -226,16 +226,16 @@ type GenTokenParser s m
         -- | that is passed to `makeTokenParser`.
         whiteSpace       :: ParserT s m Unit,
         -- | Lexeme parser `parens p` parses `p` enclosed in parenthesis,
-        -- | pureing the value of `p`.
+        -- | returning the value of `p`.
         parens           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `braces p` parses `p` enclosed in braces (`{` and
-        -- | `}`), pureing the value of `p`.
+        -- | `}`), returning the value of `p`.
         braces           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `angles p` parses `p` enclosed in angle brackets (`<`
-        -- | and `>`), pureing the value of `p`.
+        -- | and `>`), returning the value of `p`.
         angles           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `brackets p` parses `p` enclosed in brackets (`[`
-        -- | and `]`), pureing the value of `p`.
+        -- | and `]`), returning the value of `p`.
         brackets         :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `semi` parses the character `;` and skips any
         -- | trailing white space. Returns the string `;`.
