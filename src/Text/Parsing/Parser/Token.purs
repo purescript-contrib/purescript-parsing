@@ -4,11 +4,11 @@ module Text.Parsing.Parser.Token
   ( token
   , when
   , match
-  , LanguageDef()
+  , LanguageDef
   , GenLanguageDef(LanguageDef)
   , unGenLanguageDef
-  , TokenParser()
-  , GenTokenParser()
+  , TokenParser
+  , GenTokenParser
   , makeTokenParser
   -- should these be exported?  Maybe they should go in a different module?
   , digit
@@ -21,10 +21,11 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Prelude hiding (between, when)
+import Prelude hiding (when, between)
 
 import Control.Lazy (fix)
 import Control.MonadPlus (guard, (<|>))
+
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
 import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
@@ -34,10 +35,13 @@ import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
 import Data.Int (toNumber)
 import Data.List (List(..))
+import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
 import Data.Tuple (Tuple(..))
+
 import Math (pow)
+
 import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
@@ -198,7 +202,7 @@ type GenTokenParser s m
         -- | trailing white space.
         symbol           :: String -> ParserT s m String,
         -- | `lexeme p` first applies parser `p` and than the `whiteSpace`
-        -- | parser, pureing the value of `p`. Every lexical
+        -- | parser, returning the value of `p`. Every lexical
         -- | token (lexeme) is defined using `lexeme`, this way every parse
         -- | starts at a point without white space. Parsers that use `lexeme` are
         -- | called *lexeme* parsers in this document.
@@ -222,16 +226,16 @@ type GenTokenParser s m
         -- | that is passed to `makeTokenParser`.
         whiteSpace       :: ParserT s m Unit,
         -- | Lexeme parser `parens p` parses `p` enclosed in parenthesis,
-        -- | pureing the value of `p`.
+        -- | returning the value of `p`.
         parens           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `braces p` parses `p` enclosed in braces (`{` and
-        -- | `}`), pureing the value of `p`.
+        -- | `}`), returning the value of `p`.
         braces           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `angles p` parses `p` enclosed in angle brackets (`<`
-        -- | and `>`), pureing the value of `p`.
+        -- | and `>`), returning the value of `p`.
         angles           :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `brackets p` parses `p` enclosed in brackets (`[`
-        -- | and `]`), pureing the value of `p`.
+        -- | and `]`), returning the value of `p`.
         brackets         :: forall a. ParserT s m a -> ParserT s m a,
         -- | Lexeme parser `semi` parses the character `;` and skips any
         -- | trailing white space. Returns the string `;`.
@@ -391,13 +395,12 @@ makeTokenParser (LanguageDef languageDef)
       where
         go :: ParserT String m String
         go = do
-            maybeCharArray <- between (char '"') (char '"' <?> "end of string") (Array.many stringChar)
-            pure $ fromCharArray $ foldr folder [] maybeCharArray
+            maybeChars <- between (char '"') (char '"' <?> "end of string") (List.many stringChar)
+            pure $ fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
 
-        folder :: Maybe Char -> Array Char -> Array Char
-        folder Nothing charArray = charArray
-        -- TODO: This is O(n).
-        folder (Just c) charArray = Array.cons c charArray
+        folder :: Maybe Char -> List Char -> List Char
+        folder Nothing chars = chars
+        folder (Just c) chars = Cons c chars
 
 
     stringChar :: ParserT String m (Maybe Char)

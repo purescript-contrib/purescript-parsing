@@ -6,35 +6,33 @@
     "purescript"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/purescript-contrib/purescript-parsing.git"
+  },
   "ignore": [
     "**/.*",
     "bower_components",
     "node_modules",
     "output",
-    "tests",
-    "tmp",
+    "test",
     "bower.json",
-    "Gruntfile.js",
     "package.json"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/purescript-contrib/purescript-parsing.git"
-  },
   "dependencies": {
     "purescript-arrays": "^1.0.0",
     "purescript-either": "^1.0.0",
     "purescript-foldable-traversable": "^1.0.0",
     "purescript-identity": "^1.0.0",
+    "purescript-integers": "^1.0.0",
     "purescript-lists": "^1.0.0",
     "purescript-maybe": "^1.0.0",
     "purescript-strings": "^1.0.0",
     "purescript-transformers": "^1.0.0",
-    "purescript-unicode": "^1.0.0",
-    "purescript-integers": "^1.0.0"
+    "purescript-unicode": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-console": "^1.0.0",
-    "purescript-assert": "^1.0.0"
+    "purescript-assert": "^1.0.0",
+    "purescript-console": "^1.0.0"
   }
 }
