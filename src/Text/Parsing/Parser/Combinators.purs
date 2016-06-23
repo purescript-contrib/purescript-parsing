@@ -71,7 +71,7 @@ optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
-try p = ParserT $ \(PState { input: s, position: pos }) -> try' s pos <$> unParserT p (PState { input: s, position: pos })
+try p = ParserT $ \(PState s pos) -> try' s pos <$> unParserT p (PState s pos)
   where
   try' s pos o@{ result: Left _ } = { input: s, result: o.result, consumed: false, position: pos }
   try' _ _   o = o
@@ -174,8 +174,8 @@ skipMany1 p = do
 
 -- | Parse a phrase, without modifying the consumed state or stream position.
 lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
-lookAhead (ParserT p) = ParserT \(PState { input: s, position: pos }) -> do
-  state <- p (PState { input: s, position: pos })
+lookAhead (ParserT p) = ParserT \(PState s pos) -> do
+  state <- p (PState s pos)
   pure state{input = s, consumed = false, position = pos}
 
 -- | Fail if the specified parser matches.

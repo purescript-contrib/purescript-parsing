@@ -49,7 +49,7 @@ import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
 
 -- | Create a parser which Returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
-token tokpos = ParserT $ \(PState { input: toks, position: pos }) ->
+token tokpos = ParserT $ \(PState toks pos) ->
   pure $ case toks of
     Cons x xs -> { consumed: true, input: xs, result: Right x, position: tokpos x }
     _ -> parseFailed toks pos "expected token, met EOF"
