@@ -13,16 +13,13 @@ import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
 -- | A parsing error, consisting of a message and position information.
-data ParseError = ParseError
-  { message :: String
-  , position :: Position
-  }
+data ParseError = ParseError String Position
 
 instance showParseError :: Show ParseError where
-  show (ParseError msg) = "ParseError { message: " <> msg.message <> ", position: " <> show msg.position <> " }"
+  show (ParseError msg pos) = "ParseError " <> msg <> " " <> show pos
 
 instance eqParseError :: Eq ParseError where
-  eq (ParseError {message : m1, position : p1}) (ParseError {message : m2, position : p2}) = m1 == m2 && p1 == p2
+  eq (ParseError m1  p1) (ParseError m2 p2) = m1 == m2 && p1 == p2
 
 -- | `PState` contains the remaining input and current position.
 data PState s = PState
@@ -112,4 +109,4 @@ fail message = ParserT $ \(PState { input: s, position: pos }) -> pure $ parseFa
 -- |
 -- | Most of the time, `fail` should be used instead.
 parseFailed :: forall s a. s -> Position -> String -> { input :: s, result :: Either ParseError a, consumed :: Boolean, position :: Position }
-parseFailed s pos message = { input: s, consumed: false, result: Left (ParseError { message: message, position: pos }), position: pos }
+parseFailed s pos message = { input: s, consumed: false, result: Left (ParseError message pos), position: pos }

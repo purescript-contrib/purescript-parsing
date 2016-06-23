@@ -39,7 +39,7 @@ parseTest input expected p = case runParser input p of
 parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
-  Left (ParseError { position: pos }) -> assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
+  Left (ParseError _ pos) -> assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
 
 opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
