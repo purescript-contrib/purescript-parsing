@@ -9,7 +9,7 @@ import Data.Either (Either(..))
 import Data.Foldable (elem, notElem)
 import Data.Maybe (Maybe(..))
 import Data.String (charAt, drop, fromCharArray, indexOf, length, singleton)
-import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
+import Text.Parsing.Parser (PState(..), ParserT(..), Result(..), fail, parseFailed)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Pos (updatePosString)
 
@@ -17,14 +17,14 @@ import Text.Parsing.Parser.Pos (updatePosString)
 eof :: forall m. (Monad m) => ParserT String m Unit
 eof = ParserT $ \(PState s pos) ->
   pure $ case s of
-    "" -> { consumed: false, input: s, result: Right unit, position: pos }
+    "" -> Result s (Right unit) false pos
     _  -> parseFailed s pos "Expected EOF"
 
 -- | Match the specified string.
 string :: forall m. (Monad m) => String -> ParserT String m String
 string str = ParserT $ \(PState s pos)  ->
   pure $ case indexOf str s of
-    Just 0 -> { consumed: true, input: drop (length str) s, result: Right str, position: updatePosString pos str }
+    Just 0 -> Result (drop (length str) s) (Right str) true (updatePosString pos str)
     _ -> parseFailed s pos ("Expected " <> str)
 
 -- | Match any character.
@@ -32,7 +32,7 @@ anyChar :: forall m. (Monad m) => ParserT String m Char
 anyChar = ParserT $ \(PState s pos) ->
   pure $ case charAt 0 s of
     Nothing -> parseFailed s pos "Unexpected EOF"
-    Just c  -> { consumed: true, input: drop 1 s, result: Right c, position: updatePosString pos (singleton c) }
+    Just c  -> Result (drop 1 s) (Right c) true (updatePosString pos (singleton c))
 
 -- | Match a character satisfying the specified predicate.
 satisfy :: forall m. (Monad m) => (Char -> Boolean) -> ParserT String m Char

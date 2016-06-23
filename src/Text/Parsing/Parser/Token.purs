@@ -42,7 +42,7 @@ import Data.Tuple (Tuple(..))
 
 import Math (pow)
 
-import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
+import Text.Parsing.Parser (PState(..), ParserT(..), Result(..), fail, parseFailed)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
@@ -51,7 +51,7 @@ import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
 token tokpos = ParserT $ \(PState toks pos) ->
   pure $ case toks of
-    Cons x xs -> { consumed: true, input: xs, result: Right x, position: tokpos x }
+    Cons x xs -> Result xs (Right x) true (tokpos x)
     _ -> parseFailed toks pos "expected token, met EOF"
 
 -- | Create a parser which matches any token satisfying the predicate.
