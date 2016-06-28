@@ -15,6 +15,8 @@ import Text.Parsing.Parser.Pos (Position, initialPos)
 -- | A parsing error, consisting of a message and position information.
 data ParseError = ParseError String Position
 
+derive instance eqParseError :: Eq ParseError
+
 -- | The result of a single parse
 data Result s a = Result  s                     -- the new input
                           (Either ParseError a) -- the result
@@ -23,9 +25,6 @@ data Result s a = Result  s                     -- the new input
 
 instance showParseError :: Show ParseError where
   show (ParseError msg pos) = "ParseError " <> show msg <> " " <> show pos
-
-instance eqParseError :: Eq ParseError where
-  eq (ParseError m1  p1) (ParseError m2 p2) = m1 == m2 && p1 == p2
 
 -- | `PState` contains the remaining input and current position.
 data PState s = PState s Position
