@@ -1,4 +1,13 @@
-module Text.Parsing.Parser where
+module Text.Parsing.Parser (
+    unParserT
+  , runParserT
+  , ParserT (..)
+  , runParser
+  , Parser ()
+  , consume
+  , fail
+  , parseFailed
+  ) where
 
 import Prelude
 
