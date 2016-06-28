@@ -22,7 +22,7 @@ data Result s a = Result  s                     -- the new input
                           Position              -- the new position
 
 instance showParseError :: Show ParseError where
-  show (ParseError msg pos) = "ParseError " <> msg <> " " <> show pos
+  show (ParseError msg pos) = "ParseError " <> show msg <> " " <> show pos
 
 instance eqParseError :: Eq ParseError where
   eq (ParseError m1  p1) (ParseError m2 p2) = m1 == m2 && p1 == p2
