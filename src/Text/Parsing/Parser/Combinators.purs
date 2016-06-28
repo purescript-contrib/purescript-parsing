@@ -71,7 +71,7 @@ optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
-try p = ParserT $ \(PState s pos) -> try' s pos <$> unParserT p (PState s pos)
+try p = ParserT \(PState s pos) -> try' s pos <$> unParserT p (PState s pos)
   where
   try' s pos o@(Result _ (result@(Left _)) _ _) = Result s result false pos
   try' _ _ o = o

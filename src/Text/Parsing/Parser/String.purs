@@ -15,21 +15,21 @@ import Text.Parsing.Parser.Pos (updatePosString)
 
 -- | Match end-of-file.
 eof :: forall m. (Monad m) => ParserT String m Unit
-eof = ParserT $ \(PState s pos) ->
+eof = ParserT \(PState s pos) ->
   pure $ case s of
     "" -> Result s (Right unit) false pos
     _  -> parseFailed s pos "Expected EOF"
 
 -- | Match the specified string.
 string :: forall m. (Monad m) => String -> ParserT String m String
-string str = ParserT $ \(PState s pos)  ->
+string str = ParserT \(PState s pos)  ->
   pure $ case indexOf str s of
     Just 0 -> Result (drop (length str) s) (Right str) true (updatePosString pos str)
     _ -> parseFailed s pos ("Expected " <> str)
 
 -- | Match any character.
 anyChar :: forall m. (Monad m) => ParserT String m Char
-anyChar = ParserT $ \(PState s pos) ->
+anyChar = ParserT \(PState s pos) ->
   pure $ case charAt 0 s of
     Nothing -> parseFailed s pos "Unexpected EOF"
     Just c  -> Result (drop 1 s) (Right c) true (updatePosString pos (singleton c))
