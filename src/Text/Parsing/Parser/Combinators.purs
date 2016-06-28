@@ -28,7 +28,7 @@ import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
 import Data.Maybe (Maybe(..))
-import Text.Parsing.Parser (PState(..), ParserT(..), fail, unParserT)
+import Text.Parsing.Parser (PState(..), ParserT(..), Result(..), fail, unParserT)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
@@ -71,10 +71,10 @@ optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
 try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
-try p = ParserT $ \(PState { input: s, position: pos }) -> try' s pos <$> unParserT p (PState { input: s, position: pos })
+try p = ParserT \(PState s pos) -> try' s pos <$> unParserT p (PState s pos)
   where
-  try' s pos o@{ result: Left _ } = { input: s, result: o.result, consumed: false, position: pos }
-  try' _ _   o = o
+  try' s pos o@(Result _ (result@(Left _)) _ _) = Result s result false pos
+  try' _ _ o = o
 
 -- | Parse phrases delimited by a separator.
 -- |
@@ -174,9 +174,9 @@ skipMany1 p = do
 
 -- | Parse a phrase, without modifying the consumed state or stream position.
 lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
-lookAhead (ParserT p) = ParserT \(PState { input: s, position: pos }) -> do
-  state <- p (PState { input: s, position: pos })
-  pure state{input = s, consumed = false, position = pos}
+lookAhead (ParserT p) = ParserT \(PState s pos) -> do
+  (Result _ res _ _) <- p (PState s pos)
+  pure (Result s res false pos)
 
 -- | Fail if the specified parser matches.
 notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit

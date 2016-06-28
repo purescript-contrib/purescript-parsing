@@ -34,7 +34,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
 import Data.Int (toNumber)
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
@@ -42,16 +42,16 @@ import Data.Tuple (Tuple(..))
 
 import Math (pow)
 
-import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
+import Text.Parsing.Parser (PState(..), ParserT(..), Result(..), fail, parseFailed)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
 
 -- | Create a parser which Returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
-token tokpos = ParserT $ \(PState { input: toks, position: pos }) ->
+token tokpos = ParserT \(PState toks pos) ->
   pure $ case toks of
-    Cons x xs -> { consumed: true, input: xs, result: Right x, position: tokpos x }
+    x : xs -> Result xs (Right x) true (tokpos x)
     _ -> parseFailed toks pos "expected token, met EOF"
 
 -- | Create a parser which matches any token satisfying the predicate.
@@ -400,7 +400,7 @@ makeTokenParser (LanguageDef languageDef)
 
         folder :: Maybe Char -> List Char -> List Char
         folder Nothing chars = chars
-        folder (Just c) chars = Cons c chars
+        folder (Just c) chars = c : chars
 
 
     stringChar :: ParserT String m (Maybe Char)
