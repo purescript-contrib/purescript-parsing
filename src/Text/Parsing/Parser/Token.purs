@@ -57,10 +57,6 @@ token tokpos = do
                    , input: tail
                    }
       pure head
-  -- ParserT $ \(PState { input: toks, position: pos }) ->
-  -- pure $ case toks of
-  --   Cons x xs -> { consumed: true, input: xs, result: Right x, position: tokpos x }
-  --   _ -> parseFailed toks pos "expected token, met EOF"
 
 -- | Create a parser which matches any token satisfying the predicate.
 when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
