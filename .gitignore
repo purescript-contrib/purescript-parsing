@@ -1,6 +1,8 @@
-.psci*
-bower_components/
-output/
-.psc-package
-.psc-ide-port
-.psa-stash
+/.*
+!/.gitignore
+!/.jscsrc
+!/.jshintrc
+!/.travis.yml
+/bower_components/
+/node_modules/
+/output/
