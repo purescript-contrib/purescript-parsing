@@ -1,6 +1,7 @@
 -- | Combinators for creating parsers.
 -- |
--- | ### Notes:
+-- | ### Notes
+-- |
 -- | A few of the known combinators from Parsec are missing in this module. That
 -- | is because they have already been defined in other libraries.
 -- |
@@ -16,19 +17,20 @@
 -- | ```purescript
 -- | Text.Parsec.many  (char 'x') <=> fromCharArray <$> Data.Array.many (char 'x')
 -- | ```
--- |
--- | ===
 
 module Text.Parsing.Parser.Combinators where
 
-import Prelude (class Functor, class Monad, Unit, ($), (*>), (<>), (<$>), bind, flip, pure, unit)
-
+import Prelude
+import Control.Monad.Except (runExceptT, ExceptT(..))
+import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
 import Data.Maybe (Maybe(..))
-import Text.Parsing.Parser (PState(..), ParserT(..), fail, unParserT)
+import Data.Newtype (unwrap)
+import Data.Tuple (Tuple(..))
+import Text.Parsing.Parser (ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
@@ -70,11 +72,18 @@ optionMaybe :: forall m s a. Monad m => ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
-try :: forall m s a. (Functor m) => ParserT s m a -> ParserT s m a
-try p = ParserT $ \(PState { input: s, position: pos }) -> try' s pos <$> unParserT p (PState { input: s, position: pos })
-  where
-  try' s pos o@{ result: Left _ } = { input: s, result: o.result, consumed: false, position: pos }
-  try' _ _   o = o
+try :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
+try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState { consumed })) -> do
+  Tuple e s'@(ParseState { input, position }) <- runStateT (runExceptT (unwrap p)) s
+  case e of
+    Left _ -> pure (Tuple e (ParseState { input, position, consumed }))
+    _ -> pure (Tuple e s')
+
+-- | Parse a phrase, without modifying the consumed state or stream position.
+lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
+lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
+  Tuple e _ <- runStateT (runExceptT (unwrap p)) s
+  pure (Tuple e s)
 
 -- | Parse phrases delimited by a separator.
 -- |
@@ -171,12 +180,6 @@ skipMany1 p = do
   x <- p
   xs <- skipMany p
   pure unit
-
--- | Parse a phrase, without modifying the consumed state or stream position.
-lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
-lookAhead (ParserT p) = ParserT \(PState { input: s, position: pos }) -> do
-  state <- p (PState { input: s, position: pos })
-  pure state{input = s, consumed = false, position = pos}
 
 -- | Fail if the specified parser matches.
 notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
