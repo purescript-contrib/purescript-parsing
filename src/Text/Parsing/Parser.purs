@@ -4,11 +4,12 @@ import Prelude
 
 import Control.Lazy (class Lazy)
 import Control.Monad.State.Class (class MonadState)
-import Control.Monad.Trans (class MonadTrans)
+import Control.Monad.Trans.Class (class MonadTrans)
 import Control.MonadPlus (class MonadPlus, class MonadZero, class Alternative)
 import Control.Plus (class Plus, class Alt)
 import Data.Either (Either(..))
-import Data.Identity (Identity, runIdentity)
+import Data.Identity (Identity)
+import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
@@ -50,7 +51,7 @@ type Parser s a = ParserT s Identity a
 
 -- | Apply a parser, keeping only the parsed result.
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
-runParser s = runIdentity <<< runParserT (PState { input: s, position: initialPos })
+runParser s = unwrap <<< runParserT (PState { input: s, position: initialPos })
 
 instance functorParserT :: (Functor m) => Functor (ParserT s m) where
   map f p = ParserT $ \s -> f' <$> unParserT p s

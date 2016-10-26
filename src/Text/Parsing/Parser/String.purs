@@ -8,7 +8,7 @@ import Data.Array (many)
 import Data.Either (Either(..))
 import Data.Foldable (elem, notElem)
 import Data.Maybe (Maybe(..))
-import Data.String (charAt, drop, fromCharArray, indexOf, length, singleton)
+import Data.String (Pattern(..), charAt, drop, fromCharArray, indexOf, length, singleton)
 import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Pos (updatePosString)
@@ -23,7 +23,7 @@ eof = ParserT $ \(PState { input: s, position: pos }) ->
 -- | Match the specified string.
 string :: forall m. (Monad m) => String -> ParserT String m String
 string str = ParserT $ \(PState { input: s, position: pos })  ->
-  pure $ case indexOf str s of
+  pure $ case indexOf (Pattern str) s of
     Just 0 -> { consumed: true, input: drop (length str) s, result: Right str, position: updatePosString pos str }
     _ -> parseFailed s pos ("Expected " <> str)
 
