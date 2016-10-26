@@ -20,19 +20,20 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "^1.0.0",
-    "purescript-either": "^1.0.0",
-    "purescript-foldable-traversable": "^1.0.0",
-    "purescript-identity": "^1.0.0",
-    "purescript-integers": "^1.0.0",
-    "purescript-lists": "^1.0.0",
-    "purescript-maybe": "^1.0.0",
-    "purescript-strings": "^1.0.0",
-    "purescript-transformers": "^1.0.0",
-    "purescript-unicode": "^1.0.0"
+    "purescript-arrays": "^3.0.0",
+    "purescript-either": "^2.0.0",
+    "purescript-foldable-traversable": "^2.0.0",
+    "purescript-identity": "^2.0.0",
+    "purescript-integers": "^2.0.0",
+    "purescript-lists": "^3.0.0",
+    "purescript-maybe": "^2.0.0",
+    "purescript-strings": "^2.0.0",
+    "purescript-transformers": "^2.0.1",
+    "purescript-unicode": "^2.0.0",
+    "purescript-newtype": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-assert": "^1.0.0",
-    "purescript-console": "^1.0.0"
+    "purescript-assert": "^2.0.0",
+    "purescript-console": "^2.0.0"
   }
 }

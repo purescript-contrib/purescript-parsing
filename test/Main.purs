@@ -3,13 +3,11 @@ module Test.Main where
 import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
-import Control.Apply ((*>))
 import Control.Lazy (fix)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.Array (some)
 import Data.Either (Either(..))
-import Data.Functor (($>))
 import Data.List (List(..), fromFoldable, many)
 import Data.Maybe (Maybe(..))
 import Data.String (fromCharArray, singleton)

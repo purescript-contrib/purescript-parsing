@@ -2,7 +2,7 @@ module Text.Parsing.Parser.Pos where
 
 import Prelude
 
-import Data.String (split)
+import Data.String (Pattern(..), split)
 import Data.Foldable (foldl)
 
 -- | `Position` represents the position of the parser in the input.
@@ -28,7 +28,7 @@ initialPos = Position { line: 1, column: 1 }
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> Position
-updatePosString pos str = foldl updatePosChar pos (split "" str)
+updatePosString pos str = foldl updatePosChar pos (split (Pattern "") str)
   where
   updatePosChar (Position pos) c = case c of
     "\n" -> Position { line: pos.line + 1, column: 1 }
