@@ -47,15 +47,12 @@ import Prelude hiding (when,between)
 -- | Create a parser which Returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
 token tokpos = do
-  input <- gets \(ParseState { input }) -> input
+  input <- gets \(ParseState input _ _) -> input
   case List.uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
-      modify \(ParseState { position }) ->
-        ParseState { position: tokpos head
-                   , consumed: true
-                   , input: tail
-                   }
+      modify \(ParseState _ position _) ->
+        ParseState tail (tokpos head) true
       pure head
 
 -- | Create a parser which matches any token satisfying the predicate.

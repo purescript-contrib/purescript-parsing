@@ -31,35 +31,33 @@ instance stringLikeString :: StringLike String where
 -- | Match end-of-file.
 eof :: forall s m. (StringLike s, Monad m) => ParserT s m Unit
 eof = do
-  input <- gets \(ParseState { input }) -> input
+  input <- gets \(ParseState input _ _) -> input
   unless (null input) (fail "Expected EOF")
 
 -- | Match the specified string.
 string :: forall s m. (StringLike s, Monad m) => String -> ParserT s m String
 string str = do
-  input <- gets \(ParseState { input }) -> input
+  input <- gets \(ParseState input _ _) -> input
   case indexOf (wrap str) input of
     Just 0 -> do
-      modify \(ParseState { position }) ->
-        ParseState { position: updatePosString position str
-                   , consumed: true
-                   , input: drop (length str) input
-                   }
+      modify \(ParseState _ position _) ->
+        ParseState (drop (length str) input)
+                   (updatePosString position str)
+                   true
       pure str
     _ -> fail ("Expected " <> show str)
 
 -- | Match any character.
 anyChar :: forall s m. (StringLike s, Monad m) => ParserT s m Char
 anyChar = do
-  input <- gets \(ParseState { input }) -> input
+  input <- gets \(ParseState input _ _) -> input
   case uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
-      modify \(ParseState { position }) ->
-        ParseState { position: updatePosString position (singleton head)
-                   , consumed: true
-                   , input: tail
-                   }
+      modify \(ParseState _ position _) ->
+        ParseState tail
+                   (updatePosString position (singleton head))
+                   true
       pure head
 
 -- | Match a character satisfying the specified predicate.

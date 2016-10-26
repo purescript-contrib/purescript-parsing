@@ -11,7 +11,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (fromCharArray, singleton)
 import Data.Tuple (Tuple(..))
 import Test.Assert (ASSERT, assert')
-import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser)
+import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
 import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
@@ -38,7 +38,8 @@ parseTest input expected p = case runParser input p of
 parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
-  Left (ParseError { position: pos }) -> do
+  Left err -> do
+    let pos = parseErrorPosition err
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
     logShow expected
 

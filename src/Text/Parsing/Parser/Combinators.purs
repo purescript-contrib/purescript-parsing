@@ -73,10 +73,10 @@ optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
 try :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
-try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState { consumed })) -> do
-  Tuple e s'@(ParseState { input, position }) <- runStateT (runExceptT (unwrap p)) s
+try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ _ consumed)) -> do
+  Tuple e s'@(ParseState input position _) <- runStateT (runExceptT (unwrap p)) s
   case e of
-    Left _ -> pure (Tuple e (ParseState { input, position, consumed }))
+    Left _ -> pure (Tuple e (ParseState input position consumed))
     _ -> pure (Tuple e s')
 
 -- | Parse a phrase, without modifying the consumed state or stream position.

@@ -5,7 +5,7 @@
   "keywords": [
     "purescript"
   ],
-  "license": "MIT",
+  "license": "BSD3",
   "repository": {
     "type": "git",
     "url": "git://github.com/purescript-contrib/purescript-parsing.git"
@@ -29,7 +29,7 @@
     "purescript-maybe": "^2.0.0",
     "purescript-strings": "^2.0.0",
     "purescript-transformers": "^2.0.0",
-    "purescript-unicode": "6d9a4ab9d239da4cecb33283994cce56350bbe87"
+    "purescript-unicode": "^2.0.0"
   },
   "devDependencies": {
     "purescript-assert": "^2.0.0",
