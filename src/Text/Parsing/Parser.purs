@@ -6,6 +6,7 @@ module Text.Parsing.Parser
   , ParserT(..)
   , Parser
   , runParser
+  , runParserT
   , consume
   , fail
   ) where
