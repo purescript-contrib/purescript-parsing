@@ -21,38 +21,39 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Prelude hiding (when, between)
-
-import Control.Lazy (fix)
-import Control.MonadPlus (guard, (<|>))
-
 import Data.Array as Array
+import Data.Char.Unicode as Unicode
+import Data.List as List
+import Control.Lazy (fix)
+import Control.Monad.State (modify, gets)
+import Control.MonadPlus (guard, (<|>))
 import Data.Char (fromCharCode, toCharCode)
 import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
-import Data.Char.Unicode as Unicode
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
 import Data.Int (toNumber)
 import Data.List (List(..))
-import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
 import Data.Tuple (Tuple(..))
-
 import Math (pow)
-
-import Text.Parsing.Parser (PState(..), ParserT(..), fail, parseFailed)
+import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
+import Prelude hiding (when,between)
 
 -- | Create a parser which Returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
-token tokpos = ParserT $ \(PState { input: toks, position: pos }) ->
-  pure $ case toks of
-    Cons x xs -> { consumed: true, input: xs, result: Right x, position: tokpos x }
-    _ -> parseFailed toks pos "expected token, met EOF"
+token tokpos = do
+  input <- gets \(ParseState input _ _) -> input
+  case List.uncons input of
+    Nothing -> fail "Unexpected EOF"
+    Just { head, tail } -> do
+      modify \(ParseState _ position _) ->
+        ParseState tail (tokpos head) true
+      pure head
 
 -- | Create a parser which matches any token satisfying the predicate.
 when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
@@ -640,7 +641,7 @@ makeTokenParser (LanguageDef languageDef)
         go = caseString name *> (notFollowedBy languageDef.identLetter <?> "end of " <> name)
 
     caseString :: String -> ParserT String m String
-    caseString name | languageDef.caseSensitive = string name
+    caseString name | languageDef.caseSensitive = string name $> name
                     | otherwise                 = walk name $> name
       where
         walk :: String -> ParserT String m Unit
@@ -681,7 +682,7 @@ makeTokenParser (LanguageDef languageDef)
     -- White space & symbols
     -----------------------------------------------------------
     symbol :: String -> ParserT String m String
-    symbol name = lexeme (string name)
+    symbol name = lexeme (string name) $> name
 
     lexeme :: forall a . ParserT String m a -> ParserT String m a
     lexeme p = p <* whiteSpace' (LanguageDef languageDef)

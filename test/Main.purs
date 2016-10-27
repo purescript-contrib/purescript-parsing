@@ -1,45 +1,47 @@
 module Test.Main where
 
-import Prelude hiding (between, when)
-
 import Control.Alt ((<|>))
-import Control.Apply ((*>))
 import Control.Lazy (fix)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE)
+import Control.Monad.Eff.Console (logShow, CONSOLE)
 import Data.Array (some)
 import Data.Either (Either(..))
-import Data.Functor (($>))
 import Data.List (List(..), fromFoldable, many)
 import Data.Maybe (Maybe(..))
 import Data.String (fromCharArray, singleton)
 import Data.Tuple (Tuple(..))
 import Test.Assert (ASSERT, assert')
-import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser)
+import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
 import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
+import Prelude hiding (between,when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
-nested :: forall m. (Functor m, Monad m) => ParserT String m Int
+nested :: forall m. Monad m => ParserT String m Int
 nested = fix \p -> (do
   string "a"
   pure 0) <|> ((+) 1) <$> parens p
 
 parseTest :: forall s a eff. (Show a, Eq a) => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseTest input expected p = case runParser input p of
-  Right actual -> assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
+  Right actual -> do
+    assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
+    logShow actual
   Left err -> assert' ("error: " <> show err) false
 
 parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
-  Left (ParseError { position: pos }) -> assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
+  Left err -> do
+    let pos = parseErrorPosition err
+    assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
+    logShow expected
 
 opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
@@ -415,7 +417,7 @@ main = do
   parseErrorTestPosition
     (many $ char 'f' *> char '?')
     "foo"
-    (Position { column: 3, line: 1 })
+    (Position { column: 2, line: 1 })
 
   parseTest
     "foo"
