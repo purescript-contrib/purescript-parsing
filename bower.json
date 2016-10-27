@@ -5,7 +5,7 @@
   "keywords": [
     "purescript"
   ],
-  "license": "BSD3",
+  "license": "BSD-3-Clause",
   "repository": {
     "type": "git",
     "url": "git://github.com/purescript-contrib/purescript-parsing.git"
