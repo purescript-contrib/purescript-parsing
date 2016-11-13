@@ -1,8 +1,7 @@
 # purescript-parsing
 
-[![Latest release](http://img.shields.io/bower/v/purescript-parsing.svg)](https://github.com/purescript/purescript-parsing/releases)
-[![Build Status](https://travis-ci.org/purescript-contrib/purescript-parsing.svg?branch=master)](https://travis-ci.org/purescript-contrib/purescript-parsing)
-[![Dependency Status](https://www.versioneye.com/user/projects/575abc417757a0003bd4bfae/badge.svg?style=flat)](https://www.versioneye.com/user/projects/575abc417757a0003bd4bfae)
+[![Latest release](http://img.shields.io/github/release/purescript-contrib/purescript-parsing.svg)](https://github.com/purescript/purescript-parsing/releases)
+[![Build status](https://travis-ci.org/purescript-contrib/purescript-parsing.svg?branch=master)](https://travis-ci.org/purescript-contrib/purescript-parsing)
 [![Maintainer: paf31](https://img.shields.io/badge/maintainer-paf31-lightgrey.svg)](http://github.com/paf31)
 
 A parser combinator library based on Haskell's Parsec.
