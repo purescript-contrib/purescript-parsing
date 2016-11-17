@@ -27,7 +27,7 @@ initialPos = Position { line: 1, column: 1 }
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> Position
-updatePosString pos str = foldl updatePosChar pos (split (wrap "") str)
+updatePosString pos' str = foldl updatePosChar pos' (split (wrap "") str)
   where
   updatePosChar (Position pos) c = case c of
     "\n" -> Position { line: pos.line + 1, column: 1 }
