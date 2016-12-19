@@ -7,6 +7,7 @@ module Text.Parsing.Parser
   , Parser
   , runParser
   , runParserT
+  , hoistParserT
   , consume
   , fail
   ) where
@@ -14,9 +15,9 @@ module Text.Parsing.Parser
 import Prelude
 import Control.Alt (class Alt)
 import Control.Lazy (defer, class Lazy)
-import Control.Monad.Except (class MonadError, ExceptT(..), throwError, runExceptT)
+import Control.Monad.Except (class MonadError, ExceptT(..), throwError, runExceptT, mapExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.State (runStateT, class MonadState, StateT(..), gets, evalStateT, modify)
+import Control.Monad.State (runStateT, class MonadState, StateT(..), gets, evalStateT, mapStateT, modify)
 import Control.Monad.Trans.Class (lift, class MonadTrans)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
 import Data.Either (Either(..))
@@ -58,11 +59,14 @@ runParserT s p = evalStateT (runExceptT (unwrap p)) initialState where
   initialState = ParseState s initialPos false
 
 -- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
-type Parser s a = ParserT s Identity a
+type Parser s = ParserT s Identity
 
 -- | Apply a parser, keeping only the parsed result.
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = unwrap <<< runParserT s
+
+hoistParserT :: forall s m n a. (m ~> n) -> ParserT s m a -> ParserT s n a
+hoistParserT f (ParserT m) = ParserT (mapExceptT (mapStateT f) m)
 
 instance lazyParserT :: Lazy (ParserT s m a) where
   defer f = ParserT (ExceptT (defer (runExceptT <<< unwrap <<< f)))
