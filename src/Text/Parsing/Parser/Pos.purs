@@ -16,7 +16,7 @@ newtype Position = Position
 
 instance showPosition :: Show Position where
   show (Position { line: line, column: column }) =
-    "Position { line: " <> show line <> ", column: " <> show column <> " }"
+    "(Position { line: " <> show line <> ", column: " <> show column <> " })"
 
 derive instance eqPosition :: Eq Position
 derive instance ordPosition :: Ord Position

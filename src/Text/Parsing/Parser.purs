@@ -37,7 +37,7 @@ parseErrorPosition (ParseError _ pos) = pos
 
 instance showParseError :: Show ParseError where
   show (ParseError msg pos) =
-    "(ParseError " <> show msg <> show pos <> ")"
+    "(ParseError " <> show msg <> " " <> show pos <> ")"
 
 derive instance eqParseError :: Eq ParseError
 derive instance ordParseError :: Ord ParseError
