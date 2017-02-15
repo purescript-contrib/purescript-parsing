@@ -414,7 +414,7 @@ makeTokenParser (LanguageDef languageDef)
 
     stringEscape :: ParserT String m (Maybe Char)
     stringEscape = do
-        char '\\'
+        _ <- char '\\'
         (escapeGap $> Nothing) <|> (escapeEmpty $> Nothing) <|> (Just <$> escapeCode)
 
     escapeEmpty :: ParserT String m Char
@@ -430,7 +430,7 @@ makeTokenParser (LanguageDef languageDef)
 
     charControl :: ParserT String m Char
     charControl = do
-        char '^'
+        _ <- char '^'
         code <- upper
         pure <<< fromCharCode $ toCharCode code - toCharCode 'A' + 1
 
@@ -537,7 +537,7 @@ makeTokenParser (LanguageDef languageDef)
 
     fraction :: ParserT String m Number
     fraction = "fraction" <??> do
-        char '.'
+        _ <- char '.'
         digits <- Array.some digit <?> "fraction"
         maybe (fail "not digit") pure $ foldr op (Just 0.0) digits
       where
@@ -549,7 +549,7 @@ makeTokenParser (LanguageDef languageDef)
 
     exponent' :: ParserT String m Number
     exponent' = "exponent" <??> do
-        oneOf ['e', 'E']
+        _ <- oneOf ['e', 'E']
         f <- sign
         e <- decimal <?> "exponent"
         pure $ power (f e)
@@ -604,7 +604,7 @@ makeTokenParser (LanguageDef languageDef)
       where
         go :: ParserT String m Unit
         go = do
-            string name
+            _ <- string name
             notFollowedBy languageDef.opLetter <?> "end of " <> name
 
     operator :: ParserT String m String
