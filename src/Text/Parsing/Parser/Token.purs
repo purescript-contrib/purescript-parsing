@@ -669,7 +669,7 @@ makeTokenParser (LanguageDef languageDef)
 
 
     ident :: ParserT String m String
-    ident = go <?> "identitfier"
+    ident = go <?> "identifier"
       where
         go :: ParserT String m String
         go = do
