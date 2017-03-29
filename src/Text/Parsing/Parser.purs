@@ -22,7 +22,7 @@ import Control.Monad.Trans.Class (lift, class MonadTrans)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, over, unwrap)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
@@ -65,8 +65,8 @@ type Parser s = ParserT s Identity
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = unwrap <<< runParserT s
 
-hoistParserT :: forall s m n a. (m ~> n) -> ParserT s m a -> ParserT s n a
-hoistParserT f (ParserT m) = ParserT (mapExceptT (mapStateT f) m)
+hoistParserT :: forall s m n. m ~> n -> ParserT s m ~> ParserT s n
+hoistParserT f = over ParserT $ mapExceptT $ mapStateT f
 
 instance lazyParserT :: Lazy (ParserT s m a) where
   defer f = ParserT (ExceptT (defer (runExceptT <<< unwrap <<< f)))
