@@ -53,9 +53,9 @@ infix 3 asErrorMessage as <??>
 -- | ```
 between :: forall m s a open close. Monad m => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 between open close p = do
-  open
+  _ <- open
   a <- p
-  close
+  _ <- close
   pure a
 
 -- | Provide a default result in the case where a parser fails without consuming input.
@@ -64,7 +64,7 @@ option a p = p <|> pure a
 
 -- | Optionally parse something, failing quietly.
 optional :: forall m s a. Monad m => ParserT s m a -> ParserT s m Unit
-optional p = (do p
+optional p = (do _ <- p
                  pure unit) <|> pure unit
 
 -- | pure `Nothing` in the case where a parser fails without consuming input.
@@ -100,7 +100,7 @@ sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> Parse
 sepBy1 p sep = do
   a <- p
   as <- many $ do
-    sep
+    _ <- sep
     p
   pure (a : as)
 
@@ -112,7 +112,7 @@ sepEndBy p sep = sepEndBy1 p sep <|> pure Nil
 sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndBy1 p sep = do
   a <- p
-  (do sep
+  (do _ <- sep
       as <- sepEndBy p sep
       pure (a : as)) <|> pure (singleton a)
 
@@ -120,14 +120,14 @@ sepEndBy1 p sep = do
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endBy1 p sep = some $ do
   a <- p
-  sep
+  _ <- sep
   pure a
 
 -- | Parse phrases delimited and terminated by a separator.
 endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endBy p sep = many $ do
   a <- p
-  sep
+  _ <- sep
   pure a
 
 -- | Parse phrases delimited by a right-associative operator.
@@ -167,7 +167,7 @@ chainr1' p f a = (do f' <- f
                      pure $ f' a a') <|> pure a
 
 -- | Parse one of a set of alternatives.
-choice :: forall f m s a. (Foldable f, Monad m) => f (ParserT s m a) -> ParserT s m a
+choice :: forall f m s a. Foldable f => Monad m => f (ParserT s m a) -> ParserT s m a
 choice = foldl (<|>) empty
 
 -- | Skip many instances of a phrase.
@@ -189,13 +189,11 @@ notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTill p end = scan
   where
-    scan = (do
-              end
-              pure Nil)
-       <|> (do
-              x <- p
-              xs <- scan
-              pure (x:xs))
+    scan = (do _ <- end
+               pure Nil)
+       <|> (do x <- p
+               xs <- scan
+               pure (x:xs))
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)

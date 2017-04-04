@@ -29,13 +29,13 @@ instance stringLikeString :: StringLike String where
   null = S.null
 
 -- | Match end-of-file.
-eof :: forall s m. (StringLike s, Monad m) => ParserT s m Unit
+eof :: forall s m. StringLike s => Monad m => ParserT s m Unit
 eof = do
   input <- gets \(ParseState input _ _) -> input
   unless (null input) (fail "Expected EOF")
 
 -- | Match the specified string.
-string :: forall s m. (StringLike s, Monad m) => String -> ParserT s m String
+string :: forall s m. StringLike s => Monad m => String -> ParserT s m String
 string str = do
   input <- gets \(ParseState input _ _) -> input
   case indexOf (wrap str) input of
@@ -48,7 +48,7 @@ string str = do
     _ -> fail ("Expected " <> show str)
 
 -- | Match any character.
-anyChar :: forall s m. (StringLike s, Monad m) => ParserT s m Char
+anyChar :: forall s m. StringLike s => Monad m => ParserT s m Char
 anyChar = do
   input <- gets \(ParseState input _ _) -> input
   case uncons input of
@@ -61,32 +61,32 @@ anyChar = do
       pure head
 
 -- | Match a character satisfying the specified predicate.
-satisfy :: forall s m. (StringLike s, Monad m) => (Char -> Boolean) -> ParserT s m Char
+satisfy :: forall s m. StringLike s => Monad m => (Char -> Boolean) -> ParserT s m Char
 satisfy f = try do
   c <- anyChar
   if f c then pure c
          else fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
 
 -- | Match the specified character
-char :: forall s m. (StringLike s, Monad m) => Char -> ParserT s m Char
+char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char
 char c = satisfy (_ == c) <?> ("Expected " <> show c)
 
 -- | Match a whitespace character.
-whiteSpace :: forall s m. (StringLike s, Monad m) => ParserT s m String
+whiteSpace :: forall s m. StringLike s => Monad m => ParserT s m String
 whiteSpace = do
   cs <- many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
   pure $ fromCharArray cs
 
 -- | Skip whitespace characters.
-skipSpaces :: forall s m. (StringLike s, Monad m) => ParserT s m Unit
+skipSpaces :: forall s m. StringLike s => Monad m => ParserT s m Unit
 skipSpaces = do
-  whiteSpace
+  _ <- whiteSpace
   pure unit
 
 -- | Match one of the characters in the array.
-oneOf :: forall s m. (StringLike s, Monad m) => Array Char -> ParserT s m Char
+oneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
 oneOf ss = satisfy (flip elem ss) <?> ("Expected one of " <> show ss)
 
 -- | Match any character not in the array.
-noneOf :: forall s m. (StringLike s, Monad m) => Array Char -> ParserT s m Char
+noneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
 noneOf ss = satisfy (flip notElem ss) <?> ("Expected none of " <> show ss)
