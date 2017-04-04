@@ -16,7 +16,7 @@ newtype Position = Position
 
 instance showPosition :: Show Position where
   show (Position { line: line, column: column }) =
-    "Position { line: " <> show line <> ", column: " <> show column <> " }"
+    "(Position { line: " <> show line <> ", column: " <> show column <> " })"
 
 derive instance eqPosition :: Eq Position
 derive instance ordPosition :: Ord Position
@@ -27,7 +27,7 @@ initialPos = Position { line: 1, column: 1 }
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> Position
-updatePosString pos str = foldl updatePosChar pos (split (wrap "") str)
+updatePosString pos' str = foldl updatePosChar pos' (split (wrap "") str)
   where
   updatePosChar (Position pos) c = case c of
     "\n" -> Position { line: pos.line + 1, column: 1 }

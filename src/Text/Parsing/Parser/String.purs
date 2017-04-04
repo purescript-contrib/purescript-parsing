@@ -79,9 +79,7 @@ whiteSpace = do
 
 -- | Skip whitespace characters.
 skipSpaces :: forall s m. StringLike s => Monad m => ParserT s m Unit
-skipSpaces = do
-  _ <- whiteSpace
-  pure unit
+skipSpaces = void whiteSpace
 
 -- | Match one of the characters in the array.
 oneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
