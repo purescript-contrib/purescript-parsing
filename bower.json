@@ -29,7 +29,7 @@
     "purescript-maybe": "^3.0.0",
     "purescript-strings": "^3.0.0",
     "purescript-transformers": "^3.0.0",
-    "purescript-unicode": "0.11"
+    "purescript-unicode": "^3.0.0"
   },
   "devDependencies": {
     "purescript-assert": "^3.0.0",
