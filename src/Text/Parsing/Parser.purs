@@ -15,10 +15,11 @@ module Text.Parsing.Parser
 import Prelude
 import Control.Alt (class Alt)
 import Control.Lazy (defer, class Lazy)
-import Control.Monad.Except (class MonadError, ExceptT(..), throwError, runExceptT, mapExceptT)
+import Control.Monad.Error.Class (class MonadThrow, throwError)
+import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.State (runStateT, class MonadState, StateT(..), gets, evalStateT, mapStateT, modify)
-import Control.Monad.Trans.Class (lift, class MonadTrans)
+import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
@@ -78,6 +79,7 @@ derive newtype instance bindParserT :: Monad m => Bind (ParserT s m)
 derive newtype instance monadParserT :: Monad m => Monad (ParserT s m)
 derive newtype instance monadRecParserT :: MonadRec m => MonadRec (ParserT s m)
 derive newtype instance monadStateParserT :: Monad m => MonadState (ParseState s) (ParserT s m)
+derive newtype instance monadThrowParserT :: Monad m => MonadThrow ParseError (ParserT s m)
 derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (ParserT s m)
 
 instance altParserT :: Monad m => Alt (ParserT s m) where

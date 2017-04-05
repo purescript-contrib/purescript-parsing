@@ -63,7 +63,7 @@ when tokpos f = try $ do
   pure a
 
 -- | Match the specified token at the head of the stream.
-match :: forall a m. (Monad m, Eq a) => (a -> Position) -> a -> ParserT (List a) m a
+match :: forall a m. Monad m => Eq a => (a -> Position) -> a -> ParserT (List a) m a
 match tokpos tok = when tokpos (_ == tok)
 
 type LanguageDef = GenLanguageDef String Identity

@@ -25,17 +25,17 @@ parens = between (string "(") (string ")")
 
 nested :: forall m. Monad m => ParserT String m Int
 nested = fix \p -> (do
-  string "a"
+  _ <- string "a"
   pure 0) <|> ((+) 1) <$> parens p
 
-parseTest :: forall s a eff. (Show a, Eq a) => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+parseTest :: forall s a eff. Show a => Eq a => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseTest input expected p = case runParser input p of
   Right actual -> do
     assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
     logShow actual
   Left err -> assert' ("error: " <> show err) false
 
-parseErrorTestPosition :: forall s a eff. (Show a) => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+parseErrorTestPosition :: forall s a eff. Show a => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
   Left err -> do
@@ -69,7 +69,7 @@ exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> pure (/)) AssocRight 
 manySatisfyTest :: Parser String String
 manySatisfyTest = do
   r <- some $ satisfy (\s -> s /= '?')
-  char '?'
+  _ <- char '?'
   pure (fromCharArray r)
 
 data TestToken = A | B
@@ -427,7 +427,7 @@ main = do
   parseTest "(((a)))" 3 nested
   parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (string "a")
   parseTest "(ab)" (Just "b") $ parens do
-    string "a"
+    _ <- string "a"
     optionMaybe $ string "b"
   parseTest "a,a,a" (Cons "a" (Cons "a" (Cons "a" Nil))) $ string "a" `sepBy1` string ","
   parseTest "a,a,a," (Cons "a" (Cons "a" (Cons "a" Nil))) $ do

@@ -60,7 +60,7 @@ option a p = p <|> pure a
 
 -- | Optionally parse something, failing quietly.
 optional :: forall m s a. Monad m => ParserT s m a -> ParserT s m Unit
-optional p = (void p) <|> pure unit
+optional p = void p <|> pure unit
 
 -- | pure `Nothing` in the case where a parser fails without consuming input.
 optionMaybe :: forall m s a. Monad m => ParserT s m a -> ParserT s m (Maybe a)
@@ -154,7 +154,7 @@ chainr1' p f a = (do f' <- f
                      pure $ f' a a') <|> pure a
 
 -- | Parse one of a set of alternatives.
-choice :: forall f m s a. (Foldable f, Monad m) => f (ParserT s m a) -> ParserT s m a
+choice :: forall f m s a. Foldable f => Monad m => f (ParserT s m a) -> ParserT s m a
 choice = foldl (<|>) empty
 
 -- | Skip many instances of a phrase.
@@ -177,10 +177,9 @@ manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT
 manyTill p end = scan
   where
     scan = (end $> Nil)
-       <|> (do
-              x <- p
+       <|> do x <- p
               xs <- scan
-              pure (x:xs))
+              pure (x:xs)
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
