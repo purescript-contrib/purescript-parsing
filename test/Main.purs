@@ -12,11 +12,11 @@ import Data.String (fromCharArray, singleton)
 import Data.Tuple (Tuple(..))
 import Test.Assert (ASSERT, assert')
 import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
-import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
+import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between, oneOfAs)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar, oneOfAs)
+import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
 import Prelude hiding (between,when)
 
@@ -47,7 +47,7 @@ opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
 
 digit :: Parser String Int
-digit = oneOfAs
+digit = anyChar `oneOfAs`
         [ Tuple '0' 0
         , Tuple '1' 1
         , Tuple '2' 2

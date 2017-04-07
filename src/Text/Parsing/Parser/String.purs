@@ -5,13 +5,13 @@ module Text.Parsing.Parser.String where
 import Data.String as S
 import Control.Monad.State (modify, gets)
 import Data.Array (many)
-import Data.Foldable (class Foldable, elem, notElem, foldMap)
+import Data.Foldable (elem, notElem)
 import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
 import Data.Newtype (wrap)
 import Data.String (Pattern, fromCharArray, length, singleton)
-import Data.Tuple (Tuple, fst, lookup)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
-import Text.Parsing.Parser.Combinators (try, (<?>))
+import Text.Parsing.Parser.Combinators ((<?>), satisfyMap)
 import Text.Parsing.Parser.Pos (updatePosString)
 import Prelude hiding (between)
 
@@ -63,18 +63,7 @@ anyChar = do
 
 -- | Match a character satisfying the specified predicate.
 satisfy :: forall s m. StringLike s => Monad m => (Char -> Boolean) -> ParserT s m Char
-satisfy f = try do
-  c <- anyChar
-  if f c then pure c
-         else fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
-
--- | Match and maps a character satisfying the specified predicate.
-satisfyMap :: forall s m a. StringLike s => Monad m => (Char -> Maybe a) -> ParserT s m a
-satisfyMap f = try do
-  c <- anyChar
-  case f c of
-    Just a -> pure a
-    Nothing -> fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
+satisfy f = satisfyMap anyChar (\c -> if f c then Right c else Left $ "Character '" <> singleton c <> "' did not satisfy predicate")
 
 -- | Match the specified character
 char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char
@@ -93,10 +82,6 @@ skipSpaces = void whiteSpace
 -- | Match one of the characters in the array.
 oneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
 oneOf ss = satisfy (flip elem ss) <?> ("Expected one of " <> show ss)
-
--- | Match one of the characters in the array and return coresponding result value.
-oneOfAs :: forall s m a f. Foldable f => StringLike s => Monad m => f (Tuple Char a) -> ParserT s m a
-oneOfAs ssa = satisfyMap (flip lookup ssa) <?> ("Expected one of " <> show (foldMap (\a -> [fst a]) ssa))
 
 -- | Match any character not in the array.
 noneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char

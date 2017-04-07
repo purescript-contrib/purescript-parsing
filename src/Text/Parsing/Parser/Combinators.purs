@@ -27,9 +27,10 @@ import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
+import Data.Array (fromFoldable)
 import Data.Newtype (unwrap)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst, lookup)
 import Text.Parsing.Parser (ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
@@ -187,3 +188,21 @@ many1Till p end = do
   x <- p
   xs <- manyTill p end
   pure (x:xs)
+
+-- | Match and maps result of parser satisfying the specified predicate.
+-- | Allows to specify error message if predicate fails
+satisfyMap :: forall s m a b. Monad m => ParserT s m a -> (a -> Either String b) -> ParserT s m b
+satisfyMap p f = try do
+  x <- p
+  case f x of
+    Right a -> pure a
+    Left err -> fail err
+
+-- | Match and maps result of parser satisfying the specified predicate.
+-- | Uses default error message
+satisfyMap' :: forall s m a b. Monad m => ParserT s m a -> (a -> Maybe b) -> ParserT s m b
+satisfyMap' p f =  satisfyMap p (\c -> maybe (Left "Predicate is not satisfied") Right $ f c)
+
+-- | Match result of first parser in colection of Tuple and return coresponding result
+oneOfAs :: forall s m a f b. Foldable f => Eq a => Show a => Monad m => ParserT s m a -> f (Tuple a b) -> ParserT s m b
+oneOfAs p xs = satisfyMap' p (flip lookup xs) <?> ("Expected one of " <> show (fromFoldable xs <#> fst))
