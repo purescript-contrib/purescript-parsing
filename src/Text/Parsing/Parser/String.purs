@@ -5,11 +5,11 @@ module Text.Parsing.Parser.String where
 import Data.String as S
 import Control.Monad.State (modify, gets)
 import Data.Array (many)
-import Data.Foldable (elem, notElem, findMap)
+import Data.Foldable (class Foldable, elem, notElem, foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.String (Pattern, fromCharArray, length, singleton)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple, fst, lookup)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (updatePosString)
@@ -95,11 +95,8 @@ oneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
 oneOf ss = satisfy (flip elem ss) <?> ("Expected one of " <> show ss)
 
 -- | Match one of the characters in the array and return coresponding result value.
-oneOfAs :: forall s m a. StringLike s => Monad m => Array (Tuple Char a) -> ParserT s m a
-oneOfAs ssa = satisfyMap pred <?> ("Expected one of " <> show ss)
-  where
-    ss = (fst <$> ssa)
-    pred c = findMap (\(Tuple c' a) -> if c == c' then Just a else Nothing) ssa
+oneOfAs :: forall s m a f. Foldable f => StringLike s => Monad m => f (Tuple Char a) -> ParserT s m a
+oneOfAs ssa = satisfyMap (flip lookup ssa) <?> ("Expected one of " <> show (foldMap (\a -> [fst a]) ssa))
 
 -- | Match any character not in the array.
 noneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
