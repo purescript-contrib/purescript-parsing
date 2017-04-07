@@ -16,7 +16,7 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
+import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar, oneOfAs)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
 import Prelude hiding (between,when)
 
@@ -47,16 +47,18 @@ opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
 
 digit :: Parser String Int
-digit = (string "0" >>= \_ -> pure 0)
-        <|> (string "1" >>= \_ -> pure 1)
-        <|> (string "2" >>= \_ -> pure 2)
-        <|> (string "3" >>= \_ -> pure 3)
-        <|> (string "4" >>= \_ -> pure 4)
-        <|> (string "5" >>= \_ -> pure 5)
-        <|> (string "6" >>= \_ -> pure 6)
-        <|> (string "7" >>= \_ -> pure 7)
-        <|> (string "8" >>= \_ -> pure 8)
-        <|> (string "9" >>= \_ -> pure 9)
+digit = oneOfAs
+        [ Tuple '0' 0
+        , Tuple '1' 1
+        , Tuple '2' 2
+        , Tuple '3' 3
+        , Tuple '4' 4
+        , Tuple '5' 5
+        , Tuple '6' 6
+        , Tuple '7' 7
+        , Tuple '8' 8
+        , Tuple '9' 9
+        ]
 
 exprTest :: Parser String Int
 exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> pure (/)) AssocRight ]

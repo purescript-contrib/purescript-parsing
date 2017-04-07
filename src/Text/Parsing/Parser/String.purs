@@ -5,10 +5,11 @@ module Text.Parsing.Parser.String where
 import Data.String as S
 import Control.Monad.State (modify, gets)
 import Data.Array (many)
-import Data.Foldable (elem, notElem)
+import Data.Foldable (elem, notElem, findMap)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.String (Pattern, fromCharArray, length, singleton)
+import Data.Tuple (Tuple(..), fst)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (updatePosString)
@@ -67,6 +68,14 @@ satisfy f = try do
   if f c then pure c
          else fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
 
+-- | Match and maps a character satisfying the specified predicate.
+satisfyMap :: forall s m a. StringLike s => Monad m => (Char -> Maybe a) -> ParserT s m a
+satisfyMap f = try do
+  c <- anyChar
+  case f c of
+    Just a -> pure a
+    Nothing -> fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
+
 -- | Match the specified character
 char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char
 char c = satisfy (_ == c) <?> ("Expected " <> show c)
@@ -84,6 +93,13 @@ skipSpaces = void whiteSpace
 -- | Match one of the characters in the array.
 oneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
 oneOf ss = satisfy (flip elem ss) <?> ("Expected one of " <> show ss)
+
+-- | Match one of the characters in the array and return coresponding result value.
+oneOfAs :: forall s m a. StringLike s => Monad m => Array (Tuple Char a) -> ParserT s m a
+oneOfAs ssa = satisfyMap pred <?> ("Expected one of " <> show ss)
+  where
+    ss = (fst <$> ssa)
+    pred c = findMap (\(Tuple c' a) -> if c == c' then Just a else Nothing) ssa
 
 -- | Match any character not in the array.
 noneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
