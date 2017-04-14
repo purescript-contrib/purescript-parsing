@@ -7,11 +7,10 @@ import Control.Monad.State (modify, gets)
 import Data.Array (many)
 import Data.Foldable (elem, notElem)
 import Data.Maybe (Maybe(..))
-import Data.Either (Either(..))
 import Data.Newtype (wrap)
 import Data.String (Pattern, fromCharArray, length, singleton)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
-import Text.Parsing.Parser.Combinators ((<?>), satisfyMap)
+import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (updatePosString)
 import Prelude hiding (between)
 
@@ -63,7 +62,10 @@ anyChar = do
 
 -- | Match a character satisfying the specified predicate.
 satisfy :: forall s m. StringLike s => Monad m => (Char -> Boolean) -> ParserT s m Char
-satisfy f = satisfyMap anyChar (\c -> if f c then Right c else Left $ "Character '" <> singleton c <> "' did not satisfy predicate")
+satisfy f = try do
+  c <- anyChar
+  if f c then pure c
+         else fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
 
 -- | Match the specified character
 char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char

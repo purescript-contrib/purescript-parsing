@@ -47,7 +47,7 @@ opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
 
 digit :: Parser String Int
-digit = anyChar `oneOfAs`
+digit = char `oneOfAs`
         [ Tuple '0' 0
         , Tuple '1' 1
         , Tuple '2' 2
