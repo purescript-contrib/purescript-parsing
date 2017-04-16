@@ -14,6 +14,7 @@ module Text.Parsing.Parser
 
 import Prelude
 import Control.Alt (class Alt)
+import Control.Apply (lift2)
 import Control.Lazy (defer, class Lazy)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
@@ -23,6 +24,7 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
+import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
@@ -71,6 +73,12 @@ hoistParserT f (ParserT m) = ParserT (mapExceptT (mapStateT f) m)
 
 instance lazyParserT :: Lazy (ParserT s m a) where
   defer f = ParserT (ExceptT (defer (runExceptT <<< unwrap <<< f)))
+
+instance semigroupParserT :: (Monad m, Semigroup a) => Semigroup (ParserT s m a) where
+  append = lift2 (<>)
+
+instance monoidParserT :: (Monad m, Monoid a) => Monoid (ParserT s m a) where
+  mempty = pure mempty
 
 derive newtype instance functorParserT :: Functor m => Functor (ParserT s m)
 derive newtype instance applyParserT :: Monad m => Apply (ParserT s m)
