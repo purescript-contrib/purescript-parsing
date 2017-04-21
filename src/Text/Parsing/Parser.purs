@@ -25,7 +25,7 @@ import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, c
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.Monoid (class Monoid, mempty)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, unwrap, over)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
@@ -69,7 +69,14 @@ runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = unwrap <<< runParserT s
 
 hoistParserT :: forall s m n a. (m ~> n) -> ParserT s m a -> ParserT s n a
-hoistParserT f (ParserT m) = ParserT (mapExceptT (mapStateT f) m)
+hoistParserT = mapParserT
+
+-- | Change the underlying monad action and data type in a ParserT monad action.
+mapParserT :: forall b n s a m.
+  (  m (Tuple (Either ParseError a) (ParseState s))
+  -> n (Tuple (Either ParseError b) (ParseState s))
+  ) -> ParserT s m a -> ParserT s n b
+mapParserT = over ParserT <<< mapExceptT <<< mapStateT
 
 instance lazyParserT :: Lazy (ParserT s m a) where
   defer f = ParserT (ExceptT (defer (runExceptT <<< unwrap <<< f)))
