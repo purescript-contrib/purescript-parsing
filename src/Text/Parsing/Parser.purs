@@ -8,6 +8,7 @@ module Text.Parsing.Parser
   , runParser
   , runParserT
   , hoistParserT
+  , mapParserT
   , consume
   , fail
   ) where
