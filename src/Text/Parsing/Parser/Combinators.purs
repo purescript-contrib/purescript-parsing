@@ -187,3 +187,7 @@ many1Till p end = do
   x <- p
   xs <- manyTill p end
   pure (x:xs)
+
+-- | TK
+oneOfAs :: forall s m f a b c. Functor f => Foldable f => Monad m => (a -> ParserT s m b) -> f (Tuple a c) -> ParserT s m c
+oneOfAs p xs = choice $ (\(Tuple s r) -> try $ p s $> r) <$> xs
