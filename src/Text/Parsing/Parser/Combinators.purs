@@ -24,6 +24,7 @@ import Prelude
 import Control.Monad.Except (runExceptT, ExceptT(..))
 import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
+import Control.Alternative (class Alternative)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
@@ -187,3 +188,7 @@ many1Till p end = do
   x <- p
   xs <- manyTill p end
   pure (x:xs)
+
+-- | Combine two alternatives.
+eitherP :: forall m a b. Alternative m => m a -> m b -> m (Either a b)
+eitherP a b = (Left <$> a) <|> (Right <$> b)
