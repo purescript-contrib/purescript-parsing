@@ -1,5 +1,5 @@
 module Text.Parsing.Parser
-  ( ParseError
+  ( ParseError(..)
   , parseErrorMessage
   , parseErrorPosition
   , ParseState(..)
