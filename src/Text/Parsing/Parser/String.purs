@@ -69,7 +69,7 @@ satisfy f = try do
 
 -- | Match the specified character
 char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char
-char c = satisfy (_ == c) <?> ("Expected " <> show c)
+char c = satisfy (_ == c) <?> show c
 
 -- | Match a whitespace character.
 whiteSpace :: forall s m. StringLike s => Monad m => ParserT s m String
@@ -83,8 +83,8 @@ skipSpaces = void whiteSpace
 
 -- | Match one of the characters in the array.
 oneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
-oneOf ss = satisfy (flip elem ss) <?> ("Expected one of " <> show ss)
+oneOf ss = satisfy (flip elem ss) <?> ("one of " <> show ss)
 
 -- | Match any character not in the array.
 noneOf :: forall s m. StringLike s => Monad m => Array Char -> ParserT s m Char
-noneOf ss = satisfy (flip notElem ss) <?> ("Expected none of " <> show ss)
+noneOf ss = satisfy (flip notElem ss) <?> ("none of " <> show ss)
