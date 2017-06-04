@@ -2,17 +2,16 @@
 
 module Text.Parsing.Parser.String where
 
-
-import Data.String as S
-import Control.Monad.State (modify, gets)
 import Data.Array (many, toUnfoldable)
 import Data.Foldable (fold, elem, notElem)
-import Data.Newtype (class Newtype, unwrap)
-import Data.Unfoldable (class Unfoldable)
 import Data.List as L
+import Data.Monoid (class Monoid)
 import Data.Monoid.Endo (Endo(..))
 import Data.Maybe (Maybe(..))
-import Data.Monoid (class Monoid)
+import Data.Newtype (class Newtype, unwrap)
+import Data.String as S
+import Data.Unfoldable (class Unfoldable)
+import Control.Monad.State (modify, gets)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (Position, updatePosString, updatePosChar)
@@ -21,11 +20,11 @@ import Prelude hiding (between)
 -- | A newtype used in cases where there is a prefix to be droped.
 newtype Prefix a = Prefix a
 
-derive instance eqPrefix :: (Eq a) => Eq (Prefix a)
-derive instance ordPrefix :: (Ord a) => Ord (Prefix a)
+derive instance eqPrefix :: Eq a => Eq (Prefix a)
+derive instance ordPrefix :: Ord a => Ord (Prefix a)
 derive instance newtypePrefix :: Newtype (Prefix a) _
 
-instance showPrefix :: (Show a) => Show (Prefix a) where
+instance showPrefix :: Show a => Show (Prefix a) where
   show (Prefix s) = "(Prefix " <> show s <> ")"
 
 class HasUpdatePosition a where
