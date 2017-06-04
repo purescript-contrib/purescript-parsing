@@ -3,30 +3,29 @@
 module Text.Parsing.Parser.String where
 
 
-import Control.Monad.Rec.Class (tailRecM3, Step(..))
 import Data.String as S
 import Control.Monad.State (modify, gets)
 import Data.Array (many, toUnfoldable)
-import Data.Foldable (elem, notElem, foldMap)
+import Data.Foldable (fold, elem, notElem)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Unfoldable (class Unfoldable)
 import Data.List as L
+import Data.Monoid.Endo (Endo(..))
 import Data.Maybe (Maybe(..))
-import Data.Either (Either(..))
 import Data.Monoid (class Monoid)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (Position, updatePosString, updatePosChar)
 import Prelude hiding (between)
-import Data.Foldable (foldl)
 
--- | A newtype used in cases where there is a prefix string to droped.
-newtype Prefix f = Prefix f
+-- | A newtype used in cases where there is a prefix to be droped.
+newtype Prefix a = Prefix a
 
-derive instance eqPrefix :: Eq f => Eq (Prefix f)
-derive instance ordPrefix :: Ord f => Ord (Prefix f)
--- derive instance newtypePrefix :: Newtype Prefix _
+derive instance eqPrefix :: (Eq a) => Eq (Prefix a)
+derive instance ordPrefix :: (Ord a) => Ord (Prefix a)
+derive instance newtypePrefix :: Newtype (Prefix a) _
 
-instance showPrefix :: Show f => Show (Prefix f) where
+instance showPrefix :: (Show a) => Show (Prefix a) where
   show (Prefix s) = "(Prefix " <> show s <> ")"
 
 class HasUpdatePosition a where
@@ -44,28 +43,20 @@ instance charHasUpdatePosition :: HasUpdatePosition Char where
 -- | Instances must satisfy the following laws:
 -- |
 class StreamLike f c | f -> c where
-  uncons :: f -> Maybe { head :: c, tail :: f, updatePos :: (Position -> Position) }
-  drop :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: (Position -> Position) }
+  uncons :: f -> Maybe { head :: c, tail :: f, updatePos :: Position -> Position }
+  drop :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: Position -> Position }
 
-instance stringLikeString :: StreamLike String Char where
+instance stringStreamLike :: StreamLike String Char where
   uncons f = S.uncons f <#> \({ head, tail}) ->
-    { head: head, updatePos: (_ `updatePos` head), tail}
+    { head, tail, updatePos: (_ `updatePos` head)}
   drop (Prefix p) s = S.stripPrefix (S.Pattern p) s <#> \rest ->
-    { rest: rest, updatePos: (_ `updatePos` p)}
+    { rest, updatePos: (_ `updatePos` p)}
 
-instance listcharLikeString :: (Eq a, HasUpdatePosition a) => StreamLike (L.List a) a where
+instance listcharStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (L.List a) a where
   uncons f = L.uncons f <#> \({ head, tail}) ->
-    { head: head, updatePos: (_ `updatePos` head), tail}
-  drop (Prefix p') s' = case (tailRecM3 go p' s' id) of -- no MonadRec for Maybe
-      Right a -> pure a
-      _ -> Nothing
-    where
-    go prefix input updatePos' = case prefix, input of
-      (L.Cons p ps), (L.Cons i is) | p == i -> pure $ Loop
-        ({ a: ps, b: is, c: updatePos' >>> (_ `updatePos` p) })
-      (L.Nil), is -> pure $ Done
-        ({ rest: is, updatePos: updatePos' })
-      _, _ -> Left unit
+    { head, tail, updatePos: (_ `updatePos` head)}
+  drop (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
+    { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
 eof :: forall f c m. StreamLike f c => Monad m => ParserT f m Unit
 eof = do
