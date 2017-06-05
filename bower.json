@@ -25,7 +25,7 @@
     "purescript-foldable-traversable": "^3.0.0",
     "purescript-identity": "^3.0.0",
     "purescript-integers": "^3.0.0",
-    "purescript-lists": "git://github.com/safareli/purescript-lists.git#strip",
+    "purescript-lists": "^4.6.0",
     "purescript-maybe": "^3.0.0",
     "purescript-strings": "^3.0.0",
     "purescript-transformers": "^3.0.0",
