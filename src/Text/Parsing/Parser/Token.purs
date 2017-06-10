@@ -1,10 +1,7 @@
 -- | Functions for working with streams of tokens.
 
 module Text.Parsing.Parser.Token
-  ( token
-  , when
-  , match
-  , LanguageDef
+  ( LanguageDef
   , GenLanguageDef(LanguageDef)
   , unGenLanguageDef
   , TokenParser
@@ -43,28 +40,6 @@ import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy,
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
 import Prelude hiding (when,between)
-
--- | Create a parser which Returns the first token in the stream.
-token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
-token tokpos = do
-  input <- gets \(ParseState input _ _) -> input
-  case List.uncons input of
-    Nothing -> fail "Unexpected EOF"
-    Just { head, tail } -> do
-      modify \(ParseState _ position _) ->
-        ParseState tail (tokpos head) true
-      pure head
-
--- | Create a parser which matches any token satisfying the predicate.
-when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
-when tokpos f = try $ do
-  a <- token tokpos
-  guard $ f a
-  pure a
-
--- | Match the specified token at the head of the stream.
-match :: forall a m. Monad m => Eq a => (a -> Position) -> a -> ParserT (List a) m a
-match tokpos tok = when tokpos (_ == tok)
 
 type LanguageDef = GenLanguageDef String Identity
 

@@ -16,8 +16,8 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
-import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
+import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar, class HasUpdatePosition)
+import Text.Parsing.Parser.Token (TokenParser, makeTokenParser)
 import Prelude hiding (between,when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
@@ -82,6 +82,9 @@ instance testTokensEq :: Eq TestToken where
   eq A A = true
   eq B B = true
   eq _ _ = false
+
+instance stringHasUpdatePosition :: HasUpdatePosition TestToken where
+  updatePos (Position { column, line }) tok = Position { column: column + 1, line}
 
 isA :: TestToken -> Boolean
 isA A = true
@@ -438,15 +441,14 @@ main = do
   parseTest "1*2+3/4-5" (-3) exprTest
   parseTest "ab?" "ab" manySatisfyTest
 
-  let tokpos = const initialPos
-  parseTest (fromFoldable [A, B]) A (token tokpos)
-  parseTest (fromFoldable [B, A]) B (token tokpos)
+  parseTest (fromFoldable [A, B]) A (anyChar)
+  parseTest (fromFoldable [B, A]) B (anyChar)
 
-  parseTest (fromFoldable [A, B]) A (when tokpos isA)
+  parseTest (fromFoldable [A, B]) A (satisfy isA)
 
-  parseTest (fromFoldable [A]) A (match tokpos A)
-  parseTest (fromFoldable [B]) B (match tokpos B)
-  parseTest (fromFoldable [A, B]) A (match tokpos A)
+  parseTest (fromFoldable [A]) A (char A)
+  parseTest (fromFoldable [B]) B (char B)
+  parseTest (fromFoldable [A, B]) A (char A)
 
   parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
