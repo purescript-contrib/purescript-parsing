@@ -57,6 +57,7 @@ instance listcharStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (L.List
   drop (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
     { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
+-- | Match end of stream.
 eof :: forall f c m. StreamLike f c => Monad m => ParserT f m Unit
 eof = do
   input <- gets \(ParseState input _ _) -> input
@@ -64,7 +65,7 @@ eof = do
     Nothing -> pure unit
     _ -> fail "Expected EOF"
 
--- | Match the specified string.
+-- | Match the specified stream.
 string :: forall f c m. StreamLike f c => Show f => Monad m => f -> ParserT f m f
 string str = do
   input <- gets \(ParseState input _ _) -> input
@@ -75,7 +76,7 @@ string str = do
       pure str
     _ -> fail ("Expected " <> show str)
 
--- | Match any character.
+-- | Match any token.
 anyChar :: forall f c m. StreamLike f c => Monad m => ParserT f m c
 anyChar = do
   input <- gets \(ParseState input _ _) -> input
@@ -86,22 +87,22 @@ anyChar = do
         ParseState tail (updatePos position) true
       pure head
 
--- | Match a character satisfying the specified predicate.
+-- | Match a token satisfying the specified predicate.
 satisfy :: forall f c m. StreamLike f c => Show c => Monad m => (c -> Boolean) -> ParserT f m c
 satisfy f = try do
   c <- anyChar
   if f c then pure c
          else fail $ "Character " <> show c <> " did not satisfy predicate"
 
--- | Match the specified character
+-- | Match the specified token
 char :: forall f c m. StreamLike f c => Eq c => Show c => Monad m => c -> ParserT f m c
 char c = satisfy (_ == c) <?> show c
 
--- | Match many whitespace characters.
+-- | Match many whitespace character in some Unfoldable.
 whiteSpace :: forall f m g. StreamLike f Char => Unfoldable g => Monoid f => Monad m => ParserT f m (g Char)
 whiteSpace = map toUnfoldable whiteSpace'
 
--- | Match a whitespace characters but returns them as Array.
+-- | Match a whitespace characters but returns them using Array.
 whiteSpace' :: forall f m. StreamLike f Char => Monad m => ParserT f m (Array Char)
 whiteSpace' = many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
 
@@ -109,10 +110,10 @@ whiteSpace' = many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\
 skipSpaces :: forall f m. StreamLike f Char => Monad m => ParserT f m Unit
 skipSpaces = void whiteSpace'
 
--- | Match one of the characters in the array.
+-- | Match one of the tokens in the array.
 oneOf :: forall f c m. StreamLike f c => Show c => Eq c => Monad m => Array c -> ParserT f m c
 oneOf ss = satisfy (flip elem ss) <?> ("one of " <> show ss)
 
--- | Match any character not in the array.
+-- | Match any token not in the array.
 noneOf :: forall f c m. StreamLike f c => Show c => Eq c => Monad m => Array c -> ParserT f m c
 noneOf ss = satisfy (flip notElem ss) <?> ("none of " <> show ss)
