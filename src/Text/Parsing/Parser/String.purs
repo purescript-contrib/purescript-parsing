@@ -95,7 +95,7 @@ satisfy f = try do
 
 -- | Match the specified character
 char :: forall f c m. StreamLike f c => Eq c => Show c => Monad m => c -> ParserT f m c
-char c = satisfy (_ == c) <?> ("Expected " <> show c)
+char c = satisfy (_ == c) <?> show c
 
 -- | Match many whitespace characters.
 whiteSpace :: forall f m g. StreamLike f Char => Unfoldable g => Monoid f => Monad m => ParserT f m (g Char)
