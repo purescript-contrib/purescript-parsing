@@ -40,7 +40,7 @@ instance charHasUpdatePosition :: HasUpdatePosition Char where
 -- | operations which this modules needs.
 -- |
 -- | Instances must satisfy the following laws:
--- |
+-- | - `drop (Prefix a) a >>= uncons = Nothing`
 class StreamLike f c | f -> c where
   uncons :: f -> Maybe { head :: c, tail :: f, updatePos :: Position -> Position }
   drop :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: Position -> Position }
