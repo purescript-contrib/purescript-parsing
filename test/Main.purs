@@ -16,7 +16,7 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, match, satisfy, anyChar, class HasUpdatePosition)
+import Text.Parsing.Parser.String (eof, string, match, satisfy, token, class HasUpdatePosition)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser)
 import Prelude hiding (between,when)
 
@@ -44,7 +44,7 @@ parseErrorTestPosition p input expected = case runParser input p of
     logShow expected
 
 opTest :: Parser String String
-opTest = chainl (singleton <$> anyChar) (match '+' $> append) ""
+opTest = chainl (singleton <$> token) (match '+' $> append) ""
 
 digit :: Parser String Int
 digit = (string "0" >>= \_ -> pure 0)
@@ -441,8 +441,8 @@ main = do
   parseTest "1*2+3/4-5" (-3) exprTest
   parseTest "ab?" "ab" manySatisfyTest
 
-  parseTest (fromFoldable [A, B]) A (anyChar)
-  parseTest (fromFoldable [B, A]) B (anyChar)
+  parseTest (fromFoldable [A, B]) A (token)
+  parseTest (fromFoldable [B, A]) B (token)
 
   parseTest (fromFoldable [A, B]) A (satisfy isA)
 

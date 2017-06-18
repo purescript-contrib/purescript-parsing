@@ -77,8 +77,8 @@ string str = do
     _ -> fail ("Expected " <> show str)
 
 -- | Match any token.
-anyChar :: forall f c m. StreamLike f c => Monad m => ParserT f m c
-anyChar = do
+token :: forall f c m. StreamLike f c => Monad m => ParserT f m c
+token = do
   input <- gets \(ParseState input _ _) -> input
   case uncons input of
     Nothing -> fail "Unexpected EOF"
@@ -90,7 +90,7 @@ anyChar = do
 -- | Match a token satisfying the specified predicate.
 satisfy :: forall f c m. StreamLike f c => Show c => Monad m => (c -> Boolean) -> ParserT f m c
 satisfy f = try do
-  c <- anyChar
+  c <- token
   if f c then pure c
          else fail $ "Character " <> show c <> " did not satisfy predicate"
 
