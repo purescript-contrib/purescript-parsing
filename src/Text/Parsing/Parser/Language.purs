@@ -12,7 +12,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Text.Parsing.Parser (ParserT)
-import Text.Parsing.Parser.String (char, oneOf)
+import Text.Parsing.Parser.String (match, oneOf)
 import Text.Parsing.Parser.Token (LanguageDef, TokenParser, GenLanguageDef(..), unGenLanguageDef, makeTokenParser, alphaNum, letter)
 
 -----------------------------------------------------------
@@ -70,7 +70,7 @@ emptyDef = LanguageDef
             , commentEnd:      ""
             , commentLine:     ""
             , nestedComments:  true
-            , identStart:      letter <|> char '_'
+            , identStart:      letter <|> match '_'
             , identLetter:     alphaNum <|> oneOf ['_', '\'']
             , opStart:         op'
             , opLetter:        op'
@@ -95,7 +95,7 @@ haskellDef  :: LanguageDef
 haskellDef   =
     case haskell98Def of
         (LanguageDef def) -> LanguageDef def
-                { identLetter    = def.identLetter <|> char '#'
+                { identLetter    = def.identLetter <|> match '#'
                 , reservedNames  = def.reservedNames <>
                                    ["foreign","import","export","primitive"
                                    ,"_ccall_","_casm_"

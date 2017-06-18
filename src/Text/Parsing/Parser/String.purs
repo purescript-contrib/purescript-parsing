@@ -95,8 +95,8 @@ satisfy f = try do
          else fail $ "Character " <> show c <> " did not satisfy predicate"
 
 -- | Match the specified token
-char :: forall f c m. StreamLike f c => Eq c => Show c => Monad m => c -> ParserT f m c
-char c = satisfy (_ == c) <?> show c
+match :: forall f c m. StreamLike f c => Eq c => Show c => Monad m => c -> ParserT f m c
+match c = satisfy (_ == c) <?> show c
 
 
 -- | Match a whitespace characters but returns them using Array.

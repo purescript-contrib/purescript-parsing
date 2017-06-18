@@ -38,7 +38,7 @@ import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
-import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
+import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, match)
 import Prelude hiding (when,between)
 
 type LanguageDef = GenLanguageDef String Identity
@@ -60,10 +60,10 @@ newtype GenLanguageDef s m
     -- | Set to `true` if the language supports nested block comments.
     nestedComments :: Boolean,
     -- | This parser should accept any start characters of identifiers. For
-    -- | example `letter <|> char '_'`.
+    -- | example `letter <|> match '_'`.
     identStart     :: ParserT s m Char,
     -- | This parser should accept any legal tail characters of identifiers.
-    -- | For example `alphaNum <|> char '_'`.
+    -- | For example `alphaNum <|> match '_'`.
     identLetter    :: ParserT s m Char,
     -- | This parser should accept any start characters of operators. For
     -- | example `oneOf [':', '+', '=']`.
@@ -355,13 +355,13 @@ makeTokenParser (LanguageDef languageDef)
     charLiteral = lexeme go <?> "character"
       where
         go :: ParserT String m Char
-        go = between (char '\'') (char '\'' <?> "end of character") characterChar
+        go = between (match '\'') (match '\'' <?> "end of character") characterChar
 
     characterChar :: ParserT String m Char
     characterChar = charLetter <|> charEscape <?> "literal character"
 
     charEscape :: ParserT String m Char
-    charEscape = char '\\' *> escapeCode
+    charEscape = match '\\' *> escapeCode
 
     charLetter :: ParserT String m Char
     charLetter = satisfy \c -> (c /= '\'') && (c /= '\\') && (c > '\026')
@@ -371,7 +371,7 @@ makeTokenParser (LanguageDef languageDef)
       where
         go :: ParserT String m String
         go = do
-            maybeChars <- between (char '"') (char '"' <?> "end of string") (List.many stringChar)
+            maybeChars <- between (match '"') (match '"' <?> "end of string") (List.many stringChar)
             pure $ fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
 
         folder :: Maybe Char -> List Char -> List Char
@@ -389,14 +389,14 @@ makeTokenParser (LanguageDef languageDef)
 
     stringEscape :: ParserT String m (Maybe Char)
     stringEscape = do
-        _ <- char '\\'
+        _ <- match '\\'
         (escapeGap $> Nothing) <|> (escapeEmpty $> Nothing) <|> (Just <$> escapeCode)
 
     escapeEmpty :: ParserT String m Char
-    escapeEmpty = char '&'
+    escapeEmpty = match '&'
 
     escapeGap :: ParserT String m Char
-    escapeGap = Array.some space *> char '\\' <?> "end of string gap"
+    escapeGap = Array.some space *> match '\\' <?> "end of string gap"
 
     -- -- escape codes
     escapeCode :: ParserT String m Char
@@ -405,15 +405,15 @@ makeTokenParser (LanguageDef languageDef)
 
     charControl :: ParserT String m Char
     charControl = do
-        _ <- char '^'
+        _ <- match '^'
         code <- upper
         pure <<< fromCharCode $ toCharCode code - toCharCode 'A' + 1
 
     charNum :: ParserT String m Char
     charNum = do
         code <- decimal
-           <|> ( char 'o' *> number 8 octDigit )
-           <|> ( char 'x' *> number 16 hexDigit )
+           <|> ( match 'o' *> number 8 octDigit )
+           <|> ( match 'x' *> number 16 hexDigit )
         if code > 0x10FFFF
            then fail "invalid escape sequence"
            else pure $ fromCharCode code
@@ -422,7 +422,7 @@ makeTokenParser (LanguageDef languageDef)
     charEsc = choice (map parseEsc escMap)
       where
         parseEsc :: Tuple Char Char -> ParserT String m Char
-        parseEsc (Tuple c code) = char c $> code
+        parseEsc (Tuple c code) = match c $> code
 
     charAscii :: ParserT String m Char
     charAscii = choice (map parseAscii asciiMap)
@@ -479,7 +479,7 @@ makeTokenParser (LanguageDef languageDef)
     floating = decimal >>= fractExponent
 
     natFloat :: ParserT String m (Either Int Number)
-    natFloat = char '0' *> zeroNumFloat
+    natFloat = match '0' *> zeroNumFloat
            <|> decimalFloat
 
     zeroNumFloat :: ParserT String m (Either Int Number)
@@ -512,7 +512,7 @@ makeTokenParser (LanguageDef languageDef)
 
     fraction :: ParserT String m Number
     fraction = "fraction" <??> do
-        _ <- char '.'
+        _ <- match '.'
         digits <- Array.some digit <?> "fraction"
         maybe (fail "not digit") pure $ foldr op (Just 0.0) digits
       where
@@ -541,15 +541,15 @@ makeTokenParser (LanguageDef languageDef)
         pure $ f n
 
     sign :: forall a . (Ring a) => ParserT String m (a -> a)
-    sign = (char '-' $> negate)
-       <|> (char '+' $> id)
+    sign = (match '-' $> negate)
+       <|> (match '+' $> id)
        <|> pure id
 
     nat :: ParserT String m Int
     nat = zeroNumber <|> decimal
 
     zeroNumber :: ParserT String m Int
-    zeroNumber = char '0' *>
+    zeroNumber = match '0' *>
                     ( hexadecimal <|> octal <|> decimal <|> pure 0 ) <?> ""
 
     decimal :: ParserT String m Int
@@ -625,8 +625,8 @@ makeTokenParser (LanguageDef languageDef)
                         Just { head: c, tail: cs } -> (caseChar c <?> msg) *> walk cs
 
         caseChar :: Char -> ParserT String m Char
-        caseChar c | isAlpha c = char (Unicode.toLower c) <|> char (Unicode.toUpper c)
-                   | otherwise = char c
+        caseChar c | isAlpha c = match (Unicode.toLower c) <|> match (Unicode.toUpper c)
+                   | otherwise = match c
 
         msg :: String
         msg = show name

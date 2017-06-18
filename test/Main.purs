@@ -16,7 +16,7 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar, class HasUpdatePosition)
+import Text.Parsing.Parser.String (eof, string, match, satisfy, anyChar, class HasUpdatePosition)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser)
 import Prelude hiding (between,when)
 
@@ -44,7 +44,7 @@ parseErrorTestPosition p input expected = case runParser input p of
     logShow expected
 
 opTest :: Parser String String
-opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
+opTest = chainl (singleton <$> anyChar) (match '+' $> append) ""
 
 digit :: Parser String Int
 digit = (string "0" >>= \_ -> pure 0)
@@ -69,7 +69,7 @@ exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> pure (/)) AssocRight 
 manySatisfyTest :: Parser String String
 manySatisfyTest = do
   r <- some $ satisfy (\s -> s /= '?')
-  _ <- char '?'
+  _ <- match '?'
   pure (fromCharArray r)
 
 data TestToken = A | B
@@ -418,14 +418,14 @@ main :: forall eff . Eff (console :: CONSOLE, assert :: ASSERT |eff) Unit
 main = do
 
   parseErrorTestPosition
-    (many $ char 'f' *> char '?')
+    (many $ match 'f' *> match '?')
     "foo"
     (Position { column: 2, line: 1 })
 
   parseTest
     "foo"
     Nil
-    (many $ try $ char 'f' *> char '?')
+    (many $ try $ match 'f' *> match '?')
 
   parseTest "(((a)))" 3 nested
   parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (string "a")
@@ -446,9 +446,9 @@ main = do
 
   parseTest (fromFoldable [A, B]) A (satisfy isA)
 
-  parseTest (fromFoldable [A]) A (char A)
-  parseTest (fromFoldable [B]) B (char B)
-  parseTest (fromFoldable [A, B]) A (char A)
+  parseTest (fromFoldable [A]) A (match A)
+  parseTest (fromFoldable [B]) B (match B)
+  parseTest (fromFoldable [A, B]) A (match A)
 
   parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })

@@ -15,7 +15,7 @@
 -- | be used in conjunction with `Data.String.fromCharArray` to achieve "Parsec-like" results.
 -- |
 -- | ```purescript
--- | Text.Parsec.many  (char 'x') <=> fromCharArray <$> Data.Array.many (char 'x')
+-- | Text.Parsec.many  (match 'x') <=> fromCharArray <$> Data.Array.many (match 'x')
 -- | ```
 
 module Text.Parsing.Parser.Combinators where
