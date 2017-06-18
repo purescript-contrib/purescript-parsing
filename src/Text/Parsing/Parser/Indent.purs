@@ -62,7 +62,7 @@ import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (ParserT, ParseState(ParseState), fail)
 import Text.Parsing.Parser.Combinators (option, optionMaybe)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (string, oneOf)
+import Text.Parsing.Parser.String (prefix, oneOf)
 
 -- | Indentation sensitive parser type. Usually @ m @ will
 -- | be @ Identity @ as with any @ ParserT @
@@ -100,7 +100,7 @@ many1 :: forall s m a. (Monad m) => ParserT s m a -> ParserT s m (List a)
 many1 p = lift2 Cons p (many p)
 
 symbol :: forall m. (Monad m) => String -> ParserT String m String
-symbol name = (many $ oneOf [' ','\t']) *> (string name)
+symbol name = (many $ oneOf [' ','\t']) *> (prefix name)
 
 -- | `withBlock f a p` parses `a`
 -- | followed by an indented block of `p`

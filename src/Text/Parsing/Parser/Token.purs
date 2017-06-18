@@ -38,7 +38,7 @@ import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
-import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, match)
+import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, prefix, match)
 import Prelude hiding (when,between)
 
 type LanguageDef = GenLanguageDef String Identity
@@ -428,7 +428,7 @@ makeTokenParser (LanguageDef languageDef)
     charAscii = choice (map parseAscii asciiMap)
       where
         parseAscii :: Tuple String Char -> ParserT String m Char
-        parseAscii (Tuple asc code) = try $ string asc $> code
+        parseAscii (Tuple asc code) = try $ prefix asc $> code
 
     -- escape code tables
     escMap :: Array (Tuple Char Char)
@@ -579,7 +579,7 @@ makeTokenParser (LanguageDef languageDef)
       where
         go :: ParserT String m Unit
         go = do
-            _ <- string name
+            _ <- prefix name
             notFollowedBy languageDef.opLetter <?> "end of " <> name
 
     operator :: ParserT String m String
@@ -616,7 +616,7 @@ makeTokenParser (LanguageDef languageDef)
         go = caseString name *> (notFollowedBy languageDef.identLetter <?> "end of " <> name)
 
     caseString :: String -> ParserT String m String
-    caseString name | languageDef.caseSensitive = string name $> name
+    caseString name | languageDef.caseSensitive = prefix name $> name
                     | otherwise                 = walk name $> name
       where
         walk :: String -> ParserT String m Unit
@@ -657,7 +657,7 @@ makeTokenParser (LanguageDef languageDef)
     -- White space & symbols
     -----------------------------------------------------------
     symbol :: String -> ParserT String m String
-    symbol name = lexeme (string name) $> name
+    symbol name = lexeme (prefix name) $> name
 
     lexeme :: forall a . ParserT String m a -> ParserT String m a
     lexeme p = p <* whiteSpace' (LanguageDef languageDef)
@@ -713,11 +713,11 @@ simpleSpace = skipMany1 (satisfy isSpace)
 
 oneLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 oneLineComment (LanguageDef languageDef) =
-    try (string languageDef.commentLine) *> skipMany (satisfy (_ /= '\n'))
+    try (prefix languageDef.commentLine) *> skipMany (satisfy (_ /= '\n'))
 
 multiLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 multiLineComment langDef@(LanguageDef languageDef) =
-    try (string languageDef.commentStart) *> inComment langDef
+    try (prefix languageDef.commentStart) *> inComment langDef
 
 inComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inComment langDef@(LanguageDef languageDef) =
@@ -725,7 +725,7 @@ inComment langDef@(LanguageDef languageDef) =
 
 inCommentMulti :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentMulti langDef@(LanguageDef languageDef) =
-    fix \p -> ( void $ try (string languageDef.commentEnd) )
+    fix \p -> ( void $ try (prefix languageDef.commentEnd) )
           <|> ( multiLineComment langDef    *>  p )
           <|> ( skipMany1 (noneOf startEnd) *> p )
           <|> ( oneOf startEnd              *> p )
@@ -736,7 +736,7 @@ inCommentMulti langDef@(LanguageDef languageDef) =
 
 inCommentSingle :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentSingle (LanguageDef languageDef) =
-    fix \p -> ( void $ try (string languageDef.commentEnd) )
+    fix \p -> ( void $ try (prefix languageDef.commentEnd) )
           <|> ( skipMany1 (noneOf startEnd) *> p )
           <|> ( oneOf startEnd              *> p )
           <?> "end of comment"

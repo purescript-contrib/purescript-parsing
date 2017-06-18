@@ -49,7 +49,7 @@ infix 3 asErrorMessage as <??>
 -- | For example:
 -- |
 -- | ```purescript
--- | parens = between (string "(") (string ")")
+-- | parens = between (prefix "(") (prefix ")")
 -- | ```
 between :: forall m s a open close. Monad m => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 between open close p = open *> p <* close
@@ -85,7 +85,7 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
 -- | For example:
 -- |
 -- | ```purescript
--- | digit `sepBy` string ","
+-- | digit `sepBy` prefix ","
 -- | ```
 sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepBy p sep = sepBy1 p sep <|> pure Nil
@@ -122,7 +122,7 @@ endBy p sep = many $ p <* sep
 -- | For example:
 -- |
 -- | ```purescript
--- | chainr digit (string "+" *> add) 0
+-- | chainr digit (prefix "+" *> add) 0
 -- | ```
 chainr :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainr p f a = chainr1 p f <|> pure a

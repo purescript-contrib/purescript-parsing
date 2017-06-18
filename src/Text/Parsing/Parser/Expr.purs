@@ -32,10 +32,10 @@ type SplitAccum m s a = { rassoc  :: List (ParserT s m (a -> a -> a))
 -- | For example:
 -- |
 -- | ```purescript
--- | buildExprParser [ [ Infix (string "/" $> div) AssocRight ]
--- |                 , [ Infix (string "*" $> mul) AssocRight ]
--- |                 , [ Infix (string "-" $> sub) AssocRight ]
--- |                 , [ Infix (string "+" $> add) AssocRight ]
+-- | buildExprParser [ [ Infix (prefix "/" $> div) AssocRight ]
+-- |                 , [ Infix (prefix "*" $> mul) AssocRight ]
+-- |                 , [ Infix (prefix "-" $> sub) AssocRight ]
+-- |                 , [ Infix (prefix "+" $> add) AssocRight ]
 -- |                 ] digit
 -- | ```
 buildExprParser :: forall m s a. Monad m => OperatorTable m s a -> ParserT s m a -> ParserT s m a

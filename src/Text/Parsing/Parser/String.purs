@@ -17,7 +17,7 @@ import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (Position, updatePosString, updatePosChar)
 import Prelude hiding (between)
 
--- | A newtype used in cases where there is a prefix to be droped.
+-- | A newtype used in cases where there is a prefix to be stipPrefixed.
 newtype Prefix a = Prefix a
 
 derive instance eqPrefix :: Eq a => Eq (Prefix a)
@@ -40,21 +40,21 @@ instance charHasUpdatePosition :: HasUpdatePosition Char where
 -- | operations which this modules needs.
 -- |
 -- | Instances must satisfy the following laws:
--- | - `drop (Prefix a) a >>= uncons = Nothing`
+-- | - `stipPrefix (Prefix a) a >>= uncons = Nothing`
 class StreamLike f c | f -> c where
   uncons :: f -> Maybe { head :: c, tail :: f, updatePos :: Position -> Position }
-  drop :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: Position -> Position }
+  stipPrefix :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: Position -> Position }
 
 instance stringStreamLike :: StreamLike String Char where
   uncons f = S.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
-  drop (Prefix p) s = S.stripPrefix (S.Pattern p) s <#> \rest ->
+  stipPrefix (Prefix p) s = S.stripPrefix (S.Pattern p) s <#> \rest ->
     { rest, updatePos: (_ `updatePos` p)}
 
 instance listcharStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (L.List a) a where
   uncons f = L.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
-  drop (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
+  stipPrefix (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
     { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
 -- | Match end of stream.
@@ -65,11 +65,11 @@ eof = do
     Nothing -> pure unit
     _ -> fail "Expected EOF"
 
--- | Match the specified stream.
-string :: forall f c m. StreamLike f c => Show f => Monad m => f -> ParserT f m f
-string str = do
+-- | Match the specified prefix.
+prefix :: forall f c m. StreamLike f c => Show f => Monad m => f -> ParserT f m f
+prefix str = do
   input <- gets \(ParseState input _ _) -> input
-  case drop (Prefix str) input of
+  case stipPrefix (Prefix str) input of
     Just {rest, updatePos} -> do
       modify \(ParseState _ position _) ->
         ParseState rest (updatePos position) true

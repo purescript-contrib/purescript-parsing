@@ -16,16 +16,16 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, match, satisfy, token, class HasUpdatePosition)
+import Text.Parsing.Parser.String (eof, prefix, match, satisfy, token, class HasUpdatePosition)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser)
 import Prelude hiding (between,when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
-parens = between (string "(") (string ")")
+parens = between (prefix "(") (prefix ")")
 
 nested :: forall m. Monad m => ParserT String m Int
 nested = fix \p -> (do
-  _ <- string "a"
+  _ <- prefix "a"
   pure 0) <|> ((+) 1) <$> parens p
 
 parseTest :: forall s a eff. Show a => Eq a => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
@@ -47,22 +47,22 @@ opTest :: Parser String String
 opTest = chainl (singleton <$> token) (match '+' $> append) ""
 
 digit :: Parser String Int
-digit = (string "0" >>= \_ -> pure 0)
-        <|> (string "1" >>= \_ -> pure 1)
-        <|> (string "2" >>= \_ -> pure 2)
-        <|> (string "3" >>= \_ -> pure 3)
-        <|> (string "4" >>= \_ -> pure 4)
-        <|> (string "5" >>= \_ -> pure 5)
-        <|> (string "6" >>= \_ -> pure 6)
-        <|> (string "7" >>= \_ -> pure 7)
-        <|> (string "8" >>= \_ -> pure 8)
-        <|> (string "9" >>= \_ -> pure 9)
+digit = (prefix "0" >>= \_ -> pure 0)
+        <|> (prefix "1" >>= \_ -> pure 1)
+        <|> (prefix "2" >>= \_ -> pure 2)
+        <|> (prefix "3" >>= \_ -> pure 3)
+        <|> (prefix "4" >>= \_ -> pure 4)
+        <|> (prefix "5" >>= \_ -> pure 5)
+        <|> (prefix "6" >>= \_ -> pure 6)
+        <|> (prefix "7" >>= \_ -> pure 7)
+        <|> (prefix "8" >>= \_ -> pure 8)
+        <|> (prefix "9" >>= \_ -> pure 9)
 
 exprTest :: Parser String Int
-exprTest = buildExprParser [ [ Infix (string "/" >>= \_ -> pure (/)) AssocRight ]
-                           , [ Infix (string "*" >>= \_ -> pure (*)) AssocRight ]
-                           , [ Infix (string "-" >>= \_ -> pure (-)) AssocRight ]
-                           , [ Infix (string "+" >>= \_ -> pure (+)) AssocRight ]
+exprTest = buildExprParser [ [ Infix (prefix "/" >>= \_ -> pure (/)) AssocRight ]
+                           , [ Infix (prefix "*" >>= \_ -> pure (*)) AssocRight ]
+                           , [ Infix (prefix "-" >>= \_ -> pure (-)) AssocRight ]
+                           , [ Infix (prefix "+" >>= \_ -> pure (+)) AssocRight ]
                            ] digit
 
 
@@ -283,34 +283,34 @@ tokenParserWhiteSpaceTest = do
 tokenParserParensTest :: TestM
 tokenParserParensTest = do
     -- parse parens
-    parseTest "(hello)" "hello" $ testTokenParser.parens $ string "hello"
+    parseTest "(hello)" "hello" $ testTokenParser.parens $ prefix "hello"
 
     -- fail on non-closed parens
-    parseErrorTestPosition (testTokenParser.parens $ string "hello") "(hello" $ mkPos 7
+    parseErrorTestPosition (testTokenParser.parens $ prefix "hello") "(hello" $ mkPos 7
 
 tokenParserBracesTest :: TestM
 tokenParserBracesTest = do
     -- parse braces
-    parseTest "{hello}" "hello" $ testTokenParser.braces $ string "hello"
+    parseTest "{hello}" "hello" $ testTokenParser.braces $ prefix "hello"
 
     -- fail on non-closed braces
-    parseErrorTestPosition (testTokenParser.braces $ string "hello") "{hello" $ mkPos 7
+    parseErrorTestPosition (testTokenParser.braces $ prefix "hello") "{hello" $ mkPos 7
 
 tokenParserAnglesTest :: TestM
 tokenParserAnglesTest = do
     -- parse angles
-    parseTest "<hello>" "hello" $ testTokenParser.angles $ string "hello"
+    parseTest "<hello>" "hello" $ testTokenParser.angles $ prefix "hello"
 
     -- fail on non-closed angles
-    parseErrorTestPosition (testTokenParser.angles $ string "hello") "<hello" $ mkPos 7
+    parseErrorTestPosition (testTokenParser.angles $ prefix "hello") "<hello" $ mkPos 7
 
 tokenParserBracketsTest :: TestM
 tokenParserBracketsTest = do
     -- parse brackets
-    parseTest "[hello]" "hello" $ testTokenParser.brackets $ string "hello"
+    parseTest "[hello]" "hello" $ testTokenParser.brackets $ prefix "hello"
 
     -- fail on non-closed brackets
-    parseErrorTestPosition (testTokenParser.brackets $ string "hello") "[hello" $ mkPos 7
+    parseErrorTestPosition (testTokenParser.brackets $ prefix "hello") "[hello" $ mkPos 7
 
 tokenParserSemiTest :: TestM
 tokenParserSemiTest = do
@@ -347,47 +347,47 @@ tokenParserDotTest = do
 tokenParserSemiSepTest :: TestM
 tokenParserSemiSepTest = do
     -- parse semi sep
-    parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep $ string "foo"
+    parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep $ prefix "foo"
 
     -- parse semi sep with newline
-    parseTest "foo; \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep $ string "foo"
+    parseTest "foo; \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep $ prefix "foo"
 
     -- parse no semi sep
-    parseTest "" (fromFoldable []) $ testTokenParser.semiSep $ string "foo"
+    parseTest "" (fromFoldable []) $ testTokenParser.semiSep $ prefix "foo"
     -- parseErrorTestPosition testTokenParser.operator "foo" $ mkPos 1
 
 tokenParserSemiSep1Test :: TestM
 tokenParserSemiSep1Test = do
     -- parse semi sep1
-    parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ string "foo"
+    parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ prefix "foo"
 
     -- parse semi sep1 with newline
-    parseTest "foo; \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ string "foo"
+    parseTest "foo; \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ prefix "foo"
 
     -- no parse on empty string
-    parseErrorTestPosition (testTokenParser.semiSep1 $ string "foo") "" $ mkPos 1
+    parseErrorTestPosition (testTokenParser.semiSep1 $ prefix "foo") "" $ mkPos 1
 
 tokenParserCommaSepTest :: TestM
 tokenParserCommaSepTest = do
     -- parse comma sep
-    parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep $ string "foo"
+    parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep $ prefix "foo"
 
     -- parse comma sep with newline
-    parseTest "foo, \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep $ string "foo"
+    parseTest "foo, \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep $ prefix "foo"
 
     -- parse no comma sep
-    parseTest "" (fromFoldable []) $ testTokenParser.commaSep $ string "foo"
+    parseTest "" (fromFoldable []) $ testTokenParser.commaSep $ prefix "foo"
 
 tokenParserCommaSep1Test :: TestM
 tokenParserCommaSep1Test = do
     -- parse comma sep1
-    parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ string "foo"
+    parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ prefix "foo"
 
     -- parse comma sep1 with newline
-    parseTest "foo, \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ string "foo"
+    parseTest "foo, \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ prefix "foo"
 
     -- no parse on empty string
-    parseErrorTestPosition (testTokenParser.commaSep1 $ string "foo") "" $ mkPos 1
+    parseErrorTestPosition (testTokenParser.commaSep1 $ prefix "foo") "" $ mkPos 1
 
 haskellStyleTest :: TestM
 haskellStyleTest = do
@@ -428,13 +428,13 @@ main = do
     (many $ try $ match 'f' *> match '?')
 
   parseTest "(((a)))" 3 nested
-  parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (string "a")
+  parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (prefix "a")
   parseTest "(ab)" (Just "b") $ parens do
-    _ <- string "a"
-    optionMaybe $ string "b"
-  parseTest "a,a,a" (Cons "a" (Cons "a" (Cons "a" Nil))) $ string "a" `sepBy1` string ","
+    _ <- prefix "a"
+    optionMaybe $ prefix "b"
+  parseTest "a,a,a" (Cons "a" (Cons "a" (Cons "a" Nil))) $ prefix "a" `sepBy1` prefix ","
   parseTest "a,a,a," (Cons "a" (Cons "a" (Cons "a" Nil))) $ do
-    as <- string "a" `endBy1` string ","
+    as <- prefix "a" `endBy1` prefix ","
     eof
     pure as
   parseTest "a+b+c" "abc" opTest
@@ -450,10 +450,10 @@ main = do
   parseTest (fromFoldable [B]) B (match B)
   parseTest (fromFoldable [A, B]) A (match A)
 
-  parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
-  parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
-  parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
-  parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
+  parseErrorTestPosition (prefix "abc") "bcd" (Position { column: 1, line: 1 })
+  parseErrorTestPosition (prefix "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
+  parseErrorTestPosition (prefix "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
+  parseErrorTestPosition (prefix "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
 
   tokenParserIdentifierTest
   tokenParserReservedTest
