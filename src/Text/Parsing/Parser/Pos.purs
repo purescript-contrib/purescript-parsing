@@ -2,7 +2,6 @@ module Text.Parsing.Parser.Pos where
 
 import Prelude
 import Data.Foldable (foldl)
-import Data.Newtype (wrap)
 import Data.String (toCharArray)
 
 -- | `Position` represents the position of the parser in the input.

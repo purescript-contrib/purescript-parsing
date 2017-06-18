@@ -2,15 +2,13 @@
 
 module Text.Parsing.Parser.String where
 
-import Data.Array (many, toUnfoldable)
+import Data.Array (many)
 import Data.Foldable (fold, elem, notElem)
 import Data.List as L
-import Data.Monoid (class Monoid)
 import Data.Monoid.Endo (Endo(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.String as S
-import Data.Unfoldable (class Unfoldable)
 import Control.Monad.State (modify, gets)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (try, (<?>))

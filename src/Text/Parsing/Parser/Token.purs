@@ -22,8 +22,7 @@ import Data.Array as Array
 import Data.Char.Unicode as Unicode
 import Data.List as List
 import Control.Lazy (fix)
-import Control.Monad.State (modify, gets)
-import Control.MonadPlus (guard, (<|>))
+import Control.MonadPlus ((<|>))
 import Data.Char (fromCharCode, toCharCode)
 import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
 import Data.Either (Either(..))
@@ -35,9 +34,8 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
 import Data.Tuple (Tuple(..))
 import Math (pow)
-import Text.Parsing.Parser (ParseState(..), ParserT, fail)
+import Text.Parsing.Parser (ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
-import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, prefix, match)
 import Prelude hiding (when,between)
 
