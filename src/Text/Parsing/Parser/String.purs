@@ -98,17 +98,14 @@ satisfy f = try do
 char :: forall f c m. StreamLike f c => Eq c => Show c => Monad m => c -> ParserT f m c
 char c = satisfy (_ == c) <?> show c
 
--- | Match many whitespace character in some Unfoldable.
-whiteSpace :: forall f m g. StreamLike f Char => Unfoldable g => Monoid f => Monad m => ParserT f m (g Char)
-whiteSpace = map toUnfoldable whiteSpace'
 
 -- | Match a whitespace characters but returns them using Array.
-whiteSpace' :: forall f m. StreamLike f Char => Monad m => ParserT f m (Array Char)
-whiteSpace' = many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
+whiteSpace :: forall f m. StreamLike f Char => Monad m => ParserT f m (Array Char)
+whiteSpace = many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
 
 -- | Skip whitespace characters.
 skipSpaces :: forall f m. StreamLike f Char => Monad m => ParserT f m Unit
-skipSpaces = void whiteSpace'
+skipSpaces = void whiteSpace
 
 -- | Match one of the tokens in the array.
 oneOf :: forall f c m. StreamLike f c => Show c => Eq c => Monad m => Array c -> ParserT f m c
