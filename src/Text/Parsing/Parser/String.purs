@@ -15,7 +15,7 @@ import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (Position, updatePosString, updatePosChar)
 import Prelude hiding (between)
 
--- | A newtype used in cases where there is a prefix to be stipPrefixed.
+-- | A newtype used in cases where there is a prefix to be stripPrefixed.
 newtype Prefix a = Prefix a
 
 derive instance eqPrefix :: Eq a => Eq (Prefix a)
@@ -38,21 +38,21 @@ instance charHasUpdatePosition :: HasUpdatePosition Char where
 -- | operations which this modules needs.
 -- |
 -- | Instances must satisfy the following laws:
--- | - `stipPrefix (Prefix a) a >>= uncons = Nothing`
+-- | - `stripPrefix (Prefix a) a >>= uncons = Nothing`
 class StreamLike f c | f -> c where
   uncons :: f -> Maybe { head :: c, tail :: f, updatePos :: Position -> Position }
-  stipPrefix :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: Position -> Position }
+  stripPrefix :: Prefix f -> f -> Maybe {  rest :: f, updatePos :: Position -> Position }
 
 instance stringStreamLike :: StreamLike String Char where
   uncons f = S.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
-  stipPrefix (Prefix p) s = S.stripPrefix (S.Pattern p) s <#> \rest ->
+  stripPrefix (Prefix p) s = S.stripPrefix (S.Pattern p) s <#> \rest ->
     { rest, updatePos: (_ `updatePos` p)}
 
-instance listcharStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (L.List a) a where
+instance listStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (L.List a) a where
   uncons f = L.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
-  stipPrefix (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
+  stripPrefix (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
     { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
 -- | Match end of stream.
@@ -67,7 +67,7 @@ eof = do
 prefix :: forall f c m. StreamLike f c => Show f => Monad m => f -> ParserT f m f
 prefix str = do
   input <- gets \(ParseState input _ _) -> input
-  case stipPrefix (Prefix str) input of
+  case stripPrefix (Prefix str) input of
     Just {rest, updatePos} -> do
       modify \(ParseState _ position _) ->
         ParseState rest (updatePos position) true
@@ -99,7 +99,7 @@ match c = satisfy (_ == c) <?> show c
 
 -- | Match a whitespace characters but returns them using Array.
 whiteSpace :: forall f m. StreamLike f Char => Monad m => ParserT f m (Array Char)
-whiteSpace = many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
+whiteSpace = many $ satisfy \c -> c == ' ' || c == '\n' || c == '\t' || c == '\r'
 
 -- | Skip whitespace characters.
 skipSpaces :: forall f m. StreamLike f Char => Monad m => ParserT f m Unit
