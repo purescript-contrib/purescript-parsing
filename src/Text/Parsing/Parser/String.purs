@@ -65,14 +65,14 @@ eof = do
 
 -- | Match the specified prefix.
 prefix :: forall f c m. StreamLike f c => Show f => Monad m => f -> ParserT f m f
-prefix str = do
+prefix p = do
   input <- gets \(ParseState input _ _) -> input
-  case stripPrefix (Prefix str) input of
+  case stripPrefix (Prefix p) input of
     Just {rest, updatePos} -> do
       modify \(ParseState _ position _) ->
         ParseState rest (updatePos position) true
-      pure str
-    _ -> fail ("Expected " <> show str)
+      pure p
+    _ -> fail ("Expected " <> show p)
 
 -- | Match any token.
 token :: forall f c m. StreamLike f c => Monad m => ParserT f m c
