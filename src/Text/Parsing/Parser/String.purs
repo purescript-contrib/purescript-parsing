@@ -5,6 +5,7 @@ module Text.Parsing.Parser.String where
 import Data.Array (many)
 import Data.Foldable (fold, elem, notElem)
 import Data.List as L
+import Data.List.Lazy as LazyL
 import Data.Monoid.Endo (Endo(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -53,6 +54,12 @@ instance listStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (L.List a) 
   uncons f = L.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
   stripPrefix (Prefix p) s = L.stripPrefix (L.Pattern p) s <#> \rest ->
+    { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
+
+instance lazyListStreamLike :: (Eq a, HasUpdatePosition a) => StreamLike (LazyL.List a) a where
+  uncons f = LazyL.uncons f <#> \({ head, tail}) ->
+    { head, tail, updatePos: (_ `updatePos` head)}
+  stripPrefix (Prefix p) s = LazyL.stripPrefix (LazyL.Pattern p) s <#> \rest ->
     { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
 -- | Match end of stream.
