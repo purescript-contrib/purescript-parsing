@@ -7,14 +7,6 @@ module Text.Parsing.Parser.Token
   , TokenParser
   , GenTokenParser
   , makeTokenParser
-  -- should these be exported?  Maybe they should go in a different module?
-  , digit
-  , hexDigit
-  , octDigit
-  , upper
-  , space
-  , letter
-  , alphaNum
   )
     where
 
@@ -24,7 +16,7 @@ import Data.List as List
 import Control.Lazy (fix)
 import Control.MonadPlus ((<|>))
 import Data.Char (fromCharCode, toCharCode)
-import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
+import Data.Char.Unicode (digitToInt, isAlpha)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
@@ -36,7 +28,8 @@ import Data.Tuple (Tuple(..))
 import Math (pow)
 import Text.Parsing.Parser (ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
-import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, prefix, match)
+import Text.Parsing.Parser.Stream (satisfy, oneOf, noneOf, prefix, match)
+import Text.Parsing.Parser.String (digit, hexDigit, octDigit, space, upper)
 import Prelude hiding (when,between)
 
 type LanguageDef = GenLanguageDef String Identity
@@ -707,7 +700,7 @@ whiteSpace' langDef@(LanguageDef languageDef)
         skipMany (simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef <?> "")
 
 simpleSpace :: forall m . Monad m => ParserT String m Unit
-simpleSpace = skipMany1 (satisfy isSpace)
+simpleSpace = skipMany1 (space)
 
 oneLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 oneLineComment (LanguageDef languageDef) =
@@ -745,32 +738,3 @@ inCommentSingle (LanguageDef languageDef) =
 -------------------------------------------------------------------------
 -- Helper functions that should maybe go in Text.Parsing.Parser.String --
 -------------------------------------------------------------------------
-
--- | Parse a digit.  Matches any char that satisfies `Data.Char.Unicode.isDigit`.
-digit :: forall m . Monad m => ParserT String m Char
-digit = satisfy isDigit <?> "digit"
-
--- | Parse a hex digit.  Matches any char that satisfies `Data.Char.Unicode.isHexDigit`.
-hexDigit :: forall m . Monad m => ParserT String m Char
-hexDigit = satisfy isHexDigit <?> "hex digit"
-
--- | Parse an octal digit.  Matches any char that satisfies `Data.Char.Unicode.isOctDigit`.
-octDigit :: forall m . Monad m => ParserT String m Char
-octDigit = satisfy isOctDigit <?> "oct digit"
-
--- | Parse an uppercase letter.  Matches any char that satisfies `Data.Char.Unicode.isUpper`.
-upper :: forall m . Monad m => ParserT String m Char
-upper = satisfy isUpper <?> "uppercase letter"
-
--- | Parse a space character.  Matches any char that satisfies `Data.Char.Unicode.isSpace`.
-space :: forall m . Monad m => ParserT String m Char
-space = satisfy isSpace <?> "space"
-
--- | Parse an alphabetical character.  Matches any char that satisfies `Data.Char.Unicode.isAlpha`.
-letter :: forall m . Monad m => ParserT String m Char
-letter = satisfy isAlpha <?> "letter"
-
--- | Parse an alphabetical or numerical character.
--- | Matches any char that satisfies `Data.Char.Unicode.isAlphaNum`.
-alphaNum :: forall m . Monad m => ParserT String m Char
-alphaNum = satisfy isAlphaNum <?> "letter or digit"

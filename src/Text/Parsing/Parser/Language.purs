@@ -12,8 +12,9 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Text.Parsing.Parser (ParserT)
-import Text.Parsing.Parser.String (match, oneOf)
-import Text.Parsing.Parser.Token (LanguageDef, TokenParser, GenLanguageDef(..), unGenLanguageDef, makeTokenParser, alphaNum, letter)
+import Text.Parsing.Parser.Stream (match, oneOf)
+import Text.Parsing.Parser.String (alphaNum, letter)
+import Text.Parsing.Parser.Token (LanguageDef, TokenParser, GenLanguageDef(..), unGenLanguageDef, makeTokenParser)
 
 -----------------------------------------------------------
 -- Styles: haskellStyle, javaStyle

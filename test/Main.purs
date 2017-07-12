@@ -16,7 +16,7 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..))
-import Text.Parsing.Parser.String (eof, prefix, match, satisfy, token, class HasUpdatePosition)
+import Text.Parsing.Parser.Stream (eof, prefix, match, satisfy, token, class HasUpdatePosition)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser)
 import Prelude hiding (between,when)
 

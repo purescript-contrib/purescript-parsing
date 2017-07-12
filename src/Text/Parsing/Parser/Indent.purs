@@ -62,7 +62,7 @@ import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (ParserT, ParseState(ParseState), fail)
 import Text.Parsing.Parser.Combinators (option, optionMaybe)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (prefix, oneOf)
+import Text.Parsing.Parser.Stream (prefix, oneOf)
 
 -- | Indentation sensitive parser type. Usually @ m @ will
 -- | be @ Identity @ as with any @ ParserT @
