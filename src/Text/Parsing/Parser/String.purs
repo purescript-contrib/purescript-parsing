@@ -15,7 +15,7 @@ import Text.Parsing.Parser.Combinators (try, (<?>))
 import Text.Parsing.Parser.Pos (Position, updatePosString, updatePosChar)
 import Prelude hiding (between)
 
--- | A newtype used in cases where there is a prefix to be stripPrefixed.
+-- | A newtype used to identify a prefix of a string
 newtype Prefix a = Prefix a
 
 derive instance eqPrefix :: Eq a => Eq (Prefix a)
