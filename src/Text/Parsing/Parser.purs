@@ -131,7 +131,7 @@ position = gets \(ParseState _ pos _) -> pos
 
 -- | Fail with a message.
 fail :: forall m s a. Monad m => String -> ParserT s m a
-fail message = throwError <<< ParseError message =<< position
+fail message = failWithPosition message =<< position
 
 -- | Fail with a message and a position.
 failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
