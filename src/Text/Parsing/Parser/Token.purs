@@ -39,7 +39,7 @@ import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons
 import Data.Tuple (Tuple(..))
 import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
-import Text.Parsing.Parser.Combinators (skipMany1, try, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
+import Text.Parsing.Parser.Combinators (skipMany1, try, tryRethrow, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
 import Prelude hiding (when,between)
@@ -57,7 +57,7 @@ token tokpos = do
 
 -- | Create a parser which matches any token satisfying the predicate.
 when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
-when tokpos f = try $ do
+when tokpos f = tryRethrow do
   a <- token tokpos
   guard $ f a
   pure a

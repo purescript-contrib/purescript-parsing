@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.String (Pattern, fromCharArray, length, singleton)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
-import Text.Parsing.Parser.Combinators (try, (<?>))
+import Text.Parsing.Parser.Combinators (tryRethrow, (<?>))
 import Text.Parsing.Parser.Pos (updatePosString)
 import Prelude hiding (between)
 
@@ -62,7 +62,7 @@ anyChar = do
 
 -- | Match a character satisfying the specified predicate.
 satisfy :: forall s m. StringLike s => Monad m => (Char -> Boolean) -> ParserT s m Char
-satisfy f = try do
+satisfy f = tryRethrow do
   c <- anyChar
   if f c then pure c
          else fail $ "Character '" <> singleton c <> "' did not satisfy predicate"

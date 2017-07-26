@@ -1,5 +1,5 @@
 module Text.Parsing.Parser
-  ( ParseError
+  ( ParseError(..)
   , parseErrorMessage
   , parseErrorPosition
   , ParseState(..)
@@ -10,7 +10,9 @@ module Text.Parsing.Parser
   , hoistParserT
   , mapParserT
   , consume
+  , position
   , fail
+  , failWithPosition
   ) where
 
 import Prelude
@@ -123,8 +125,14 @@ consume :: forall s m. Monad m => ParserT s m Unit
 consume = modify \(ParseState input position _) ->
   ParseState input position true
 
+-- | Returns the current position in the stream.
+position :: forall s m. Monad m => ParserT s m Position
+position = gets \(ParseState _ pos _) -> pos
+
 -- | Fail with a message.
 fail :: forall m s a. Monad m => String -> ParserT s m a
-fail message = do
-  position <- gets \(ParseState _ pos _) -> pos
-  throwError (ParseError message position)
+fail message = throwError <<< ParseError message =<< position
+
+-- | Fail with a message and a position.
+failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
+failWithPosition message position = throwError (ParseError message position)

@@ -419,6 +419,11 @@ main = do
     "foo"
     (Position { column: 2, line: 1 })
 
+  parseErrorTestPosition
+    (satisfy (_ == '?'))
+    "foo"
+    (Position { column: 1, line: 1 })
+
   parseTest
     "foo"
     Nil
