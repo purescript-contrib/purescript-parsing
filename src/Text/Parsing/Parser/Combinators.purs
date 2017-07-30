@@ -30,7 +30,7 @@ import Data.List (List(..), (:), many, some, singleton)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (ParseState(..), ParserT(..), fail)
+import Text.Parsing.Parser (ParseState(..), ParserT(..), ParseError(..), fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
@@ -72,6 +72,14 @@ try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ _ consumed)) -> do
   Tuple e s'@(ParseState input position _) <- runStateT (runExceptT (unwrap p)) s
   case e of
     Left _ -> pure (Tuple e (ParseState input position consumed))
+    _ -> pure (Tuple e s')
+
+-- | Like `try`, but will reannotate the error location to the `try` point.
+tryRethrow :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
+tryRethrow p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ position consumed)) -> do
+  Tuple e s'@(ParseState input' position' _) <- runStateT (runExceptT (unwrap p)) s
+  case e of
+    Left (ParseError err _) -> pure (Tuple (Left (ParseError err position)) (ParseState input' position' consumed))
     _ -> pure (Tuple e s')
 
 -- | Parse a phrase, without modifying the consumed state or stream position.

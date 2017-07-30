@@ -13,7 +13,7 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.String as S
 import Prelude hiding (between)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
-import Text.Parsing.Parser.Combinators (try, (<?>))
+import Text.Parsing.Parser.Combinators (tryRethrow, (<?>))
 import Text.Parsing.Parser.Pos (Position, updatePosString, updatePosChar)
 
 -- | A newtype used to identify a prefix of a stream
@@ -94,7 +94,7 @@ token = do
 
 -- | Match a token satisfying the specified predicate.
 satisfy :: forall s t m. Stream s m t => Show t => Monad m => (t -> Boolean) -> ParserT s m t
-satisfy f = try do
+satisfy f = tryRethrow do
   c <- token
   if f c then pure c
          else fail $ "Character " <> show c <> " did not satisfy predicate"
