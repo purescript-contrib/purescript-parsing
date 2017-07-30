@@ -97,7 +97,7 @@ satisfy :: forall s t m. Stream s m t => Show t => Monad m => (t -> Boolean) -> 
 satisfy f = tryRethrow do
   c <- token
   if f c then pure c
-         else fail $ "Character " <> show c <> " did not satisfy predicate"
+         else fail $ "Token " <> show c <> " did not satisfy predicate"
 
 -- | Match the specified token
 match :: forall s t m. Stream s m t => Eq t => Show t => Monad m => t -> ParserT s m t
