@@ -1,4 +1,4 @@
--- | Primitive parsers for working with an `StreamLike` input.
+-- | Primitive parsers for working with an `Stream` input.
 
 module Text.Parsing.Parser.Stream where
 
@@ -40,30 +40,30 @@ instance charHasUpdatePosition :: HasUpdatePosition Char where
 -- |
 -- | Instances must satisfy the following laws:
 -- | - `stripPrefix (Prefix a) a >>= uncons = Nothing`
-class StreamLike s m t | s -> t where
+class Stream s m t | s -> t where
   uncons :: s -> m (Maybe { head :: t, tail :: s, updatePos :: Position -> Position })
   stripPrefix :: Prefix s -> s -> m (Maybe {  rest :: s, updatePos :: Position -> Position })
 
-instance stringStreamLike :: (Applicative m) =>  StreamLike String m Char where
+instance stringStream :: (Applicative m) =>  Stream String m Char where
   uncons f = pure $ S.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
   stripPrefix (Prefix p) s = pure $ S.stripPrefix (S.Pattern p) s <#> \rest ->
     { rest, updatePos: (_ `updatePos` p)}
 
-instance listStreamLike :: (Applicative m, Eq a, HasUpdatePosition a) => StreamLike (L.List a) m a where
+instance listStream :: (Applicative m, Eq a, HasUpdatePosition a) => Stream (L.List a) m a where
   uncons f = pure $ L.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
   stripPrefix (Prefix p) s = pure $ L.stripPrefix (L.Pattern p) s <#> \rest ->
     { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
-instance lazyListStreamLike :: (Applicative m, Eq a, HasUpdatePosition a) => StreamLike (LazyL.List a) m a where
+instance lazyListStream :: (Applicative m, Eq a, HasUpdatePosition a) => Stream (LazyL.List a) m a where
   uncons f = pure $ LazyL.uncons f <#> \({ head, tail}) ->
     { head, tail, updatePos: (_ `updatePos` head)}
   stripPrefix (Prefix p) s = pure $ LazyL.stripPrefix (LazyL.Pattern p) s <#> \rest ->
     { rest, updatePos: unwrap (fold (p <#> (flip updatePos >>> Endo)))}
 
 -- | Match end of stream.
-eof :: forall s t m. StreamLike s m t => Monad m => ParserT s m Unit
+eof :: forall s t m. Stream s m t => Monad m => ParserT s m Unit
 eof = do
   input <- gets \(ParseState input _ _) -> input
   (lift $ uncons input) >>= case _ of
@@ -71,7 +71,7 @@ eof = do
     _ -> fail "Expected EOF"
 
 -- | Match the specified prefix.
-prefix :: forall f c m. StreamLike f m c => Show f => Monad m => f -> ParserT f m f
+prefix :: forall f c m. Stream f m c => Show f => Monad m => f -> ParserT f m f
 prefix p = do
   input <- gets \(ParseState input _ _) -> input
   (lift $ stripPrefix (Prefix p) input) >>= case _ of
@@ -82,7 +82,7 @@ prefix p = do
     _ -> fail ("Expected " <> show p)
 
 -- | Match any token.
-token :: forall s t m. StreamLike s m t => Monad m => ParserT s m t
+token :: forall s t m. Stream s m t => Monad m => ParserT s m t
 token = do
   input <- gets \(ParseState input _ _) -> input
   (lift $ uncons input) >>= case _ of
@@ -93,21 +93,21 @@ token = do
       pure head
 
 -- | Match a token satisfying the specified predicate.
-satisfy :: forall s t m. StreamLike s m t => Show t => Monad m => (t -> Boolean) -> ParserT s m t
+satisfy :: forall s t m. Stream s m t => Show t => Monad m => (t -> Boolean) -> ParserT s m t
 satisfy f = try do
   c <- token
   if f c then pure c
          else fail $ "Character " <> show c <> " did not satisfy predicate"
 
 -- | Match the specified token
-match :: forall s t m. StreamLike s m t => Eq t => Show t => Monad m => t -> ParserT s m t
+match :: forall s t m. Stream s m t => Eq t => Show t => Monad m => t -> ParserT s m t
 match c = satisfy (_ == c) <?> show c
 
 
 -- | Match one of the tokens in the array.
-oneOf :: forall s t m. StreamLike s m t => Show t => Eq t => Monad m => Array t -> ParserT s m t
+oneOf :: forall s t m. Stream s m t => Show t => Eq t => Monad m => Array t -> ParserT s m t
 oneOf ss = satisfy (flip elem ss) <?> ("one of " <> show ss)
 
 -- | Match any token not in the array.
-noneOf :: forall s t m. StreamLike s m t => Show t => Eq t => Monad m => Array t -> ParserT s m t
+noneOf :: forall s t m. Stream s m t => Show t => Eq t => Monad m => Array t -> ParserT s m t
 noneOf ss = satisfy (flip notElem ss) <?> ("none of " <> show ss)
