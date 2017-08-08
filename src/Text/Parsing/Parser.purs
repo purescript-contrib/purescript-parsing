@@ -122,8 +122,8 @@ instance monadTransParserT :: MonadTrans (ParserT s) where
 
 -- | Set the consumed flag.
 consume :: forall s m. Monad m => ParserT s m Unit
-consume = modify \(ParseState input position _) ->
-  ParseState input position true
+consume = modify \(ParseState input pos _) ->
+  ParseState input pos true
 
 -- | Returns the current position in the stream.
 position :: forall s m. Monad m => ParserT s m Position
@@ -135,4 +135,4 @@ fail message = failWithPosition message =<< position
 
 -- | Fail with a message and a position.
 failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
-failWithPosition message position = throwError (ParseError message position)
+failWithPosition message pos = throwError (ParseError message pos)
