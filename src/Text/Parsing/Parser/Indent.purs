@@ -59,7 +59,7 @@ import Control.Monad.State.Trans (get, put)
 import Control.Monad.Trans.Class (lift)
 import Data.List (List(..), many)
 import Data.Maybe (Maybe(..))
-import Text.Parsing.Parser (ParserT, ParseState(ParseState), fail)
+import Text.Parsing.Parser (ParserT, ParseState(..), fail)
 import Text.Parsing.Parser.Combinators (option, optionMaybe)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.Stream (prefix, oneOf)
@@ -71,7 +71,7 @@ type IndentParser s a = ParserT s (State Position) a
 -- | @ getPosition @ returns current position
 -- | should probably be added to Text.Parsing.Parser.Pos
 getPosition :: forall m s. (Monad m) => ParserT s m Position
-getPosition = gets \(ParseState _ pos _) -> pos
+getPosition = gets \(ParseState state) -> state.pos
 
 -- | simple helper function to avoid typ-problems with MonadState instance
 get' :: forall s. IndentParser s Position

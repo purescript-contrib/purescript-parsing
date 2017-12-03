@@ -21,16 +21,13 @@
 module Text.Parsing.Parser.Combinators where
 
 import Prelude
-import Control.Monad.Except (runExceptT, ExceptT(..))
-import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (ParseState(..), ParserT(..), ParseError(..), fail)
+import Text.Parsing.Parser (ParseState(..), ParserT, ParseError(..), unParserT, inParserT, fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
@@ -68,24 +65,28 @@ optionMaybe p = option Nothing (Just <$> p)
 
 -- | In case of failure, reset the stream to the unconsumed state.
 try :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
-try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ _ consumed)) -> do
-  Tuple e s'@(ParseState input position _) <- runStateT (runExceptT (unwrap p)) s
-  case e of
-    Left _ -> pure (Tuple e (ParseState input position consumed))
-    _ -> pure (Tuple e s')
+try p = inParserT \(ParseState state) ->
+  unParserT p (ParseState state) <#> \(Tuple e (ParseState nextState)) ->
+    case e of
+      Left _ -> Tuple e (ParseState nextState{consumed = state.consumed})
+      Right _ -> Tuple e (ParseState nextState)
 
 -- | Like `try`, but will reannotate the error location to the `try` point.
 tryRethrow :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
-tryRethrow p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ position consumed)) -> do
-  Tuple e s'@(ParseState input' position' _) <- runStateT (runExceptT (unwrap p)) s
-  case e of
-    Left (ParseError err _) -> pure (Tuple (Left (ParseError err position)) (ParseState input' position' consumed))
-    _ -> pure (Tuple e s')
+tryRethrow p = inParserT \(ParseState state) ->
+  unParserT p (ParseState state) <#> \(Tuple e (ParseState nextState)) ->
+    case e of
+      Left (ParseError err _) ->
+        Tuple
+          (Left (ParseError err state.pos))
+          (ParseState nextState{consumed = state.consumed})
+      Right _ ->
+        Tuple e (ParseState nextState)
 
 -- | Parse a phrase, without modifying the consumed state or stream position.
 lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
-lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
-  Tuple e _ <- runStateT (runExceptT (unwrap p)) s
+lookAhead p = inParserT \s -> do
+  Tuple e _ <- unParserT p s
   pure (Tuple e s)
 
 -- | Parse phrases delimited by a separator.

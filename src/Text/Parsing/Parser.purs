@@ -7,6 +7,8 @@ module Text.Parsing.Parser
   , Parser
   , runParser
   , runParserT
+  , unParserT
+  , inParserT
   , hoistParserT
   , mapParserT
   , consume
@@ -22,14 +24,14 @@ import Control.Lazy (defer, class Lazy)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.State (runStateT, class MonadState, StateT(..), gets, evalStateT, mapStateT, modify)
+import Control.Monad.State (runStateT, class MonadState, StateT(..), gets, mapStateT, modify)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype, unwrap, over)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst)
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
 -- | A parsing error, consisting of a message and position information.
@@ -49,7 +51,9 @@ derive instance eqParseError :: Eq ParseError
 derive instance ordParseError :: Ord ParseError
 
 -- | Contains the remaining input and current position.
-data ParseState s = ParseState s Position Boolean
+-- data ParseState s = ParseState s Position Boolean
+newtype ParseState s = ParseState
+  { input :: s, pos :: Position, consumed :: Boolean }
 
 -- | The Parser monad transformer.
 -- |
@@ -61,8 +65,23 @@ derive instance newtypeParserT :: Newtype (ParserT s m a) _
 
 -- | Apply a parser, keeping only the parsed result.
 runParserT :: forall m s a. Monad m => s -> ParserT s m a -> m (Either ParseError a)
-runParserT s p = evalStateT (runExceptT (unwrap p)) initialState where
-  initialState = ParseState s initialPos false
+runParserT input p = fst <$> unParserT p initialState
+  where
+  initialState = ParseState { input, pos: initialPos, consumed: false }
+
+-- Reveals inner function of parser
+unParserT :: forall m s a
+   . Monad m
+  => ParserT s m a
+  -> (ParseState s -> m (Tuple (Either ParseError a) (ParseState s)))
+unParserT (ParserT p) = runStateT $ runExceptT p
+
+-- Takes inner function of Parser and constructs one
+inParserT :: forall m s a
+   . Monad m
+  => (ParseState s -> m (Tuple (Either ParseError a) (ParseState s)))
+  -> ParserT s m a
+inParserT = ParserT <<< ExceptT <<< StateT
 
 -- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
 type Parser s = ParserT s Identity
@@ -101,12 +120,12 @@ derive newtype instance monadThrowParserT :: Monad m => MonadThrow ParseError (P
 derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (ParserT s m)
 
 instance altParserT :: Monad m => Alt (ParserT s m) where
-  alt p1 p2 = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState i p _)) -> do
-    Tuple e s'@(ParseState i' p' c') <- runStateT (runExceptT (unwrap p1)) (ParseState i p false)
-    case e of
-      Left err
-        | not c' -> runStateT (runExceptT (unwrap p2)) s
-      _ -> pure (Tuple e s')
+  alt p1 p2 = inParserT \(ParseState state) ->
+    unParserT p1 (ParseState (state{consumed = false})) >>= \(Tuple e (ParseState nextState)) ->
+      case e of
+        Left err
+          | not nextState.consumed -> unParserT p2 (ParseState state)
+        _ -> pure (Tuple e (ParseState nextState))
 
 instance plusParserT :: Monad m => Plus (ParserT s m) where
   empty = fail "No alternative"
@@ -122,12 +141,12 @@ instance monadTransParserT :: MonadTrans (ParserT s) where
 
 -- | Set the consumed flag.
 consume :: forall s m. Monad m => ParserT s m Unit
-consume = modify \(ParseState input pos _) ->
-  ParseState input pos true
+consume = modify \(ParseState state) ->
+  ParseState state{consumed = true}
 
 -- | Returns the current position in the stream.
 position :: forall s m. Monad m => ParserT s m Position
-position = gets \(ParseState _ pos _) -> pos
+position = gets \(ParseState state) -> state.pos
 
 -- | Fail with a message.
 fail :: forall m s a. Monad m => String -> ParserT s m a
