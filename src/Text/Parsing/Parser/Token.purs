@@ -383,7 +383,7 @@ makeTokenParser (LanguageDef languageDef)
         go = between (char '\'') (char '\'' <?> "end of character") characterChar
 
     characterChar :: ParserT String m Char
-    characterChar = charLetter <|> charEscape <?> "literal character"
+    characterChar = (charLetter <|> charEscape) <?> "literal character"
 
     charEscape :: ParserT String m Char
     charEscape = char '\\' *> escapeCode
@@ -405,9 +405,9 @@ makeTokenParser (LanguageDef languageDef)
 
 
     stringChar :: ParserT String m (Maybe Char)
-    stringChar = (Just <$> stringLetter)
-             <|> stringEscape
-             <?> "string character"
+    stringChar = ( (Just <$> stringLetter)
+               <|> stringEscape
+             ) <?> "string character"
 
     stringLetter :: ParserT String m Char
     stringLetter = satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\026'))
@@ -425,7 +425,7 @@ makeTokenParser (LanguageDef languageDef)
 
     -- -- escape codes
     escapeCode :: ParserT String m Char
-    escapeCode = charEsc <|> charNum <|> charAscii <|> charControl
+    escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl)
              <?> "escape code"
 
     charControl :: ParserT String m Char
@@ -567,8 +567,8 @@ makeTokenParser (LanguageDef languageDef)
 
     sign :: forall a . (Ring a) => ParserT String m (a -> a)
     sign = (char '-' $> negate)
-       <|> (char '+' $> id)
-       <|> pure id
+       <|> (char '+' $> identity)
+       <|> pure identity
 
     nat :: ParserT String m Int
     nat = zeroNumber <|> decimal
@@ -727,11 +727,11 @@ whiteSpace' langDef@(LanguageDef languageDef)
     | null languageDef.commentLine && null languageDef.commentStart =
         skipMany (simpleSpace <?> "")
     | null languageDef.commentLine =
-        skipMany (simpleSpace <|> multiLineComment langDef <?> "")
+        skipMany ((simpleSpace <|> multiLineComment langDef) <?> "")
     | null languageDef.commentStart =
-        skipMany (simpleSpace <|> oneLineComment langDef <?> "")
+        skipMany ((simpleSpace <|> oneLineComment langDef) <?> "")
     | otherwise =
-        skipMany (simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef <?> "")
+        skipMany ((simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef) <?> "")
 
 simpleSpace :: forall m . Monad m => ParserT String m Unit
 simpleSpace = skipMany1 (satisfy isSpace)
@@ -750,21 +750,21 @@ inComment langDef@(LanguageDef languageDef) =
 
 inCommentMulti :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentMulti langDef@(LanguageDef languageDef) =
-    fix \p -> ( void $ try (string languageDef.commentEnd) )
-          <|> ( multiLineComment langDef    *>  p )
-          <|> ( skipMany1 (noneOf startEnd) *> p )
-          <|> ( oneOf startEnd              *> p )
-          <?> "end of comment"
+    fix \p -> ( ( void $ try (string languageDef.commentEnd) )
+            <|> ( multiLineComment langDef    *>  p )
+            <|> ( skipMany1 (noneOf startEnd) *> p )
+            <|> ( oneOf startEnd              *> p )
+          ) <?> "end of comment"
   where
     startEnd :: Array Char
     startEnd   = toCharArray languageDef.commentEnd <> toCharArray languageDef.commentStart
 
 inCommentSingle :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentSingle (LanguageDef languageDef) =
-    fix \p -> ( void $ try (string languageDef.commentEnd) )
-          <|> ( skipMany1 (noneOf startEnd) *> p )
-          <|> ( oneOf startEnd              *> p )
-          <?> "end of comment"
+    fix \p -> ( ( void $ try (string languageDef.commentEnd) )
+            <|> ( skipMany1 (noneOf startEnd) *> p )
+            <|> ( oneOf startEnd              *> p )
+          ) <?> "end of comment"
   where
     startEnd :: Array Char
     startEnd = toCharArray languageDef.commentEnd <> toCharArray languageDef.commentStart
