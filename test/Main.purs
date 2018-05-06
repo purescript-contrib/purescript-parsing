@@ -1,16 +1,18 @@
 module Test.Main where
 
+import Prelude hiding (between,when)
+
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (logShow, CONSOLE)
 import Data.Array (some)
 import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.Maybe (Maybe(..))
 import Data.String (fromCharArray, singleton)
 import Data.Tuple (Tuple(..))
-import Test.Assert (ASSERT, assert')
+import Effect (Effect)
+import Effect.Console (logShow)
+import Test.Assert (assert')
 import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
 import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -18,7 +20,6 @@ import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
-import Prelude hiding (between,when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -28,14 +29,14 @@ nested = fix \p -> (do
   _ <- string "a"
   pure 0) <|> ((+) 1) <$> parens p
 
-parseTest :: forall s a eff. Show a => Eq a => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+parseTest :: forall s a. Show a => Eq a => s -> a -> Parser s a -> Effect Unit
 parseTest input expected p = case runParser input p of
   Right actual -> do
     assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
     logShow actual
   Left err -> assert' ("error: " <> show err) false
 
-parseErrorTestPosition :: forall s a eff. Show a => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
   Left err -> do
@@ -96,9 +97,7 @@ mkPos n = mkPos' n 1
 mkPos' :: Int -> Int -> Position
 mkPos' column line = Position { column: column, line: line }
 
-type TestM = forall eff . Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
-
-tokenParserIdentifierTest :: TestM
+tokenParserIdentifierTest :: Effect Unit
 tokenParserIdentifierTest = do
     -- parse normal identifier
     parseTest "hello" "hello" testTokenParser.identifier
@@ -131,7 +130,7 @@ tokenParserIdentifierTest = do
     parseErrorTestPosition testTokenParser.identifier "hello {-" $ mkPos 9
 
 
-tokenParserReservedTest :: TestM
+tokenParserReservedTest :: Effect Unit
 tokenParserReservedTest = do
     -- parse reserved identifier
     parseTest "forall" unit $ testTokenParser.reserved "forall"
@@ -142,7 +141,7 @@ tokenParserReservedTest = do
     -- fail on nonmatching reserved identifier
     parseErrorTestPosition (testTokenParser.reserved "forall") "forall3" $ mkPos 7
 
-tokenParserOperatorTest :: TestM
+tokenParserOperatorTest :: Effect Unit
 tokenParserOperatorTest = do
     -- parse operator
     parseTest "<>" "<>" testTokenParser.operator
@@ -154,10 +153,10 @@ tokenParserOperatorTest = do
     parseErrorTestPosition testTokenParser.operator "=" $ mkPos 2
 
 -- TODO
-tokenParserReservedOpTest :: TestM
+tokenParserReservedOpTest :: Effect Unit
 tokenParserReservedOpTest = pure unit
 
-tokenParserCharLiteralTest :: TestM
+tokenParserCharLiteralTest :: Effect Unit
 tokenParserCharLiteralTest = do
     -- parse char literal
     parseTest "'c'" 'c' testTokenParser.charLiteral
@@ -180,7 +179,7 @@ tokenParserCharLiteralTest = do
     -- parse ascii
     parseTest "'\\^I'" '\t' testTokenParser.charLiteral
 
-tokenParserStringLiteralTest :: TestM
+tokenParserStringLiteralTest :: Effect Unit
 tokenParserStringLiteralTest = do
     -- parse string char
     parseTest "\"hello\"" "hello" testTokenParser.stringLiteral
@@ -197,7 +196,7 @@ tokenParserStringLiteralTest = do
     -- parse string escape
     parseTest "\"he\\nllo\"" "he\nllo" testTokenParser.stringLiteral
 
-tokenParserNaturalTest :: TestM
+tokenParserNaturalTest :: Effect Unit
 tokenParserNaturalTest = do
     -- parse natural
     parseTest "1" 1 testTokenParser.natural
@@ -214,7 +213,7 @@ tokenParserNaturalTest = do
     -- fail on no digits
     parseErrorTestPosition testTokenParser.natural "0o" $ mkPos 3
 
-tokenParserIntegerTest :: TestM
+tokenParserIntegerTest :: Effect Unit
 tokenParserIntegerTest = do
     -- parse integer
     parseTest "100" 100 testTokenParser.integer
@@ -225,7 +224,7 @@ tokenParserIntegerTest = do
     -- parse minus
     parseTest "-      100" (-100) testTokenParser.integer
 
-tokenParserFloatTest :: TestM
+tokenParserFloatTest :: Effect Unit
 tokenParserFloatTest = do
     -- parse float
     parseTest "100.5" 100.5 testTokenParser.float
@@ -240,11 +239,11 @@ tokenParserFloatTest = do
     parseErrorTestPosition testTokenParser.float "100.e1" $ mkPos 5
 
 -- TODO
-tokenParserNaturalOrFloatTest :: TestM
+tokenParserNaturalOrFloatTest :: Effect Unit
 tokenParserNaturalOrFloatTest = do
     pure unit
 
-tokenParserDecimalTest :: TestM
+tokenParserDecimalTest :: Effect Unit
 tokenParserDecimalTest = do
     -- parse decimal
     parseTest "0202" 202 testTokenParser.decimal
@@ -253,31 +252,31 @@ tokenParserDecimalTest = do
     parseErrorTestPosition testTokenParser.decimal "foo" $ mkPos 1
 
 -- TODO
-tokenParserHexadecimalTest :: TestM
+tokenParserHexadecimalTest :: Effect Unit
 tokenParserHexadecimalTest = do
     pure unit
 
 -- TODO
-tokenParserOctalTest :: TestM
+tokenParserOctalTest :: Effect Unit
 tokenParserOctalTest = do
     pure unit
 
-tokenParserSymbolTest :: TestM
+tokenParserSymbolTest :: Effect Unit
 tokenParserSymbolTest = do
     -- parse symbol
     parseTest "hello    " "hello" $ testTokenParser.symbol "hello"
 
 -- TODO
-tokenParserLexemeTest :: TestM
+tokenParserLexemeTest :: Effect Unit
 tokenParserLexemeTest = do
     pure unit
 
 -- TODO
-tokenParserWhiteSpaceTest :: TestM
+tokenParserWhiteSpaceTest :: Effect Unit
 tokenParserWhiteSpaceTest = do
     pure unit
 
-tokenParserParensTest :: TestM
+tokenParserParensTest :: Effect Unit
 tokenParserParensTest = do
     -- parse parens
     parseTest "(hello)" "hello" $ testTokenParser.parens $ string "hello"
@@ -285,7 +284,7 @@ tokenParserParensTest = do
     -- fail on non-closed parens
     parseErrorTestPosition (testTokenParser.parens $ string "hello") "(hello" $ mkPos 7
 
-tokenParserBracesTest :: TestM
+tokenParserBracesTest :: Effect Unit
 tokenParserBracesTest = do
     -- parse braces
     parseTest "{hello}" "hello" $ testTokenParser.braces $ string "hello"
@@ -293,7 +292,7 @@ tokenParserBracesTest = do
     -- fail on non-closed braces
     parseErrorTestPosition (testTokenParser.braces $ string "hello") "{hello" $ mkPos 7
 
-tokenParserAnglesTest :: TestM
+tokenParserAnglesTest :: Effect Unit
 tokenParserAnglesTest = do
     -- parse angles
     parseTest "<hello>" "hello" $ testTokenParser.angles $ string "hello"
@@ -301,7 +300,7 @@ tokenParserAnglesTest = do
     -- fail on non-closed angles
     parseErrorTestPosition (testTokenParser.angles $ string "hello") "<hello" $ mkPos 7
 
-tokenParserBracketsTest :: TestM
+tokenParserBracketsTest :: Effect Unit
 tokenParserBracketsTest = do
     -- parse brackets
     parseTest "[hello]" "hello" $ testTokenParser.brackets $ string "hello"
@@ -309,7 +308,7 @@ tokenParserBracketsTest = do
     -- fail on non-closed brackets
     parseErrorTestPosition (testTokenParser.brackets $ string "hello") "[hello" $ mkPos 7
 
-tokenParserSemiTest :: TestM
+tokenParserSemiTest :: Effect Unit
 tokenParserSemiTest = do
     -- parse semicolon
     parseTest ";" ";" testTokenParser.semi
@@ -317,7 +316,7 @@ tokenParserSemiTest = do
     -- fail on non-semicolon
     parseErrorTestPosition testTokenParser.semi "a" $ mkPos 1
 
-tokenParserCommaTest :: TestM
+tokenParserCommaTest :: Effect Unit
 tokenParserCommaTest = do
     -- parse comma
     parseTest "," "," testTokenParser.comma
@@ -325,7 +324,7 @@ tokenParserCommaTest = do
     -- fail on non-comma
     parseErrorTestPosition testTokenParser.comma "a" $ mkPos 1
 
-tokenParserColonTest :: TestM
+tokenParserColonTest :: Effect Unit
 tokenParserColonTest = do
     -- parse colon
     parseTest ":" ":" testTokenParser.colon
@@ -333,7 +332,7 @@ tokenParserColonTest = do
     -- fail on non-colon
     parseErrorTestPosition testTokenParser.colon "a" $ mkPos 1
 
-tokenParserDotTest :: TestM
+tokenParserDotTest :: Effect Unit
 tokenParserDotTest = do
     -- parse dot
     parseTest "." "." testTokenParser.dot
@@ -341,7 +340,7 @@ tokenParserDotTest = do
     -- fail on non-dot
     parseErrorTestPosition testTokenParser.dot "a" $ mkPos 1
 
-tokenParserSemiSepTest :: TestM
+tokenParserSemiSepTest :: Effect Unit
 tokenParserSemiSepTest = do
     -- parse semi sep
     parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep $ string "foo"
@@ -353,7 +352,7 @@ tokenParserSemiSepTest = do
     parseTest "" (fromFoldable []) $ testTokenParser.semiSep $ string "foo"
     -- parseErrorTestPosition testTokenParser.operator "foo" $ mkPos 1
 
-tokenParserSemiSep1Test :: TestM
+tokenParserSemiSep1Test :: Effect Unit
 tokenParserSemiSep1Test = do
     -- parse semi sep1
     parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ string "foo"
@@ -364,7 +363,7 @@ tokenParserSemiSep1Test = do
     -- no parse on empty string
     parseErrorTestPosition (testTokenParser.semiSep1 $ string "foo") "" $ mkPos 1
 
-tokenParserCommaSepTest :: TestM
+tokenParserCommaSepTest :: Effect Unit
 tokenParserCommaSepTest = do
     -- parse comma sep
     parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep $ string "foo"
@@ -375,7 +374,7 @@ tokenParserCommaSepTest = do
     -- parse no comma sep
     parseTest "" (fromFoldable []) $ testTokenParser.commaSep $ string "foo"
 
-tokenParserCommaSep1Test :: TestM
+tokenParserCommaSep1Test :: Effect Unit
 tokenParserCommaSep1Test = do
     -- parse comma sep1
     parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ string "foo"
@@ -386,7 +385,7 @@ tokenParserCommaSep1Test = do
     -- no parse on empty string
     parseErrorTestPosition (testTokenParser.commaSep1 $ string "foo") "" $ mkPos 1
 
-haskellStyleTest :: TestM
+haskellStyleTest :: Effect Unit
 haskellStyleTest = do
     let haskellTokParser = makeTokenParser haskellStyle
 
@@ -399,7 +398,7 @@ haskellStyleTest = do
         "hello /* comment\n */ foo"
         (mkPos 7)
 
-javaStyleTest :: TestM
+javaStyleTest :: Effect Unit
 javaStyleTest = do
     let javaTokParser = makeTokenParser javaStyle
     -- make sure java-style comments work
@@ -411,7 +410,7 @@ javaStyleTest = do
         "hello {- comment\n -} foo"
         (mkPos 7)
 
-main :: forall eff . Eff (console :: CONSOLE, assert :: ASSERT |eff) Unit
+main :: Effect Unit
 main = do
 
   parseErrorTestPosition

@@ -44,11 +44,11 @@ buildExprParser operators simpleExpr = foldl makeParser simpleExpr operators
 makeParser :: forall m s a. Monad m => ParserT s m a -> Array (Operator m s a) -> ParserT s m a
 makeParser term ops = do
   x <- termP prefixP term postfixP
-  rassocP x rassocOp prefixP term postfixP
+  ( rassocP x rassocOp prefixP term postfixP
     <|> lassocP x lassocOp prefixP term postfixP
     <|> nassocP x nassocOp prefixP term postfixP
     <|> pure x
-    <?> "operator"
+  ) <?> "operator"
   where
   accum = foldr splitOp { rassoc:  Nil
                         , lassoc:  Nil
@@ -63,8 +63,8 @@ makeParser term ops = do
   prefixOp  = choice accum.prefix <?> ""
   postfixOp = choice accum.postfix <?> ""
 
-  postfixP = postfixOp <|> pure id
-  prefixP = prefixOp <|> pure id
+  postfixP = postfixOp <|> pure identity
+  prefixP = prefixOp <|> pure identity
 
 splitOp :: forall m s a. Operator m s a -> SplitAccum m s a -> SplitAccum m s a
 splitOp (Infix op AssocNone)  accum = accum { nassoc  = op : accum.nassoc }

@@ -204,16 +204,16 @@ infixl 12 indentOp as <?/>
 
 -- | Parses with surrounding brackets
 indentBrackets :: forall a. IndentParser String a -> IndentParser String a
-indentBrackets p = withPos $ pure id <-/> symbol "[" <+/> p <-/> symbol "]"
+indentBrackets p = withPos $ pure identity <-/> symbol "[" <+/> p <-/> symbol "]"
 
 -- | Parses with surrounding angle brackets
 indentAngles :: forall a. IndentParser String a -> IndentParser String a
-indentAngles p = withPos $ pure id <-/> symbol "<" <+/> p <-/> symbol ">"
+indentAngles p = withPos $ pure identity <-/> symbol "<" <+/> p <-/> symbol ">"
 
 -- | Parses with surrounding braces
 indentBraces :: forall a. IndentParser String a -> IndentParser String a
-indentBraces p = withPos $ pure id <-/> symbol "{" <+/> p <-/> symbol "}"
+indentBraces p = withPos $ pure identity <-/> symbol "{" <+/> p <-/> symbol "}"
 
 -- | Parses with surrounding parentheses
 indentParens :: forall a. IndentParser String a -> IndentParser String a
-indentParens p = withPos $ pure id <-/> symbol "(" <+/> p <-/> symbol ")"
+indentParens p = withPos $ pure identity <-/> symbol "(" <+/> p <-/> symbol ")"
