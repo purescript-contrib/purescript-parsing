@@ -2,17 +2,19 @@
 
 module Text.Parsing.Parser.String where
 
-import Data.String as S
-import Control.Monad.State (modify, gets)
+import Prelude hiding (between)
+
+import Control.Monad.State (gets, modify_)
 import Data.Array (many)
 import Data.Foldable (elem, notElem)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
-import Data.String (Pattern, fromCharArray, length, singleton)
+import Data.String (Pattern, length)
+import Data.String as S
+import Data.String.CodeUnits as SCU
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (tryRethrow, (<?>))
 import Text.Parsing.Parser.Pos (updatePosString)
-import Prelude hiding (between)
 
 -- | This class exists to abstract over streams which support the string-like
 -- | operations which this modules needs.
@@ -23,7 +25,7 @@ class StringLike s where
   uncons :: s -> Maybe { head :: Char, tail :: s }
 
 instance stringLikeString :: StringLike String where
-  uncons = S.uncons
+  uncons = SCU.uncons
   drop = S.drop
   indexOf = S.indexOf
   null = S.null
@@ -40,7 +42,7 @@ string str = do
   input <- gets \(ParseState input _ _) -> input
   case indexOf (wrap str) input of
     Just 0 -> do
-      modify \(ParseState _ position _) ->
+      modify_ \(ParseState _ position _) ->
         ParseState (drop (length str) input)
                    (updatePosString position str)
                    true
@@ -54,9 +56,9 @@ anyChar = do
   case uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
-      modify \(ParseState _ position _) ->
+      modify_ \(ParseState _ position _) ->
         ParseState tail
-                   (updatePosString position (singleton head))
+                   (updatePosString position (SCU.singleton head))
                    true
       pure head
 
@@ -65,7 +67,7 @@ satisfy :: forall s m. StringLike s => Monad m => (Char -> Boolean) -> ParserT s
 satisfy f = tryRethrow do
   c <- anyChar
   if f c then pure c
-         else fail $ "Character '" <> singleton c <> "' did not satisfy predicate"
+         else fail $ "Character '" <> SCU.singleton c <> "' did not satisfy predicate"
 
 -- | Match the specified character
 char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char
@@ -75,7 +77,7 @@ char c = satisfy (_ == c) <?> show c
 whiteSpace :: forall s m. StringLike s => Monad m => ParserT s m String
 whiteSpace = do
   cs <- many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
-  pure $ fromCharArray cs
+  pure $ SCU.fromCharArray cs
 
 -- | Skip whitespace characters.
 skipSpaces :: forall s m. StringLike s => Monad m => ParserT s m Unit

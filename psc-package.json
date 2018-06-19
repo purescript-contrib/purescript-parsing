@@ -1,0 +1,19 @@
+{
+  "name": "purescript-parsing",
+  "set": "psc-0.12.0",
+  "source": "https://github.com/purescript/package-sets.git",
+  "depends": [
+    "arrays",
+    "either",
+    "foldable-traversable",
+    "identity",
+    "integers",
+    "lists",
+    "maybe",
+    "prelude",
+    "psci-support",
+    "strings",
+    "transformers",
+    "unicode"
+  ]
+}

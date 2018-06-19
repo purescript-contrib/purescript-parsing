@@ -21,28 +21,30 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Data.Array as Array
-import Data.Char.Unicode as Unicode
-import Data.List as List
+import Prelude hiding (when,between)
+
 import Control.Lazy (fix)
-import Control.Monad.State (modify, gets)
+import Control.Monad.State (gets, modify_)
 import Control.MonadPlus (guard, (<|>))
+import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
 import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
+import Data.Char.Unicode as Unicode
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
 import Data.Int (toNumber)
 import Data.List (List(..))
+import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
-import Data.String (toCharArray, null, toLower, fromCharArray, singleton, uncons)
+import Data.String (null, toLower)
+import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..))
 import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, tryRethrow, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
-import Prelude hiding (when,between)
 
 -- | Create a parser which Returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
@@ -51,7 +53,7 @@ token tokpos = do
   case List.uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
-      modify \(ParseState _ position _) ->
+      modify_ \(ParseState _ position _) ->
         ParseState tail (tokpos head) true
       pure head
 
@@ -397,7 +399,7 @@ makeTokenParser (LanguageDef languageDef)
         go :: ParserT String m String
         go = do
             maybeChars <- between (char '"') (char '"' <?> "end of string") (List.many stringChar)
-            pure $ fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
+            pure $ SCU.fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
 
         folder :: Maybe Char -> List Char -> List Char
         folder Nothing chars = chars
@@ -432,7 +434,9 @@ makeTokenParser (LanguageDef languageDef)
     charControl = do
         _ <- char '^'
         code <- upper
-        pure <<< fromCharCode $ toCharCode code - toCharCode 'A' + 1
+        case fromCharCode (toCharCode code - toCharCode 'A' + 1) of
+            Just c -> pure c
+            Nothing -> fail "invalid character code (should not happen)"
 
     charNum :: ParserT String m Char
     charNum = do
@@ -441,7 +445,9 @@ makeTokenParser (LanguageDef languageDef)
            <|> ( char 'x' *> number 16 hexDigit )
         if code > 0x10FFFF
            then fail "invalid escape sequence"
-           else pure $ fromCharCode code
+           else case fromCharCode code of
+                    Just c -> pure c
+                    Nothing -> fail "invalid character code (should not happen)"
 
     charEsc :: ParserT String m Char
     charEsc = choice (map parseEsc escMap)
@@ -567,8 +573,8 @@ makeTokenParser (LanguageDef languageDef)
 
     sign :: forall a . (Ring a) => ParserT String m (a -> a)
     sign = (char '-' $> negate)
-       <|> (char '+' $> id)
-       <|> pure id
+       <|> (char '+' $> identity)
+       <|> pure identity
 
     nat :: ParserT String m Int
     nat = zeroNumber <|> decimal
@@ -624,7 +630,7 @@ makeTokenParser (LanguageDef languageDef)
         go = do
             c <- languageDef.opStart
             cs <- Array.many languageDef.opLetter
-            pure $ singleton c <> fromCharArray cs
+            pure $ SCU.singleton c <> SCU.fromCharArray cs
 
     isReservedOp :: String -> Boolean
     isReservedOp name = isReserved (Array.sort languageDef.reservedOpNames) name
@@ -645,7 +651,7 @@ makeTokenParser (LanguageDef languageDef)
                     | otherwise                 = walk name $> name
       where
         walk :: String -> ParserT String m Unit
-        walk name' = case uncons name' of
+        walk name' = case SCU.uncons name' of
                         Nothing -> pure unit
                         Just { head: c, tail: cs } -> (caseChar c <?> msg) *> walk cs
 
@@ -675,7 +681,7 @@ makeTokenParser (LanguageDef languageDef)
         go = do
             c <- languageDef.identStart
             cs <- Array.many languageDef.identLetter
-            pure $ singleton c <> fromCharArray cs
+            pure $ SCU.singleton c <> SCU.fromCharArray cs
 
 
     -----------------------------------------------------------
@@ -757,7 +763,7 @@ inCommentMulti langDef@(LanguageDef languageDef) =
           <?> "end of comment"
   where
     startEnd :: Array Char
-    startEnd   = toCharArray languageDef.commentEnd <> toCharArray languageDef.commentStart
+    startEnd   = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
 
 inCommentSingle :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentSingle (LanguageDef languageDef) =
@@ -767,7 +773,7 @@ inCommentSingle (LanguageDef languageDef) =
           <?> "end of comment"
   where
     startEnd :: Array Char
-    startEnd = toCharArray languageDef.commentEnd <> toCharArray languageDef.commentStart
+    startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
 
 -------------------------------------------------------------------------
 -- Helper functions that should maybe go in Text.Parsing.Parser.String --

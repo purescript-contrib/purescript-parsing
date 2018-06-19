@@ -1,16 +1,18 @@
 module Test.Main where
 
+import Prelude hiding (between,when)
+
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (logShow, CONSOLE)
 import Data.Array (some)
 import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.Maybe (Maybe(..))
-import Data.String (fromCharArray, singleton)
+import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.Tuple (Tuple(..))
-import Test.Assert (ASSERT, assert')
+import Effect (Effect)
+import Effect.Console (logShow)
+import Test.Assert (assert')
 import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
 import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -18,7 +20,6 @@ import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
-import Prelude hiding (between,when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -28,14 +29,14 @@ nested = fix \p -> (do
   _ <- string "a"
   pure 0) <|> ((+) 1) <$> parens p
 
-parseTest :: forall s a eff. Show a => Eq a => s -> a -> Parser s a -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+parseTest :: forall s a. Show a => Eq a => s -> a -> Parser s a -> Effect Unit
 parseTest input expected p = case runParser input p of
   Right actual -> do
     assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
     logShow actual
   Left err -> assert' ("error: " <> show err) false
 
-parseErrorTestPosition :: forall s a eff. Show a => Parser s a -> s -> Position -> Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
   Left err -> do
@@ -96,7 +97,7 @@ mkPos n = mkPos' n 1
 mkPos' :: Int -> Int -> Position
 mkPos' column line = Position { column: column, line: line }
 
-type TestM = forall eff . Eff (console :: CONSOLE, assert :: ASSERT | eff) Unit
+type TestM = Effect Unit
 
 tokenParserIdentifierTest :: TestM
 tokenParserIdentifierTest = do
@@ -411,7 +412,7 @@ javaStyleTest = do
         "hello {- comment\n -} foo"
         (mkPos 7)
 
-main :: forall eff . Eff (console :: CONSOLE, assert :: ASSERT |eff) Unit
+main :: Effect Unit
 main = do
 
   parseErrorTestPosition

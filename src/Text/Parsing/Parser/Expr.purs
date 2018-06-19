@@ -63,8 +63,8 @@ makeParser term ops = do
   prefixOp  = choice accum.prefix <?> ""
   postfixOp = choice accum.postfix <?> ""
 
-  postfixP = postfixOp <|> pure id
-  prefixP = prefixOp <|> pure id
+  postfixP = postfixOp <|> pure identity
+  prefixP = prefixOp <|> pure identity
 
 splitOp :: forall m s a. Operator m s a -> SplitAccum m s a -> SplitAccum m s a
 splitOp (Infix op AssocNone)  accum = accum { nassoc  = op : accum.nassoc }

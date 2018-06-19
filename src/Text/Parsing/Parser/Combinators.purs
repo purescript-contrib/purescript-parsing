@@ -36,13 +36,13 @@ import Text.Parsing.Parser (ParseState(..), ParserT(..), ParseError(..), fail)
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
 withErrorMessage p msg = p <|> fail ("Expected " <> msg)
 
-infix 3 withErrorMessage as <?>
+infixl 3 withErrorMessage as <?>
 
 -- | Flipped `(<?>)`.
 asErrorMessage :: forall m s a. Monad m => String -> ParserT s m a -> ParserT s m a
 asErrorMessage = flip (<?>)
 
-infix 3 asErrorMessage as <??>
+infixl 3 asErrorMessage as <??>
 
 -- | Wrap a parser with opening and closing markers.
 -- |

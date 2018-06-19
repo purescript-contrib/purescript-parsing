@@ -16,18 +16,18 @@ module Text.Parsing.Parser
   ) where
 
 import Prelude
+
 import Control.Alt (class Alt)
 import Control.Apply (lift2)
 import Control.Lazy (defer, class Lazy)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.State (runStateT, class MonadState, StateT(..), gets, evalStateT, mapStateT, modify)
+import Control.Monad.State (class MonadState, StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
-import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype, unwrap, over)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
@@ -122,7 +122,7 @@ instance monadTransParserT :: MonadTrans (ParserT s) where
 
 -- | Set the consumed flag.
 consume :: forall s m. Monad m => ParserT s m Unit
-consume = modify \(ParseState input pos _) ->
+consume = modify_ \(ParseState input pos _) ->
   ParseState input pos true
 
 -- | Returns the current position in the stream.
