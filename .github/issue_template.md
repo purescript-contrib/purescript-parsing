@@ -1,6 +1,6 @@
 ## Pre-check
 
-* For help and support, try the [PureScript user forum](https://purescript-users.ml) or the [functional programming Slack](https://functionalprogramming.slack.com) before opening an issue in the repository.
+* For help and support, try the [PureScript user forum](https://discourse.purescript.org) or the [functional programming Slack](https://functionalprogramming.slack.com) before opening an issue in the repository.
 * For bug reports, do a quick search to ensure the bug has not yet been reported.
 * For new feature requests, please remember to describe the feature you would like to see, why you need it, and how it might be implemented.
 * Finally -- be nice and have fun!
