@@ -14,7 +14,7 @@ Following these guidelines helps ensure we're able to carefully consider your co
 * Update documentation and tutorials to be easier to understand, more comprehensive, and above all -- up to date!
 
 ### Contributions we should discuss
-Some contributions will take some discussion before we accept an update to the project. If your contribution includes one of the below examples (or seems to be reasonably similar), please consider reaching out to us before putting in a lot of work to build the feature. We're active on the [PureScript user forum](https://purescript-users.ml) and the [functional programming Slack](https://functionalprogramming.slack.com/) community (new? [use this link to join](https://fpchat-invite.herokuapp.com/)!). For feature requests, feel free to open an issue with a tag.
+Some contributions will take some discussion before we accept an update to the project. If your contribution includes one of the below examples (or seems to be reasonably similar), please consider reaching out to us before putting in a lot of work to build the feature. We're active on the [PureScript user forum](https://discourse.purescript.org) and the [functional programming Slack](https://functionalprogramming.slack.com/) community (new? [use this link to join](https://fpchat-invite.herokuapp.com/)!). For feature requests, feel free to open an issue with a tag.
 
 * New features and functions that will change the library's public API
 * New tutorials (while we love seeing new tutorials, we won't always be able to feature them in the readme)
@@ -28,7 +28,7 @@ We have a small set of quality-of-life guidelines for contributing to `purescrip
 * If possible, please avoid requiring new dependencies.
 
 ### Filing issues
-If you have a general question about the project, it's best to ask on the [PureScript user forum](https://purescript-users.ml) or the [functional programming Slack](https://functionalprogramming.slack.com/) than to open a new issue. If you have run into a bug in the project, then please do open an issue! When you do, we ask that you follow a few steps which are outlined in our issues template. The gist of it is here:
+If you have a general question about the project, it's best to ask on the [PureScript user forum](https://discourse.purescript.org) or the [functional programming Slack](https://functionalprogramming.slack.com/) than to open a new issue. If you have run into a bug in the project, then please do open an issue! When you do, we ask that you follow a few steps which are outlined in our issues template. The gist of it is here:
 
 * Verify the problem is indeed with `purescript-parsing` (not with Pulp, Bower, or PureScript);
 * Record what versions you are using for PureScript and `purescript-parsing`
