@@ -73,7 +73,7 @@ satisfy f = tryRethrow do
 char :: forall s m. StringLike s => Monad m => Char -> ParserT s m Char
 char c = satisfy (_ == c) <?> show c
 
--- | Match a whitespace character.
+-- | Match zero or more whitespace characters.
 whiteSpace :: forall s m. StringLike s => Monad m => ParserT s m String
 whiteSpace = do
   cs <- many $ satisfy \c -> c == '\n' || c == '\r' || c == ' ' || c == '\t'
