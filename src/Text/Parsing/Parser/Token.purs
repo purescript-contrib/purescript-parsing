@@ -71,7 +71,7 @@ match tokpos tok = when tokpos (_ == tok)
 type LanguageDef = GenLanguageDef String Identity
 
 -- | The `GenLanguageDef` type is a record that contains all parameterizable
--- | features of the "Text.Parsec.Token" module. The module `Text.Parsec.Languager`
+-- | features of the "Text.Parsec.Token" module. The module `Text.Parsec.Language`
 -- | contains some default definitions.
 newtype GenLanguageDef s m
     = LanguageDef {
