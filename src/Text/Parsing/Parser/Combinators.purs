@@ -12,7 +12,7 @@
 -- | ```
 -- |
 -- | Because Strings are not Char Arrays in PureScript `many` and `some` on Char Parsers need to
--- | be used in conjunction with `Data.String.fromCharArray` to achieve "Parsec-like" results.
+-- | be used in conjunction with `Data.String.CodeUnits.fromCharArray` to achieve "Parsec-like" results.
 -- |
 -- | ```purescript
 -- | Text.Parsec.many  (char 'x') <=> fromCharArray <$> Data.Array.many (char 'x')
