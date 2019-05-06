@@ -391,7 +391,7 @@ makeTokenParser (LanguageDef languageDef)
     charEscape = char '\\' *> escapeCode
 
     charLetter :: ParserT String m Char
-    charLetter = satisfy \c -> (c /= '\'') && (c /= '\\') && (c > '\026')
+    charLetter = satisfy \c -> (c /= '\'') && (c /= '\\') && (c > '\x1A')
 
     stringLiteral :: ParserT String m String
     stringLiteral = lexeme (go <?> "literal string")
@@ -412,7 +412,7 @@ makeTokenParser (LanguageDef languageDef)
              <?> "string character"
 
     stringLetter :: ParserT String m Char
-    stringLetter = satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\026'))
+    stringLetter = satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\x1A'))
 
     stringEscape :: ParserT String m (Maybe Char)
     stringEscape = do
@@ -463,8 +463,8 @@ makeTokenParser (LanguageDef languageDef)
 
     -- escape code tables
     escMap :: Array (Tuple Char Char)
-    escMap = Array.zip [  'a',  'b',  'f',  'n',  'r',  't',  'v', '\\', '\"', '\'' ]
-                       [ '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\\', '\"', '\'' ]
+    escMap = Array.zip [   'a',   'b',   'f',  'n',  'r',  't',   'v', '\\', '\"', '\'' ]
+                       [ '\x7', '\x8', '\xC', '\n', '\r', '\t', '\xB', '\\', '\"', '\'' ]
 
     asciiMap :: Array (Tuple String Char)
     asciiMap = Array.zip (ascii3codes <> ascii2codes) (ascii3 <> ascii2)
@@ -479,14 +479,14 @@ makeTokenParser (LanguageDef languageDef)
                   ]
 
     ascii2 :: Array Char
-    ascii2 = [ '\BS', '\HT', '\LF', '\VT', '\FF', '\CR', '\SO', '\SI'
-             , '\EM', '\FS', '\GS', '\RS', '\US', '\SP'
+    ascii2 = [  '\x8',  '\x9',  '\xA',  '\xB',  '\xC',  '\xD', '\xE', '\xF'
+             , '\x19', '\x1C', '\x1D', '\x1E', '\x1F', '\x20'
              ]
 
     ascii3 :: Array Char
-    ascii3 = [ '\NUL', '\SOH', '\STX', '\ETX', '\EOT', '\ENQ', '\ACK'
-             , '\BEL', '\DLE', '\DC1', '\DC2', '\DC3', '\DC4', '\NAK'
-             , '\SYN', '\ETB', '\CAN', '\SUB', '\ESC', '\DEL'
+    ascii3 = [  '\x0',  '\x1',  '\x2',  '\x3',  '\x4',  '\x5',  '\x6'
+             ,  '\x7', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15'
+             , '\x16', '\x17', '\x18', '\x1A', '\x1B', '\x7F'
              ]
 
     -----------------------------------------------------------
