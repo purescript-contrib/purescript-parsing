@@ -17,6 +17,9 @@
 -- | ```purescript
 -- | Text.Parsec.many  (char 'x') <=> fromCharArray <$> Data.Array.many (char 'x')
 -- | ```
+-- |
+-- | Note that `Data.(Array|List).(many|some)` are not stack safe. If you need to parse
+-- | large numbers of items then consider using `Data.List.(manyRec|someRec)` instead.
 
 module Text.Parsing.Parser.Combinators where
 
