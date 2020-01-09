@@ -9,6 +9,7 @@ module Text.Parsing.Parser
   , runParserT
   , hoistParserT
   , mapParserT
+  , setConsumed
   , consume
   , position
   , fail
@@ -23,11 +24,14 @@ import Control.Lazy (defer, class Lazy)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.Monad.State (class MonadState, StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
+import Control.Monad.State (class MonadState, StateT(..), evalStateT, get, gets, put, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
+import Data.Compactable (class Compactable)
 import Data.Either (Either(..))
+import Data.Filterable (class Filterable)
 import Data.Identity (Identity)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, over)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
@@ -120,10 +124,73 @@ instance monadPlusParserT :: Monad m => MonadPlus (ParserT s m)
 instance monadTransParserT :: MonadTrans (ParserT s) where
   lift = ParserT <<< lift <<< lift
 
+instance compactableParserT :: Monad m => Compactable (ParserT s m) where
+  compact p1 = do
+    state <- get
+    p1 >>= case _ of
+      Just r -> pure r
+      Nothing -> put state *> fail "Parse returned Nothing"
+  separate p1 =
+    { left: do
+      state <- get
+      p1 >>= case _ of
+        Left r -> pure r
+        Right r -> put state *> fail "Parse returned Right"
+    , right: do
+      state <- get
+      p1 >>= case _ of
+        Left r -> put state *> fail "Parse returned Left"
+        Right r -> pure r
+    }
+
+instance filterableParserT :: Monad m => Filterable (ParserT s m) where
+  partitionMap pred p1 =
+    { left: do
+      state <- get
+      p1 <#> pred >>= case _ of
+        Left r -> pure r
+        Right r -> put state *> fail "Predicate returned Right"
+    , right: do
+      state <- get
+      p1 <#> pred >>= case _ of
+        Left r -> put state *> fail "Predicate returned Left"
+        Right r -> pure r
+    }
+  partition pred p1 =
+    { yes: do
+      state <- get
+      r <- p1
+      case pred r of
+        true -> pure r
+        false -> put state *> fail "Result did not satisfy predicate"
+    , no: do
+      state <- get
+      r <- p1
+      case pred r of
+        true -> put state *> fail "Result unexpectedly satisfied predicate"
+        false -> pure r
+    }
+  filterMap pred p1 = do
+    state <- get
+    p1 <#> pred >>= case _ of
+      Just r -> pure r
+      Nothing -> put state *> fail "Predicate returned Nothing"
+  filter pred p1 = do
+    state <- get
+    r <- p1
+    case pred r of
+      true -> pure r
+      false -> put state *> fail "Result did not satisfy predicate"
+
+
+-- | Set or unset the consumed flag.
+setConsumed :: forall s m. Monad m => Boolean -> ParserT s m Unit
+setConsumed bool = modify_ \(ParseState input pos _) ->
+  ParseState input pos bool
+
 -- | Set the consumed flag.
 consume :: forall s m. Monad m => ParserT s m Unit
-consume = modify_ \(ParseState input pos _) ->
-  ParseState input pos true
+consume = setConsumed true
 
 -- | Returns the current position in the stream.
 position :: forall s m. Monad m => ParserT s m Position

@@ -22,6 +22,7 @@
   "dependencies": {
     "purescript-arrays": "^5.0.0",
     "purescript-either": "^4.0.0",
+    "purescript-filterable": "^3.0.2",
     "purescript-foldable-traversable": "^4.0.0",
     "purescript-identity": "^4.0.0",
     "purescript-integers": "^4.0.0",
