@@ -11,6 +11,7 @@ module Text.Parsing.Parser
   , mapParserT
   , setConsumed
   , consume
+  , unconsume
   , position
   , fail
   , failWithPosition
@@ -191,6 +192,9 @@ setConsumed bool = modify_ \(ParseState input pos _) ->
 -- | Set the consumed flag.
 consume :: forall s m. Monad m => ParserT s m Unit
 consume = setConsumed true
+
+unconsume :: forall s m. Monad m => ParserT s m Unit
+unconsume = setConsumed false
 
 -- | Returns the current position in the stream.
 position :: forall s m. Monad m => ParserT s m Position
