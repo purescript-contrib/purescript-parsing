@@ -193,6 +193,7 @@ setConsumed bool = modify_ \(ParseState input pos _) ->
 consume :: forall s m. Monad m => ParserT s m Unit
 consume = setConsumed true
 
+-- | Unset the consumed flag.
 unconsume :: forall s m. Monad m => ParserT s m Unit
 unconsume = setConsumed false
 
