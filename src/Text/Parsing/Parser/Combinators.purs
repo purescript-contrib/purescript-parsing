@@ -28,6 +28,7 @@ import Control.Monad.Except (runExceptT, ExceptT(..))
 import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
+import Data.Filterable (filterMap, partitionMap)
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), (:), many, some, singleton)
 import Data.Maybe (Maybe(..))
@@ -198,3 +199,25 @@ many1Till p end = do
   x <- p
   xs <- manyTill p end
   pure (x:xs)
+
+-- | Parse a phrase, and if it succeeds, run the mapping function over it. If
+-- | the provided parser fails, it will fail normally. If the mapping function
+-- | returns Nothing, the parser will fail with the provided error message.
+filterMapWithError
+  :: forall s a m b
+   . Monad m
+  => (a -> Maybe b) -> String -> ParserT s m a -> ParserT s m b
+filterMapWithError mapper error p =
+  lookAhead p >>= do pure >>> filterMap mapper >>> (_ <|> fail error)
+
+-- | Same as `filterMapWithError`, but instead of providing a string to error
+-- | with, the mapper should return an Either, which is a Right containing the
+-- | new result, or a Left containing the error message.
+filterMapEither
+  :: forall s a m b
+   . Monad m
+  => (a -> Either String b) -> ParserT s m a -> ParserT s m b
+filterMapEither mapper p = lookAhead p >>= do
+  pure
+    >>> partitionMap mapper
+    >>> \{left, right} -> right <|> (left >>= fail)

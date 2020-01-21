@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
 import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
-import Text.Parsing.Parser.Combinators (endBy1, sepBy1, sepBy, optionMaybe, try, chainl, between)
+import Text.Parsing.Parser.Combinators (endBy1, sepBy1, sepBy, optionMaybe, try, chainl, between, filterMapWithError, filterMapEither)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
@@ -446,6 +446,20 @@ filterableTest = do
   -- when run after another parser with *>, correct error position is given
   (\p -> parseErrorTestPosition p "12" (mkPos 2))
     $ digit *> (_.yes <<< partition (_ == 3)) digit
+
+  -- filterMapWithError using Just as the mapper will act just like the original parser
+  parseTest "6" 6
+    $ filterMapWithError Just "shouldn't fail" digit
+
+  -- filterMapEither using Right as the mapper will act just like the original parser
+  parseTest "6" 6
+    $ filterMapEither Right digit
+
+  -- when run after another parser with *>, correct error position is given
+  (\p -> parseErrorTestPosition p "12" (mkPos 2))
+    $ digit *> filterMapEither
+                 (\n -> if n == 2 then Left "error" else Right n)
+                 digit
 
 main :: Effect Unit
 main = do
