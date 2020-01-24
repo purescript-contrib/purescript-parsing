@@ -406,6 +406,9 @@ javaStyleTest = do
     -- make sure java-style comments work
     parseTest "hello /* comment\n */ fo_" "fo_" $ javaTokParser.identifier *> javaTokParser.identifier
 
+    -- make sure java-style identifier work
+    parseTest "$hello /* comment\n */ _f$o_" "_f$o_" $ javaTokParser.identifier *> javaTokParser.identifier
+
     -- make sure haskell-style comments do not work
     parseErrorTestPosition
         (javaTokParser.identifier *> javaTokParser.identifier)
