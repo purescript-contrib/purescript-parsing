@@ -133,43 +133,43 @@ instance compactableParserT :: Monad m => Compactable (ParserT s m) where
       Nothing -> put state *> fail "Parse returned Nothing"
   separate p1 =
     { left: do
-      state <- get
-      p1 >>= case _ of
-        Left r -> pure r
-        Right r -> put state *> fail "Parse returned Right"
+        state <- get
+        p1 >>= case _ of
+          Left r -> pure r
+          Right r -> put state *> fail "Parse returned Right"
     , right: do
-      state <- get
-      p1 >>= case _ of
-        Left r -> put state *> fail "Parse returned Left"
-        Right r -> pure r
+        state <- get
+        p1 >>= case _ of
+          Left r -> put state *> fail "Parse returned Left"
+          Right r -> pure r
     }
 
 instance filterableParserT :: Monad m => Filterable (ParserT s m) where
   partitionMap pred p1 =
     { left: do
-      state <- get
-      p1 <#> pred >>= case _ of
-        Left r -> pure r
-        Right r -> put state *> fail "Predicate returned Right"
+        state <- get
+        p1 <#> pred >>= case _ of
+          Left r -> pure r
+          Right r -> put state *> fail "Predicate returned Right"
     , right: do
-      state <- get
-      p1 <#> pred >>= case _ of
-        Left r -> put state *> fail "Predicate returned Left"
-        Right r -> pure r
+        state <- get
+        p1 <#> pred >>= case _ of
+          Left r -> put state *> fail "Predicate returned Left"
+          Right r -> pure r
     }
   partition pred p1 =
     { yes: do
-      state <- get
-      r <- p1
-      case pred r of
-        true -> pure r
-        false -> put state *> fail "Result did not satisfy predicate"
+        state <- get
+        r <- p1
+        case pred r of
+          true -> pure r
+          false -> put state *> fail "Result did not satisfy predicate"
     , no: do
-      state <- get
-      r <- p1
-      case pred r of
-        true -> put state *> fail "Result unexpectedly satisfied predicate"
-        false -> pure r
+        state <- get
+        r <- p1
+        case pred r of
+          true -> put state *> fail "Result unexpectedly satisfied predicate"
+          false -> pure r
     }
   filterMap pred p1 = do
     state <- get
