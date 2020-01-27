@@ -136,11 +136,11 @@ instance compactableParserT :: Monad m => Compactable (ParserT s m) where
         state <- get
         p1 >>= case _ of
           Left r -> pure r
-          Right r -> put state *> fail "Parse returned Right"
+          Right _ -> put state *> fail "Parse returned Right"
     , right: do
         state <- get
         p1 >>= case _ of
-          Left r -> put state *> fail "Parse returned Left"
+          Left _ -> put state *> fail "Parse returned Left"
           Right r -> pure r
     }
 
@@ -150,11 +150,11 @@ instance filterableParserT :: Monad m => Filterable (ParserT s m) where
         state <- get
         p1 <#> pred >>= case _ of
           Left r -> pure r
-          Right r -> put state *> fail "Predicate returned Right"
+          Right _ -> put state *> fail "Predicate returned Right"
     , right: do
         state <- get
         p1 <#> pred >>= case _ of
-          Left r -> put state *> fail "Predicate returned Left"
+          Left _ -> put state *> fail "Predicate returned Left"
           Right r -> pure r
     }
   partition pred p1 =
