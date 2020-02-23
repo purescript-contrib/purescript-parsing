@@ -9,17 +9,25 @@ import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (fromCharArray, singleton)
+import Data.Traversable(for_)
 import Data.Tuple (Tuple(..))
+import Data.UInt (fromInt)
 import Effect (Effect)
 import Effect.Console (logShow)
+import Control.Monad.Trans.Class (lift)
 import Test.Assert (assert')
-import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
-import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
+import Text.Parsing.Parser (Parser, ParserT, runParser, runParserT, parseErrorPosition, fail)
+import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between, manyTill)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
+import Data.ArrayBuffer.ArrayBuffer (empty) as AB
+import Data.ArrayBuffer.DataView (setInt8, whole, Endian(LE,BE), AProxy(..)) as AB
+import Text.Parsing.Parser.DataView as DV
+import Data.ArrayBuffer.Typed (at, toArray) as TA
+import Data.ArrayBuffer.Types (Int16, Int32) as AB
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -36,6 +44,15 @@ parseTest input expected p = case runParser input p of
     logShow actual
   Left err -> assert' ("error: " <> show err) false
 
+parseTestT :: forall s a. Show a => Eq a => s -> a -> ParserT s Effect a -> Effect Unit
+parseTestT input expected p = do
+  result <- runParserT input p
+  case result of
+    Right actual -> do
+      assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
+      logShow actual
+    Left err -> assert' ("error: " <> show err) false
+
 parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right _ -> assert' "error: ParseError expected!" false
@@ -43,6 +60,13 @@ parseErrorTestPosition p input expected = case runParser input p of
     let pos = parseErrorPosition err
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
     logShow expected
+
+parseFailTestT :: forall s a. s -> ParserT s Effect a -> Effect Unit
+parseFailTestT input p = do
+  result <- runParserT input p
+  case result of
+    Right _ -> assert' "error: ParseError expected!" false
+    Left err -> logShow $ show err
 
 opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
@@ -446,6 +470,7 @@ main = do
   parseTest "a+b+c" "abc" opTest
   parseTest "1*2+3/4-5" (-3) exprTest
   parseTest "ab?" "ab" manySatisfyTest
+  parseTest "aaab" (fromFoldable ['a','a','a']) $ manyTill (char 'a') (char 'b')
 
   let tokpos = const initialPos
   parseTest (fromFoldable [A, B]) A (token tokpos)
@@ -496,3 +521,74 @@ main = do
 
   haskellStyleTest
   javaStyleTest
+
+  ab <- AB.empty 5
+  let dv = AB.whole ab
+  for_ [0,1,2,3,4] $ \i -> AB.setInt8 dv i (i+5)
+  parseTestT dv 5 DV.anyInt8
+  parseTestT dv (fromFoldable [5,6,7,8,9]) $ manyTill DV.anyInt8 DV.eof
+  parseTestT dv (fromFoldable [5,6,7,8]) $ manyTill DV.anyInt8 (DV.satisfyInt8 (_ == 9))
+  parseTestT dv 0x0506 DV.anyInt16be
+  parseTestT dv 0x0605 DV.anyInt16le
+  parseTestT dv (fromInt 0x0506) DV.anyUint16be
+  parseTestT dv (fromInt 0x0605) DV.anyUint16le
+  parseTestT dv (Tuple 0x05060708 0x09) $ do
+    l <- DV.anyInt32be
+    r <- DV.anyInt8
+    DV.eof
+    pure $ Tuple l r
+  parseTestT dv (Tuple 0x08070605 0x09) $ do
+    l <- DV.anyInt32le
+    r <- DV.anyInt8
+    DV.eof
+    pure $ Tuple l r
+  parseTestT dv (Tuple (fromInt 0x05060708) 0x09) $ do
+    l <- DV.anyUint32be
+    r <- DV.anyInt8
+    DV.eof
+    pure $ Tuple l r
+  parseTestT dv (Tuple (fromInt 0x08070605) 0x09) $ do
+    l <- DV.anyUint32le
+    r <- DV.anyInt8
+    DV.eof
+    pure $ Tuple l r
+  parseTestT dv 0x0908 do
+    _ <- DV.takeViewN 3
+    DV.anyInt16le <* DV.eof
+  parseTestT dv 0x0908 do
+    _ <- DV.takeViewN 3
+    remain <- DV.takeViewRest
+    lift (runParserT remain DV.anyInt16le) >>= case _ of
+      Right actual -> pure actual
+      Left err -> fail $ show err
+  parseFailTestT dv $ DV.takeViewN 6
+  parseTestT dv 0x0908 do
+    _ <- DV.takeViewN 1
+    av <- DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int16) 2
+    DV.eof
+    lift (TA.at av 1) >>= case _ of
+      Nothing -> (lift $ TA.toArray av) >>=
+        \s -> fail $ "Can't read second ArrayValue Int16 from " <> show s
+      Just x -> pure x
+  parseTestT dv 0x07 do
+    _ <- DV.takeViewN 1
+    DV.takeViewRest >>= \dv2 ->
+      lift (runParserT dv2 $ DV.takeViewN 1 *> DV.takeViewRest) >>= case _ of
+        Left err -> fail $ show err
+        Right dv3 -> lift (runParserT dv3 $ DV.anyInt8) >>= case _ of
+          Left err -> fail $ show err
+          Right x -> pure x
+  parseTestT dv 0x0807 do
+    _ <- DV.takeViewN 1
+    DV.takeViewRest >>= \dv2 ->
+      lift (runParserT dv2 $ DV.takeViewN 1 *> DV.takeViewRest) >>= case _ of
+        Left err -> fail $ show err
+        Right dv3 -> lift (runParserT dv3 $ DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int16) 1) >>= case _ of
+          Left err -> fail $ show err
+          Right arr -> lift (TA.at arr 0) >>= case _ of
+            Nothing -> (lift $ TA.toArray arr) >>=
+              \s -> fail $ "Can't read first ArrayValue Int16 from " <> show s
+            Just x -> pure x
+  parseFailTestT dv $ DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int16) 3
+  parseFailTestT dv $ DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int32) 2
+

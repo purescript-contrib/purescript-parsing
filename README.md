@@ -8,6 +8,17 @@
 
 A parser combinator library based on Haskell's Parsec.
 
+## Parsers
+
+There are three sets of parsing primitives included in this library.
+
+* `Text.Parsing.Parser.String` module for native `String` parsing.
+* `Text.Parsing.Parser.Token` module for parsing `List`s of any type of token.
+* `Text.Parsing.Parser.DataView` module for parsing native Javascript `ArrayBuffer`.
+
+All parsing primitives are “auto-backtracking”, meaning that if they fail,
+then they consume no input.
+
 ## Installation
 
 ```

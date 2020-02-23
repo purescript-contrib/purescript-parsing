@@ -29,7 +29,8 @@
     "purescript-maybe": "^4.0.0",
     "purescript-strings": "^4.0.0",
     "purescript-transformers": "^4.1.0",
-    "purescript-unicode": "^4.0.0"
+    "purescript-unicode": "^4.0.0",
+    "purescript-arraybuffer": "^10.0.0"
   },
   "devDependencies": {
     "purescript-assert": "^4.0.0",
