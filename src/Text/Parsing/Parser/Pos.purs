@@ -21,7 +21,7 @@ instance showPosition :: Show Position where
 derive instance eqPosition :: Eq Position
 derive instance ordPosition :: Ord Position
 
--- | The `Position` before any input has been parsed.
+-- | The `Position` before any input has been parsed is line 1, column 1.
 initialPos :: Position
 initialPos = Position { line: 1, column: 1 }
 
