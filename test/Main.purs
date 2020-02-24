@@ -24,7 +24,7 @@ import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
 import Data.ArrayBuffer.ArrayBuffer (empty) as AB
-import Data.ArrayBuffer.DataView (setInt8, whole, Endian(LE,BE), AProxy(..)) as AB
+import Data.ArrayBuffer.DataView (setInt8, whole, Endian(..), AProxy(..)) as AB
 import Text.Parsing.Parser.DataView as DV
 import Data.ArrayBuffer.Typed (at, toArray) as TA
 import Data.ArrayBuffer.Types (Int16, Int32) as AB
