@@ -49,7 +49,7 @@ parseTestT input expected p = do
     Right actual -> do
       assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
       logShow actual
-    Left err -> assert' ("error: " <> show err) false
+    Left err -> assert' (show err) false
 
 parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
 parseErrorTestPosition p input expected = case runParser input p of
@@ -59,12 +59,16 @@ parseErrorTestPosition p input expected = case runParser input p of
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
     logShow expected
 
-parseFailTestT :: forall s a. s -> ParserT s Effect a -> Effect Unit
-parseFailTestT input p = do
+parseFailTestPositionT :: forall s a. s -> Position -> ParserT s Effect a -> Effect Unit
+parseFailTestPositionT input failPos p = do
   result <- runParserT input p
   case result of
-    Right _ -> assert' "error: ParseError expected!" false
-    Left err -> logShow $ show err
+    Right _ -> assert' ("ParseError expected at "  <> show failPos) false
+    Left err -> do
+      let pos = parseErrorPosition err
+      assert' ("ParseError expected at " <> show failPos <> " but parser failed at " <> show pos)
+              (pos == failPos)
+      logShow $ show failPos
 
 opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
@@ -530,7 +534,7 @@ main = do
   parseTestT dv 0x0605 DV.anyInt16le
   parseTestT dv (fromInt 0x0506) DV.anyUint16be
   parseTestT dv (fromInt 0x0605) DV.anyUint16le
-  parseFailTestT dv $ DV.anyInt16le *> DV.anyInt16le *> DV.anyInt16le
+  parseFailTestPositionT dv (mkPos 5) $ DV.anyInt16le *> DV.anyInt16le *> DV.anyInt16le
   parseTestT dv (Tuple 0x05060708 0x09) $ do
     l <- DV.anyInt32be
     r <- DV.anyInt8
@@ -560,7 +564,7 @@ main = do
     lift (runParserT remain DV.anyInt16le) >>= case _ of
       Right actual -> pure actual
       Left err -> fail $ show err
-  parseFailTestT dv $ DV.takeN 6
+  parseFailTestPositionT dv (mkPos 1) $ DV.takeN 6
   parseTestT dv 0x07 do
     _ <- DV.takeN 1
     DV.takeRest >>= \dv2 ->
@@ -569,8 +573,8 @@ main = do
         Right dv3 -> lift (runParserT dv3 $ DV.anyInt8) >>= case _ of
           Left err -> fail $ show err
           Right x -> pure x
-  parseFailTestT dv do
-     dv2 <- DV.takeN 1
-     lift (runParserT dv2 DV.anyInt16le) >>= case _ of
-        Left err -> fail $ show err
-        Right x -> pure x
+  parseFailTestPositionT dv (mkPos 2) $ do
+    dv2 <- DV.takeN 1
+    lift (runParserT dv2 DV.anyInt16le) >>= case _ of
+      Left err -> fail $ show err
+      Right x -> pure x
