@@ -552,25 +552,25 @@ main = do
     DV.eof
     pure $ Tuple l r
   parseTestT dv 0x0908 do
-    _ <- DV.takeViewN 3
+    _ <- DV.takeN 3
     DV.anyInt16le <* DV.eof
   parseTestT dv 0x0908 do
-    _ <- DV.takeViewN 3
-    remain <- DV.takeViewRest
+    _ <- DV.takeN 3
+    remain <- DV.takeRest
     lift (runParserT remain DV.anyInt16le) >>= case _ of
       Right actual -> pure actual
       Left err -> fail $ show err
-  parseFailTestT dv $ DV.takeViewN 6
+  parseFailTestT dv $ DV.takeN 6
   parseTestT dv 0x07 do
-    _ <- DV.takeViewN 1
-    DV.takeViewRest >>= \dv2 ->
-      lift (runParserT dv2 $ DV.takeViewN 1 *> DV.takeViewRest) >>= case _ of
+    _ <- DV.takeN 1
+    DV.takeRest >>= \dv2 ->
+      lift (runParserT dv2 $ DV.takeN 1 *> DV.takeRest) >>= case _ of
         Left err -> fail $ show err
         Right dv3 -> lift (runParserT dv3 $ DV.anyInt8) >>= case _ of
           Left err -> fail $ show err
           Right x -> pure x
   parseFailTestT dv do
-     dv2 <- DV.takeViewN 1
+     dv2 <- DV.takeN 1
      lift (runParserT dv2 DV.anyInt16le) >>= case _ of
         Left err -> fail $ show err
         Right x -> pure x

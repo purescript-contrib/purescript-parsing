@@ -48,8 +48,8 @@ module Text.Parsing.Parser.DataView
   , satisfyFloat32le
   , satisfyFloat64be
   , satisfyFloat64le
-  , takeViewN
-  , takeViewRest
+  , takeN
+  , takeRest
   , eof
   , module Data.ArrayBuffer.Types
   , module Data.ArrayBuffer.DataView
