@@ -1,4 +1,5 @@
--- | Primitive parsers for parsing Javascript ArrayBuffers.
+-- | Primitive parsers for parsing Javascript ArrayBuffers with the
+-- | `Text.Parsing.Parser` module in package __purescript-parsing__.
 -- |
 -- | All of the parsers in this module operate on an input stream of
 -- | `Data.ArrayBuffer.Types.DataView`, which represents a range of an
@@ -7,7 +8,7 @@
 -- | For operations for working with `ArrayBuffer` and `DataView`, see
 -- | module `Data.ArrayBuffer.DataView` in package __purescript-arraybuffer__.
 -- |
--- | Reading and writing `ArrayBuffer` is an `Effect`ful activity, so
+-- | Reading from an `ArrayBuffer` is an `Effect`ful activity, so
 -- | all parsers in this module must be run in a
 -- | `MonadEffect m => ParserT DataView m` context, with
 -- | `Text.Parsing.Parser.runParserT`.
@@ -16,7 +17,6 @@
 -- |
 -- | * [MDN `ArrayBuffer`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)
 -- | * [MDN `DataView`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView)
--- | * [MDN `TypedArray`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray)
 module Text.Parsing.Parser.DataView
   ( anyPrim
   , anyInt8
@@ -272,8 +272,8 @@ satisfyFloat64le = satisfy LE (AProxy :: AProxy Float64)
 -- |
 -- |     takeViewN 3
 -- |
-takeViewN :: forall m. MonadEffect m => ByteLength -> ParserT DataView m DataView
-takeViewN n = do
+takeN :: forall m. MonadEffect m => ByteLength -> ParserT DataView m DataView
+takeN n = do
   ParseState input (Position {line,column}) _ <- get
   unless (n >= 0) $ fail $ "Cannot take negative number of bytes."
   unless (column + n - 1 <= DV.byteLength input) $
@@ -284,8 +284,8 @@ takeViewN n = do
   pure p
 
 -- | Take the rest of the input, however many bytes remain. Always succeeds.
-takeViewRest :: forall m. MonadEffect m => ParserT DataView m DataView
-takeViewRest = do
+takeRest :: forall m. MonadEffect m => ParserT DataView m DataView
+takeRest = do
   ParseState input (Position {line,column}) _ <- get
   p <- lift $ liftEffect $ DV.part (DV.buffer input) (DV.byteOffset input + (column-1))
                                                      (DV.byteLength input - (column-1))
@@ -297,3 +297,18 @@ eof :: forall m. Monad m => ParserT DataView m Unit
 eof = do
   ParseState input (Position {column}) _ <- get
   unless (column > DV.byteLength input) $ fail "Expected end of DataView"
+
+-- ****************************** Notes ****************************************
+--
+-- The `initialPostion` in a `ParserT` is `Postion{line:1,column:1)`.
+-- We keep `line` invariant and use `column-1` to denote the offset into the
+-- `DataView`, that's why there are so many plus 1 and minus 1 operations
+-- in this module.
+-- https://www.cs.utexas.edu/users/EWD/transcriptions/EWD08xx/EWD831.html
+--
+-- We cannot have a primitive parser which parses a `DataView` and produces
+-- an `ArrayView` (a Javascript Typed Array). Javascript DataViews are
+-- endianess-aware, but Javascript Typed Arrays assume the native endianness
+-- of the local machine. DataViews are intended to be used for I/O, ArrayViews
+-- are intended to be used internally for graphics in a process, and they're
+-- not intended to be both applied to the same ArrayBuffer.
