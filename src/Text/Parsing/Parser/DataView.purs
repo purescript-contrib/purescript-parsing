@@ -48,7 +48,6 @@ module Text.Parsing.Parser.DataView
   , satisfyFloat32le
   , satisfyFloat64be
   , satisfyFloat64le
-  , takeArrayN
   , takeViewN
   , takeViewRest
   , eof
@@ -94,11 +93,7 @@ import Data.ArrayBuffer.DataView
   ( AProxy(..)
   , Endian(LE,BE)
   )
-import Data.ArrayBuffer.DataView (byteLength, byteOffset, get, part, buffer, remainder) as DV
-import Data.ArrayBuffer.Typed (class TypedArray)
-import Data.ArrayBuffer.Typed (part) as TA
-import Data.ArrayBuffer.ArrayBuffer (slice) as AB
-
+import Data.ArrayBuffer.DataView (byteLength, byteOffset, get, part, buffer) as DV
 
 -- | Parse one fixed-bit-width `Data.ArrayBuffer.Types.ArrayViewType` primitive
 -- | of a given endianness.
@@ -268,55 +263,6 @@ satisfyFloat64be = satisfy BE (AProxy :: AProxy Float64)
 satisfyFloat64le :: forall m. MonadEffect m => (Number -> Boolean) -> ParserT DataView m Number
 satisfyFloat64le = satisfy LE (AProxy :: AProxy Float64)
 
--- | Take *N* primitive elements starting from the current parser position.
--- | Will fail if there is not enough input remaining. Will fail if *N*
--- | is negative.
--- |
--- | For operations for working with `ArrayView`, see module
--- | `Data.ArrayBuffer.Typed` in package __purescript-arraybuffer__.
--- |
--- | #### Example
--- |
--- | Parse three consecutive little-endian 32-bit signed integers.
--- |
--- |     takeArrayN LE (AProxy :: AProxy Int32) 3
--- |
-takeArrayN :: forall a name b m t
-   . TypedArray a t
-  => BinaryValue a t
-  => BytesPerValue a b
-  => ShowArrayViewType a name
-  => IsSymbol name
-  => Nat b
-  => Show t
-  => MonadEffect m
-  => Endian
-  -> AProxy a
-  -> Int
-  -> ParserT DataView m (ArrayView a)
-takeArrayN endian aproxy n = do
-  ParseState input (Position {line,column}) _ <- get
-  unless (n >= 0) $ fail $ "Cannot take negative number of elements."
-  let nLen = n * toInt' (Proxy :: Proxy b)
-  let inputLen = DV.byteLength input
-  unless ((column-1) + nLen <= inputLen) $
-    fail $ "Cannot take " <> show n <> " " <> reflectSymbol (SProxy :: SProxy name) <>
-      ", only " <> show (inputLen - column + 1) <> " bytes remain."
-  -- There's a problem here. Typed.part', which is what we need, is not exported.
-  -- https://github.com/jacereda/purescript-arraybuffer/issues/27
-  -- If it were exported, then we could do this:
-  --
-  --     p <- lift $ liftEffect $ TA.part' (DV.buffer input) (column-1) n
-  --
-  -- but since it's not exported, we'll have to slice the ArrayBuffer
-  -- and call Typed.part on the slice. Does slice actually copy? Bad perf if it does. TODO
-  let sliceBegin = ((column-1) + DV.byteOffset input)
-      sliceEnd = sliceBegin + nLen
-      inputSlice = AB.slice sliceBegin sliceEnd $ DV.buffer input
-  p <- lift $ liftEffect $ TA.part inputSlice 0 n
-  put $ ParseState input (Position {line,column:column+nLen}) true
-  pure p
-
 -- | Take *N* bytes starting from the current parser position. Will fail
 -- | if not enough bytes remain in the input. Will fail if *N* is negative.
 -- |
@@ -333,7 +279,7 @@ takeViewN n = do
   unless (column + n - 1 <= DV.byteLength input) $
     fail $ "Cannot take " <> show n <> " bytes, only " <>
       show (DV.byteLength input - column + 1) <> " bytes remain."
-  p <- lift $ liftEffect $ DV.part (DV.buffer input) ((column-1) + DV.byteOffset input) n
+  p <- lift $ liftEffect $ DV.part (DV.buffer input) (DV.byteOffset input + (column-1)) n
   put $ ParseState input (Position {line,column:column+n}) true
   pure p
 
@@ -341,7 +287,8 @@ takeViewN n = do
 takeViewRest :: forall m. MonadEffect m => ParserT DataView m DataView
 takeViewRest = do
   ParseState input (Position {line,column}) _ <- get
-  p <- lift $ liftEffect $ DV.remainder (DV.buffer input) ((column-1) + DV.byteOffset input)
+  p <- lift $ liftEffect $ DV.part (DV.buffer input) (DV.byteOffset input + (column-1))
+                                                     (DV.byteLength input - (column-1))
   put $ ParseState input (Position {line,column:DV.byteLength input + 1}) true
   pure p
 

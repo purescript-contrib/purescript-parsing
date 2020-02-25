@@ -24,10 +24,8 @@ import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
 import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
 import Data.ArrayBuffer.ArrayBuffer (empty) as AB
-import Data.ArrayBuffer.DataView (setInt8, whole, Endian(..), AProxy(..)) as AB
+import Data.ArrayBuffer.DataView (setInt8, whole) as AB
 import Text.Parsing.Parser.DataView as DV
-import Data.ArrayBuffer.Typed (at, toArray) as TA
-import Data.ArrayBuffer.Types (Int16, Int32) as AB
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -532,6 +530,7 @@ main = do
   parseTestT dv 0x0605 DV.anyInt16le
   parseTestT dv (fromInt 0x0506) DV.anyUint16be
   parseTestT dv (fromInt 0x0605) DV.anyUint16le
+  parseFailTestT dv $ DV.anyInt16le *> DV.anyInt16le *> DV.anyInt16le
   parseTestT dv (Tuple 0x05060708 0x09) $ do
     l <- DV.anyInt32be
     r <- DV.anyInt8
@@ -562,14 +561,6 @@ main = do
       Right actual -> pure actual
       Left err -> fail $ show err
   parseFailTestT dv $ DV.takeViewN 6
-  parseTestT dv 0x0908 do
-    _ <- DV.takeViewN 1
-    av <- DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int16) 2
-    DV.eof
-    lift (TA.at av 1) >>= case _ of
-      Nothing -> (lift $ TA.toArray av) >>=
-        \s -> fail $ "Can't read second ArrayValue Int16 from " <> show s
-      Just x -> pure x
   parseTestT dv 0x07 do
     _ <- DV.takeViewN 1
     DV.takeViewRest >>= \dv2 ->
@@ -578,17 +569,8 @@ main = do
         Right dv3 -> lift (runParserT dv3 $ DV.anyInt8) >>= case _ of
           Left err -> fail $ show err
           Right x -> pure x
-  parseTestT dv 0x0807 do
-    _ <- DV.takeViewN 1
-    DV.takeViewRest >>= \dv2 ->
-      lift (runParserT dv2 $ DV.takeViewN 1 *> DV.takeViewRest) >>= case _ of
+  parseFailTestT dv do
+     dv2 <- DV.takeViewN 1
+     lift (runParserT dv2 DV.anyInt16le) >>= case _ of
         Left err -> fail $ show err
-        Right dv3 -> lift (runParserT dv3 $ DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int16) 1) >>= case _ of
-          Left err -> fail $ show err
-          Right arr -> lift (TA.at arr 0) >>= case _ of
-            Nothing -> (lift $ TA.toArray arr) >>=
-              \s -> fail $ "Can't read first ArrayValue Int16 from " <> show s
-            Just x -> pure x
-  parseFailTestT dv $ DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int16) 3
-  parseFailTestT dv $ DV.takeArrayN AB.LE (AB.AProxy :: AB.AProxy AB.Int32) 2
-
+        Right x -> pure x
