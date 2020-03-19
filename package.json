@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "clean": "rimraf output && rimraf .pulp-cache",
-    "build": "pulp build && pulp test"
+    "build": "pulp build",
+    "test": "pulp test"
   },
   "devDependencies": {
     "pulp": "^14.0.0",
