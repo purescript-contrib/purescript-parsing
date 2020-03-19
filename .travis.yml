@@ -5,9 +5,11 @@ node_js: stable
 install:
   - npm install -g bower
   - npm install
-  - bower install
 script:
+  - bower install --production
   - npm run -s build
+  - bower install
+  - npm -s test
 after_success:
 - >-
   test $TRAVIS_TAG &&
