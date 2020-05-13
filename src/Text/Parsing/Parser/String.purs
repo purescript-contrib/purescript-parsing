@@ -9,7 +9,7 @@ import Data.Array (many)
 import Data.Foldable (elem, notElem)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
-import Data.String (Pattern, length)
+import Data.String (Pattern)
 import Data.String as S
 import Data.String.CodeUnits as SCU
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
@@ -20,14 +20,14 @@ import Text.Parsing.Parser.Pos (updatePosString)
 -- | operations which this modules needs.
 class StringLike s where
   drop :: Int -> s -> s
-  indexOf :: Pattern -> s -> Maybe Int
+  stripPrefix :: Pattern -> s -> Maybe s
   null :: s -> Boolean
   uncons :: s -> Maybe { head :: Char, tail :: s }
 
 instance stringLikeString :: StringLike String where
   uncons = SCU.uncons
   drop = S.drop
-  indexOf = S.indexOf
+  stripPrefix = S.stripPrefix
   null = S.null
 
 -- | Match end-of-file.
@@ -40,10 +40,10 @@ eof = do
 string :: forall s m. StringLike s => Monad m => String -> ParserT s m String
 string str = do
   input <- gets \(ParseState input _ _) -> input
-  case indexOf (wrap str) input of
-    Just 0 -> do
+  case stripPrefix (wrap str) input of
+    Just remainder -> do
       modify_ \(ParseState _ position _) ->
-        ParseState (drop (length str) input)
+        ParseState remainder
                    (updatePosString position str)
                    true
       pure str
