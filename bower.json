@@ -27,7 +27,7 @@
     "purescript-integers": "^4.0.0",
     "purescript-lists": "^5.0.0",
     "purescript-maybe": "^4.0.0",
-    "purescript-strings": "^4.0.0",
+    "purescript-strings": "^4.0.2",
     "purescript-transformers": "^4.1.0",
     "purescript-unicode": "^4.0.0"
   },
