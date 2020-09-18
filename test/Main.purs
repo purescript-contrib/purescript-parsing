@@ -13,7 +13,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
-import Text.Parsing.Parser (Parser, ParserT, runParser, parseErrorPosition)
+import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser, parseErrorPosition, label)
 import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
@@ -496,3 +496,15 @@ main = do
 
   haskellStyleTest
   javaStyleTest
+
+  case runParser "aa" p of
+    Right _ -> assert' "error: ParseError expected!" false
+    Left (ParseError message pos) -> do
+      let messageExpected = "context1context2Expected \"b\""
+      assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
+      logShow messageExpected
+   where
+    p = label "context1" $ do
+          _ <- string "a"
+          label "context2" $ do
+            string "b"
