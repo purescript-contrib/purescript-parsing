@@ -19,6 +19,12 @@ bower install purescript-parsing
 - [See the tests](test/Main.purs) for some example usages.
 - Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-parsing).
 
+## Related Packages
+
+- [__purescript-parsing-dataview__](https://pursuit.purescript.org/packages/purescript-parsing-dataview)
+  Provides the module __Text.Parsing.Parser.DataView__ for binary parsing of
+  `ArrayBuffer`.
+
 ## Contributing
 
 Read the [contribution guidelines](https://github.com/purescript-contrib/purescript-parsing/blob/master/.github/contributing.md) to get started and see helpful related resources.
