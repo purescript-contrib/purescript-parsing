@@ -13,6 +13,7 @@ module Text.Parsing.Parser
   , position
   , fail
   , failWithPosition
+  , label
   ) where
 
 import Prelude
@@ -20,7 +21,7 @@ import Prelude
 import Control.Alt (class Alt)
 import Control.Apply (lift2)
 import Control.Lazy (defer, class Lazy)
-import Control.Monad.Error.Class (class MonadThrow, throwError)
+import Control.Monad.Error.Class (class MonadThrow, throwError, catchError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.State (class MonadState, StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
@@ -136,3 +137,9 @@ fail message = failWithPosition message =<< position
 -- | Fail with a message and a position.
 failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
 failWithPosition message pos = throwError (ParseError message pos)
+
+-- | If parsing fails inside this labelled context, then prepend the `String`
+-- | to the error `String` in the `ParseError`.
+label :: forall m s a. Monad m => String -> ParserT s m a -> ParserT s m a
+label messagePrefix p = catchError p $ \ (ParseError message pos) ->
+  throwError $ ParseError (messagePrefix <> message) pos
