@@ -13,7 +13,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
-import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser, parseErrorPosition, label)
+import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser, parseErrorPosition, region)
 import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
@@ -500,11 +500,12 @@ main = do
   case runParser "aa" p of
     Right _ -> assert' "error: ParseError expected!" false
     Left (ParseError message pos) -> do
-      let messageExpected = "context1context2Expected \"b\""
+      let messageExpected = "context1 context2 Expected \"b\""
       assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
       logShow messageExpected
    where
-    p = label "context1" $ do
+    prependContext m' (ParseError m pos) = ParseError (m' <> m) pos
+    p = region (prependContext "context1 ") $ do
           _ <- string "a"
-          label "context2" $ do
+          region (prependContext "context2 ") $ do
             string "b"
