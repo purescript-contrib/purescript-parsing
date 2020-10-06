@@ -13,7 +13,7 @@ module Text.Parsing.Parser
   , position
   , fail
   , failWithPosition
-  , label
+  , region
   ) where
 
 import Prelude
@@ -138,8 +138,9 @@ fail message = failWithPosition message =<< position
 failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
 failWithPosition message pos = throwError (ParseError message pos)
 
--- | If parsing fails inside this labelled context, then prepend the `String`
--- | to the error `String` in the `ParseError`.
-label :: forall m s a. Monad m => String -> ParserT s m a -> ParserT s m a
-label messagePrefix p = catchError p $ \ (ParseError message pos) ->
-  throwError $ ParseError (messagePrefix <> message) pos
+-- | Contextualize parsing failures inside a region. If a parsing failure
+-- | occurs, then the `ParseError` will be transformed by each containing
+-- | `region` as the parser backs out the call stack.
+region :: forall m s a. Monad m => (ParseError -> ParseError) -> ParserT s m a -> ParserT s m a
+region context p = catchError p $ \err -> throwError $ context err
+
