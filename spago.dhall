@@ -1,6 +1,7 @@
 { name = "parsing"
 , dependencies =
   [ "arrays"
+  , "assert"
   , "console"
   , "effect"
   , "either"
