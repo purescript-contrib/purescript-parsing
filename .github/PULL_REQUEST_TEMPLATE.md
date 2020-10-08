@@ -1,15 +1,11 @@
-## What does this pull request do?
+**Description of the change**
+Clearly and concisely describe the purpose of the pull request. If this PR relates to an existing issue or change proposal, please link to it. Include any other background context that would help reviewers understand the motivation for this PR.
 
-Please describe the purpose of the pull request, including any background context and links to related issues. If this introduces a large change to the project, please describe what you have implemented.
+---
 
-## Where should the reviewer start?
+**Checklist:**
 
-Help save the reviewer time by highlighting the most important sections of code.
-
-## How should this be manually tested?
-
-If this is a new feature, you should provide new test coverage. If it fixes an existing bug, you should provide a failing test case this change fixes. Other than automated testing, what manual tests can the reviewer perform to verify your work?
-
-## Other Notes:
-
-Does the project documentation need to be updated? Should we introduce a new example, or update any existing examples? Does this PR require any other follow-up tasks?
+- [ ] Added the change to the changelog's "Unreleased" section with a link to this PR and your username
+- [ ] Linked any existing issues or proposals that this pull request should close
+- [ ] Updated or added relevant documentation in the README and/or documentation directory
+- [ ] Added a test for the contribution (if applicable)
