@@ -30,7 +30,7 @@ jobs:
         run: spago install
 
       - name: Build source
-        run: spago build --no-install --purs-args '--censor-lib --strict'
+        run: spago build --no-install --purs-args '--censor-lib --strict --censor-codes='UserDefinedWarning''
 
       - name: Run tests
         run: spago test --no-install
