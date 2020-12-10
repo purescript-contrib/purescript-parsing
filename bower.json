@@ -29,7 +29,7 @@
     "purescript-maybe": "master",
     "purescript-strings": "master",
     "purescript-transformers": "master",
-    "purescript-unicode": "master"
+    "purescript-unicode": "master",
     "purescript-generics-rep": "master"
   },
   "devDependencies": {
