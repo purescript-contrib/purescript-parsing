@@ -30,6 +30,7 @@
     "purescript-strings": "master",
     "purescript-transformers": "master",
     "purescript-unicode": "master"
+    "purescript-generics-rep": "master"
   },
   "devDependencies": {
     "purescript-assert": "master",

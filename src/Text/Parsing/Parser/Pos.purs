@@ -1,6 +1,7 @@
 module Text.Parsing.Parser.Pos where
 
 import Prelude
+import Data.Generic.Rep (class Generic)
 import Data.Foldable (foldl)
 import Data.Newtype (wrap)
 import Data.String (split)
@@ -13,6 +14,8 @@ newtype Position = Position
   { line :: Int
   , column :: Int
   }
+
+derive instance genericPosition :: Generic Position _
 
 instance showPosition :: Show Position where
   show (Position { line: line, column: column }) =
