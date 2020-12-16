@@ -7,6 +7,7 @@ import Control.Lazy (fix)
 import Data.Array (some)
 import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
+import Data.List.NonEmpty (cons, cons')
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.Tuple (Tuple(..))
@@ -357,10 +358,10 @@ tokenParserSemiSepTest = do
 tokenParserSemiSep1Test :: TestM
 tokenParserSemiSep1Test = do
     -- parse semi sep1
-    parseTest "foo; foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ string "foo"
+    parseTest "foo; foo" (cons "foo" (cons' "foo" Nil)) $ testTokenParser.semiSep1 $ string "foo"
 
     -- parse semi sep1 with newline
-    parseTest "foo; \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.semiSep1 $ string "foo"
+    parseTest "foo; \nfoo" (cons "foo" (cons' "foo" Nil)) $ testTokenParser.semiSep1 $ string "foo"
 
     -- no parse on empty string
     parseErrorTestPosition (testTokenParser.semiSep1 $ string "foo") "" $ mkPos 1
@@ -379,10 +380,10 @@ tokenParserCommaSepTest = do
 tokenParserCommaSep1Test :: TestM
 tokenParserCommaSep1Test = do
     -- parse comma sep1
-    parseTest "foo, foo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ string "foo"
+    parseTest "foo, foo" (cons "foo" (cons' "foo" Nil)) $ testTokenParser.commaSep1 $ string "foo"
 
     -- parse comma sep1 with newline
-    parseTest "foo, \nfoo" (fromFoldable ["foo", "foo"]) $ testTokenParser.commaSep1 $ string "foo"
+    parseTest "foo, \nfoo" (cons "foo" (cons' "foo" Nil)) $ testTokenParser.commaSep1 $ string "foo"
 
     -- no parse on empty string
     parseErrorTestPosition (testTokenParser.commaSep1 $ string "foo") "" $ mkPos 1
@@ -438,8 +439,8 @@ main = do
   parseTest "(ab)" (Just "b") $ parens do
     _ <- string "a"
     optionMaybe $ string "b"
-  parseTest "a,a,a" (Cons "a" (Cons "a" (Cons "a" Nil))) $ string "a" `sepBy1` string ","
-  parseTest "a,a,a," (Cons "a" (Cons "a" (Cons "a" Nil))) $ do
+  parseTest "a,a,a" (cons "a" (cons "a" (cons' "a" Nil))) $ string "a" `sepBy1` string ","
+  parseTest "a,a,a," (cons "a" (cons "a" (cons' "a" Nil))) $ do
     as <- string "a" `endBy1` string ","
     eof
     pure as
