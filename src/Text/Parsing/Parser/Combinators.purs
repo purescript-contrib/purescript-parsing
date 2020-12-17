@@ -29,7 +29,8 @@ import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
-import Data.List (List(..), (:), many, some, singleton)
+import Data.List (List(..), (:), many)
+import Data.List.NonEmpty (NonEmptyList, cons', singleton)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
@@ -99,30 +100,40 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
 -- | digit `sepBy` string ","
 -- | ```
 sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepBy p sep = sepBy1 p sep <|> pure Nil
+sepBy p sep =
+  (do a <- p
+      as <- many $ sep *> p
+      pure (a : as)) <|> pure Nil
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
-sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1 p sep = do
   a <- p
   as <- many $ sep *> p
-  pure (a : as)
+  pure (cons' a as)
 
 -- | Parse phrases delimited and optionally terminated by a separator.
 sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepEndBy p sep = sepEndBy1 p sep <|> pure Nil
+sepEndBy p sep =
+  (do a <- p
+      as <- many $ sep *> p
+      optional sep
+      pure (a : as)) <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
-sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1 p sep = do
   a <- p
-  (do _ <- sep
-      as <- sepEndBy p sep
-      pure (a : as)) <|> pure (singleton a)
+  (do as <- many $ sep *> p
+      optional sep
+      pure (cons' a as)) <|> pure (singleton a)
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
-endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-endBy1 p sep = some $ p <* sep
+endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+endBy1 p sep = do
+  a <- p <* sep
+  as <- many $ p <* sep
+  pure (cons' a as)
 
 -- | Parse phrases delimited and terminated by a separator.
 endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
@@ -193,8 +204,9 @@ manyTill p end = scan
               pure (x:xs)
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
-many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
+many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1Till p end = do
   x <- p
   xs <- manyTill p end
-  pure (x:xs)
+  pure (cons' x xs)
+

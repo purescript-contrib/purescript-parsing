@@ -36,6 +36,7 @@ import Data.Identity (Identity)
 import Data.Int (toNumber)
 import Data.List (List(..))
 import Data.List as List
+import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (null, toLower)
 import Data.String.CodeUnits as SCU
@@ -258,7 +259,7 @@ type GenTokenParser s m
         semiSep          :: forall a . ParserT s m a -> ParserT s m (List a),
         -- | Lexeme parser `semiSep1 p` parses *one* or more occurrences of `p`
         -- | separated by `semi`. Returns a list of values pureed by `p`.
-        semiSep1         :: forall a . ParserT s m a -> ParserT s m (List a),
+        semiSep1         :: forall a . ParserT s m a -> ParserT s m (NonEmptyList a),
         -- | Lexeme parser `commaSep p` parses *zero* or more occurrences of
         -- | `p` separated by `comma`. Returns a list of values pureed
         -- | by `p`.
@@ -266,7 +267,7 @@ type GenTokenParser s m
         -- | Lexeme parser `commaSep1 p` parses *one* or more occurrences of
         -- | `p` separated by `comma`. Returns a list of values pureed
         -- | by `p`.
-        commaSep1        :: forall a . ParserT s m a -> ParserT s m (List a)
+        commaSep1        :: forall a . ParserT s m a -> ParserT s m (NonEmptyList a)
     }
 
 -----------------------------------------------------------
@@ -369,10 +370,10 @@ makeTokenParser (LanguageDef languageDef)
     semiSep :: forall a . ParserT String m a -> ParserT String m (List a)
     semiSep p = sepBy p semi
 
-    commaSep1 :: forall a . ParserT String m a -> ParserT String m (List a)
+    commaSep1 :: forall a . ParserT String m a -> ParserT String m (NonEmptyList a)
     commaSep1 p = sepBy1 p comma
 
-    semiSep1 :: forall a . ParserT String m a -> ParserT String m (List a)
+    semiSep1 :: forall a . ParserT String m a -> ParserT String m (NonEmptyList a)
     semiSep1 p = sepBy1 p semi
 
     -----------------------------------------------------------

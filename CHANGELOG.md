@@ -5,6 +5,7 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes (😱!!!):
+- Non-empty combinators return `NonEmptyList` ([#102](https://github.com/purescript-contrib/purescript-parsing/pull/102))
 
 New features:
 
