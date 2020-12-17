@@ -100,7 +100,10 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
 -- | digit `sepBy` string ","
 -- | ```
 sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepBy p sep = (toList <$> sepBy1 p sep) <|> pure Nil
+sepBy p sep =
+  (do a <- p
+      as <- many $ sep *> p
+      pure (a : as)) <|> pure Nil
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
 sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
@@ -111,7 +114,11 @@ sepBy1 p sep = do
 
 -- | Parse phrases delimited and optionally terminated by a separator.
 sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepEndBy p sep = (toList <$> sepEndBy1 p sep) <|> pure Nil
+sepEndBy p sep =
+  (do a <- p
+      as <- many $ sep *> p
+      optional sep
+      pure (a : as)) <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
 sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
@@ -125,7 +132,7 @@ sepEndBy1 p sep = do
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 endBy1 p sep = do
   a <- p <* sep
-  as <- endBy p sep
+  as <- many $ p <* sep
   pure (cons' a as)
 
 -- | Parse phrases delimited and terminated by a separator.
