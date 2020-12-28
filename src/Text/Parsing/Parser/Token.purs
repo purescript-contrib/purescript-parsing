@@ -28,7 +28,7 @@ import Control.Monad.State (gets, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
-import Data.Char.Unicode (digitToInt, isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace, isUpper)
+import Data.Char.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper, hexDigitToInt)
 import Data.Char.Unicode as Unicode
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
@@ -551,7 +551,7 @@ makeTokenParser (LanguageDef languageDef)
         op :: Char -> Maybe Number -> Maybe Number
         op _ Nothing  = Nothing
         op d (Just f) = do
-            int' <- digitToInt d
+            int' <- hexDigitToInt d
             pure $ ( f + toNumber int' ) / 10.0
 
     exponent' :: ParserT String m Number
@@ -600,7 +600,7 @@ makeTokenParser (LanguageDef languageDef)
       where
         folder :: Maybe Int -> Char -> Maybe Int
         folder Nothing _ = Nothing
-        folder (Just x) d = ((base * x) + _) <$> digitToInt d
+        folder (Just x) d = ((base * x) + _) <$> hexDigitToInt d
 
     -----------------------------------------------------------
     -- Operators & reserved ops
@@ -780,9 +780,9 @@ inCommentSingle (LanguageDef languageDef) =
 -- Helper functions that should maybe go in Text.Parsing.Parser.String --
 -------------------------------------------------------------------------
 
--- | Parse a digit.  Matches any char that satisfies `Data.Char.Unicode.isDigit`.
+-- | Parse a digit.  Matches any char that satisfies `Data.Char.Unicode.isDecDigit`.
 digit :: forall m . Monad m => ParserT String m Char
-digit = satisfy isDigit <?> "digit"
+digit = satisfy isDecDigit <?> "digit"
 
 -- | Parse a hex digit.  Matches any char that satisfies `Data.Char.Unicode.isHexDigit`.
 hexDigit :: forall m . Monad m => ParserT String m Char

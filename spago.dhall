@@ -3,7 +3,6 @@
   [ "arrays"
   , "assert"
   , "console"
-  , "generics-rep"
   , "effect"
   , "either"
   , "foldable-traversable"
