@@ -27,14 +27,15 @@
     "purescript-integers": "master",
     "purescript-lists": "master",
     "purescript-maybe": "master",
+    "purescript-prelude": "master",
     "purescript-strings": "master",
     "purescript-transformers": "master",
-    "purescript-unicode": "master",
-    "purescript-generics-rep": "master"
+    "purescript-unicode": "master"
   },
   "devDependencies": {
     "purescript-assert": "master",
     "purescript-console": "master",
+    "purescript-effect": "master",
     "purescript-psci-support": "master"
   }
 }
