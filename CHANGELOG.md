@@ -7,7 +7,7 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes (😱!!!):
 - Improved performance of `string` and update `StringLike` to have `stripPrefix` as a class member instead of `indexOf` (#93) 
 - Non-empty combinators now return `NonEmptyList` (#102)
-- Added support for PureScript 0.14 and dropped support for all previous versions (#101, #103)
+- Added support for PureScript 0.14 and dropped support for all previous versions (#101)
 
 New features:
 - Derived `Generic` instance of Position (#87) 
@@ -15,6 +15,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Updated code to use `Data.Char.Unicode.hexDigitToInt` and `Data.Char.Unicode.isDecDigit` instead of`Data.Char.Unicode.digitToInt` and `Data.Char.Unicode.isDigit`, as those two functions have been deprecated in the `unicode` library (#103)
 - Changed default branch to `main` from `master`
 - Updated to comply with Contributors library guidelines by adding new issue and pull request templates, updating documentation, and migrating to Spago for local development and CI (#98)
 
