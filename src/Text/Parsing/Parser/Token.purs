@@ -27,9 +27,11 @@ import Control.Lazy (fix)
 import Control.Monad.State (gets, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
+import Data.String.CodeUnits (toChar, singleton) as CodeUnits
+import Data.String.CodePoints (CodePoint, codePointFromChar)
 import Data.Char (fromCharCode, toCharCode)
-import Data.Char.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper, hexDigitToInt)
-import Data.Char.Unicode as Unicode
+import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper, hexDigitToInt)
+import Data.String.Unicode as Unicode
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
@@ -551,7 +553,7 @@ makeTokenParser (LanguageDef languageDef)
         op :: Char -> Maybe Number -> Maybe Number
         op _ Nothing  = Nothing
         op d (Just f) = do
-            int' <- hexDigitToInt d
+            int' <- hexDigitToInt $ codePointFromChar d
             pure $ ( f + toNumber int' ) / 10.0
 
     exponent' :: ParserT String m Number
@@ -600,7 +602,7 @@ makeTokenParser (LanguageDef languageDef)
       where
         folder :: Maybe Int -> Char -> Maybe Int
         folder Nothing _ = Nothing
-        folder (Just x) d = ((base * x) + _) <$> hexDigitToInt d
+        folder (Just x) d = ((base * x) + _) <$> hexDigitToInt (codePointFromChar d)
 
     -----------------------------------------------------------
     -- Operators & reserved ops
@@ -657,7 +659,10 @@ makeTokenParser (LanguageDef languageDef)
                         Just { head: c, tail: cs } -> (caseChar c <?> msg) *> walk cs
 
         caseChar :: Char -> ParserT String m Char
-        caseChar c | isAlpha c = char (Unicode.toLower c) <|> char (Unicode.toUpper c)
+        caseChar c | isAlpha (codePointFromChar c)
+                   , Just c1 <- CodeUnits.toChar (Unicode.toLowerSimple $ CodeUnits.singleton c)
+                   , Just c2 <- CodeUnits.toChar (Unicode.toUpperSimple $ CodeUnits.singleton c) =
+                      char c1 <|> char c2
                    | otherwise = char c
 
         msg :: String
@@ -741,7 +746,7 @@ whiteSpace' langDef@(LanguageDef languageDef)
         skipMany (simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef <?> "")
 
 simpleSpace :: forall m . Monad m => ParserT String m Unit
-simpleSpace = skipMany1 (satisfy isSpace)
+simpleSpace = skipMany1 (satisfyCP isSpace)
 
 oneLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 oneLineComment (LanguageDef languageDef) =
@@ -780,31 +785,34 @@ inCommentSingle (LanguageDef languageDef) =
 -- Helper functions that should maybe go in Text.Parsing.Parser.String --
 -------------------------------------------------------------------------
 
--- | Parse a digit.  Matches any char that satisfies `Data.Char.Unicode.isDecDigit`.
+satisfyCP :: forall m . Monad m => (CodePoint -> Boolean) -> ParserT String m Char
+satisfyCP p = satisfy (p <<< codePointFromChar)
+
+-- | Parse a digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isDecDigit`.
 digit :: forall m . Monad m => ParserT String m Char
-digit = satisfy isDecDigit <?> "digit"
+digit = satisfyCP isDecDigit <?> "digit"
 
--- | Parse a hex digit.  Matches any char that satisfies `Data.Char.Unicode.isHexDigit`.
+-- | Parse a hex digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isHexDigit`.
 hexDigit :: forall m . Monad m => ParserT String m Char
-hexDigit = satisfy isHexDigit <?> "hex digit"
+hexDigit = satisfyCP isHexDigit <?> "hex digit"
 
--- | Parse an octal digit.  Matches any char that satisfies `Data.Char.Unicode.isOctDigit`.
+-- | Parse an octal digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isOctDigit`.
 octDigit :: forall m . Monad m => ParserT String m Char
-octDigit = satisfy isOctDigit <?> "oct digit"
+octDigit = satisfyCP isOctDigit <?> "oct digit"
 
--- | Parse an uppercase letter.  Matches any char that satisfies `Data.Char.Unicode.isUpper`.
+-- | Parse an uppercase letter.  Matches any char that satisfies `Data.CodePoint.Unicode.isUpper`.
 upper :: forall m . Monad m => ParserT String m Char
-upper = satisfy isUpper <?> "uppercase letter"
+upper = satisfyCP isUpper <?> "uppercase letter"
 
--- | Parse a space character.  Matches any char that satisfies `Data.Char.Unicode.isSpace`.
+-- | Parse a space character.  Matches any char that satisfies `Data.CodePoint.Unicode.isSpace`.
 space :: forall m . Monad m => ParserT String m Char
-space = satisfy isSpace <?> "space"
+space = satisfyCP isSpace <?> "space"
 
--- | Parse an alphabetical character.  Matches any char that satisfies `Data.Char.Unicode.isAlpha`.
+-- | Parse an alphabetical character.  Matches any char that satisfies `Data.CodePoint.Unicode.isAlpha`.
 letter :: forall m . Monad m => ParserT String m Char
-letter = satisfy isAlpha <?> "letter"
+letter = satisfyCP isAlpha <?> "letter"
 
 -- | Parse an alphabetical or numerical character.
--- | Matches any char that satisfies `Data.Char.Unicode.isAlphaNum`.
+-- | Matches any char that satisfies `Data.CodePoint.Unicode.isAlphaNum`.
 alphaNum :: forall m . Monad m => ParserT String m Char
-alphaNum = satisfy isAlphaNum <?> "letter or digit"
+alphaNum = satisfyCP isAlphaNum <?> "letter or digit"
