@@ -20,22 +20,21 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "master",
-    "purescript-either": "master",
-    "purescript-foldable-traversable": "master",
-    "purescript-identity": "master",
-    "purescript-integers": "master",
-    "purescript-lists": "master",
-    "purescript-maybe": "master",
-    "purescript-prelude": "master",
-    "purescript-strings": "master",
-    "purescript-transformers": "master",
-    "purescript-unicode": "master"
+    "purescript-arrays": "^6.0.0",
+    "purescript-either": "^5.0.0",
+    "purescript-foldable-traversable": "^5.0.0",
+    "purescript-identity": "^5.0.0",
+    "purescript-integers": "^5.0.0",
+    "purescript-lists": "^6.0.0",
+    "purescript-maybe": "^5.0.0",
+    "purescript-prelude": "^5.0.0",
+    "purescript-strings": "^5.0.0",
+    "purescript-transformers": "^5.0.0",
+    "purescript-unicode": "^5.0.0"
   },
   "devDependencies": {
-    "purescript-assert": "master",
-    "purescript-console": "master",
-    "purescript-effect": "master",
-    "purescript-psci-support": "master"
+    "purescript-assert": "^5.0.0",
+    "purescript-console": "^5.0.0",
+    "purescript-effect": "^3.0.0"
   }
 }
