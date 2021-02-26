@@ -4,7 +4,17 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
-Breaking changes (😱!!!):
+Breaking changes:
+
+New features:
+
+Bugfixes:
+
+Other improvements:
+
+## [v6.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.0) - 2021-02-26
+
+Breaking changes:
 - Improved performance of `string` and update `StringLike` to have `stripPrefix` as a class member instead of `indexOf` (#93) 
 - Non-empty combinators now return `NonEmptyList` (#102)
 - Added support for PureScript 0.14 and dropped support for all previous versions (#101)
