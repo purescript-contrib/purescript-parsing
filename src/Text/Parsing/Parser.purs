@@ -103,9 +103,9 @@ derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (P
 
 instance altParserT :: Monad m => Alt (ParserT s m) where
   alt p1 p2 = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState i p _)) -> do
-    Tuple e s'@(ParseState i' p' c') <- runStateT (runExceptT (unwrap p1)) (ParseState i p false)
+    Tuple e s'@(ParseState _ _ c') <- runStateT (runExceptT (unwrap p1)) (ParseState i p false)
     case e of
-      Left err
+      Left _
         | not c' -> runStateT (runExceptT (unwrap p2)) s
       _ -> pure (Tuple e s')
 

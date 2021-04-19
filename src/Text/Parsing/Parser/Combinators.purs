@@ -186,8 +186,8 @@ skipMany p = skipMany1 p <|> pure unit
 -- | Skip at least one instance of a phrase.
 skipMany1 :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
 skipMany1 p = do
-  x <- p
-  xs <- skipMany p
+  _ <- p
+  _ <- skipMany p
   pure unit
 
 -- | Fail if the specified parser matches.

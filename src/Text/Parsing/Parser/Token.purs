@@ -56,7 +56,7 @@ token tokpos = do
   case List.uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
-      modify_ \(ParseState _ position _) ->
+      modify_ \(ParseState _ _ _) ->
         ParseState tail (tokpos head) true
       pure head
 
