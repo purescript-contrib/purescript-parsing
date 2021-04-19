@@ -11,6 +11,8 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Fix warnings found by v0.14.1 PS release (#112)
+- Add dependencies whoes modules are used directly in source code (#112)
 
 ## [v6.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.0) - 2021-02-26
 
