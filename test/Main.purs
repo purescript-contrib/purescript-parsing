@@ -500,7 +500,7 @@ main = do
 
   case runParser "aa" p of
     Right _ -> assert' "error: ParseError expected!" false
-    Left (ParseError message pos) -> do
+    Left (ParseError message _) -> do
       let messageExpected = "context1 context2 Expected \"b\""
       assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
       logShow messageExpected
