@@ -48,6 +48,10 @@ module Text.Parsing.Indent
   , (<*/>)
   , indentOp
   , (<?/>)
+  , indentBrackets
+  , indentAngles
+  , indentBraces
+  , indentParens
   , Optional(..)
   ) where
 

@@ -11,6 +11,8 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Removed unused names found by v0.14.1 PureScript release (#112 by @JordanMartinez)
+- Installed dependencies directly imported into source code that were previously installed transitively (#112 by @JordanMartinez)
 
 ## [v6.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.0) - 2021-02-26
 
