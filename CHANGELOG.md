@@ -10,6 +10,8 @@ New features:
 
 Bugfixes:
 
+- Fix `sepBy` and `sepEndBy` (#114 by @yzyzsun)
+
 Other improvements:
 
 ## [v6.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.1) - 2021-04-20
