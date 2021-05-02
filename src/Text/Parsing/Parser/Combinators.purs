@@ -102,21 +102,21 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
 sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepBy p sep =
   (do a <- p
-      as <- many $ sep *> p
+      as <- many $ try $ sep *> p
       pure (a : as)) <|> pure Nil
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
 sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1 p sep = do
   a <- p
-  as <- many $ sep *> p
+  as <- many $ try $ sep *> p
   pure (cons' a as)
 
 -- | Parse phrases delimited and optionally terminated by a separator.
 sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndBy p sep =
   (do a <- p
-      as <- many $ sep *> p
+      as <- many $ try $ sep *> p
       optional sep
       pure (a : as)) <|> pure Nil
 
@@ -124,7 +124,7 @@ sepEndBy p sep =
 sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1 p sep = do
   a <- p
-  (do as <- many $ sep *> p
+  (do as <- many $ try $ sep *> p
       optional sep
       pure (cons' a as)) <|> pure (singleton a)
 
