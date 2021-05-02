@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
 import Text.Parsing.Parser (Parser, ParserT, ParseError(..), runParser, parseErrorPosition, region)
-import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl, between)
+import Text.Parsing.Parser.Combinators (endBy1, sepBy1, sepEndBy1, optionMaybe, try, chainl, between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
@@ -441,7 +441,15 @@ main = do
     optionMaybe $ string "b"
   parseTest "a,a,a" (cons "a" (cons "a" (cons' "a" Nil))) $ string "a" `sepBy1` string ","
   parseTest "a,a,a," (cons "a" (cons "a" (cons' "a" Nil))) $ do
+    as <- string "a" `sepBy1` string ","
+    _ <- string ","
+    pure as
+  parseTest "a,a,a," (cons "a" (cons "a" (cons' "a" Nil))) $ do
     as <- string "a" `endBy1` string ","
+    eof
+    pure as
+  parseTest "a,a,a," (cons "a" (cons "a" (cons' "a" Nil))) $ do
+    as <- string "a" `sepEndBy1` string ","
     eof
     pure as
   parseTest "a+b+c" "abc" opTest
