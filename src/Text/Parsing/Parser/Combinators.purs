@@ -132,12 +132,12 @@ sepEndBy1 p sep = do
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 endBy1 p sep = do
   a <- p <* sep
-  as <- many $ p <* sep
+  as <- many $ try $ p <* sep
   pure (cons' a as)
 
 -- | Parse phrases delimited and terminated by a separator.
 endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-endBy p sep = many $ p <* sep
+endBy p sep = many $ try $ p <* sep
 
 -- | Parse phrases delimited by a right-associative operator.
 -- |

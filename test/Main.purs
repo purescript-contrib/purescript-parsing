@@ -448,6 +448,10 @@ main = do
     as <- string "a" `endBy1` string ","
     eof
     pure as
+  parseTest "a,a,a" (cons "a" (cons' "a" Nil)) $ do
+    as <- string "a" `endBy1` string ","
+    _ <- string "a"
+    pure as
   parseTest "a,a,a," (cons "a" (cons "a" (cons' "a" Nil))) $ do
     as <- string "a" `sepEndBy1` string ","
     eof

@@ -10,7 +10,7 @@ New features:
 
 Bugfixes:
 
-- Fix `sepBy` and `sepEndBy` (#114 by @yzyzsun)
+- Fix `sepBy`, `endBy` and `sepEndBy` (#114 by @yzyzsun)
 
 Other improvements:
 
