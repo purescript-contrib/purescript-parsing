@@ -7,7 +7,6 @@
 -- |
 -- | ```purescript
 -- | Text.Parsec.many  = Data.(Array|List).many
--- | Text.Parsec.many1 = Data.(Array|List).some
 -- | Text.Parsec.(<|>) = Control.Alt.alt (<|>)
 -- | ```
 -- |
@@ -24,13 +23,15 @@
 module Text.Parsing.Parser.Combinators where
 
 import Prelude
+
 import Control.Monad.Except (runExceptT, ExceptT(..))
 import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
-import Data.List (List(..), (:), many)
-import Data.List.NonEmpty (NonEmptyList, cons', singleton)
+import Data.List (List(..), many, (:))
+import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
@@ -92,6 +93,10 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
   Tuple e _ <- runStateT (runExceptT (unwrap p)) s
   pure (Tuple e s)
 
+-- | Match one or more times.
+many1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (NonEmptyList a)
+many1 p = NEL.cons' <$> p <*> many p
+
 -- | Parse phrases delimited by a separator.
 -- |
 -- | For example:
@@ -100,40 +105,30 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
 -- | digit `sepBy` string ","
 -- | ```
 sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepBy p sep =
-  (do a <- p
-      as <- many $ sep *> p
-      pure (a : as)) <|> pure Nil
+sepBy p sep = map NEL.toList (sepBy1 p sep) <|> pure Nil
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
 sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1 p sep = do
   a <- p
   as <- many $ sep *> p
-  pure (cons' a as)
+  pure (NEL.cons' a as)
 
 -- | Parse phrases delimited and optionally terminated by a separator.
 sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
-sepEndBy p sep =
-  (do a <- p
-      as <- many $ sep *> p
-      optional sep
-      pure (a : as)) <|> pure Nil
+sepEndBy p sep = map NEL.toList (sepEndBy1 p sep) <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
 sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1 p sep = do
   a <- p
-  (do as <- many $ sep *> p
-      optional sep
-      pure (cons' a as)) <|> pure (singleton a)
+  (do _ <- sep
+      as <- sepEndBy p sep
+      pure (NEL.cons' a as)) <|> pure (NEL.singleton a)
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
-endBy1 p sep = do
-  a <- p <* sep
-  as <- many $ p <* sep
-  pure (cons' a as)
+endBy1 p sep = many1 $ p <* sep
 
 -- | Parse phrases delimited and terminated by a separator.
 endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
@@ -201,12 +196,11 @@ manyTill p end = scan
     scan = (end $> Nil)
        <|> do x <- p
               xs <- scan
-              pure (x:xs)
+              pure (x : xs)
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1Till p end = do
   x <- p
   xs <- manyTill p end
-  pure (cons' x xs)
-
+  pure (NEL.cons' x xs)
