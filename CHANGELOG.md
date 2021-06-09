@@ -9,6 +9,7 @@ Breaking changes:
 New features:
 
 Bugfixes:
+- Revert combinator implementation changes from #102 (@robertdp, https://github.com/purescript-contrib/purescript-parsing/pull/116)
 
 Other improvements:
 
