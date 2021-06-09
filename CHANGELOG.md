@@ -9,9 +9,13 @@ Breaking changes:
 New features:
 
 Bugfixes:
-- Revert combinator implementation changes from #102 (@robertdp, https://github.com/purescript-contrib/purescript-parsing/pull/116)
 
 Other improvements:
+
+## [v6.0.2](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.2) - 2021-05-09
+
+Bugfixes:
+- Revert combinator implementation changes from #102 (@robertdp, https://github.com/purescript-contrib/purescript-parsing/pull/116)
 
 ## [v6.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.1) - 2021-04-20
 
