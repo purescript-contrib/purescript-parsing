@@ -21,17 +21,14 @@ module Text.Parsing.Parser.Token
   )
     where
 
-import Prelude hiding (when,between)
+import Prelude hiding (when, between)
 
 import Control.Lazy (fix)
 import Control.Monad.State (gets, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
-import Data.String.CodeUnits (toChar, singleton) as CodeUnits
-import Data.String.CodePoints (CodePoint, codePointFromChar)
 import Data.Char (fromCharCode, toCharCode)
-import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper, hexDigitToInt)
-import Data.String.Unicode as Unicode
+import Data.CodePoint.Unicode (hexDigitToInt, isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
@@ -40,14 +37,17 @@ import Data.List (List(..))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (Maybe(..), maybe)
-import Data.String (null, toLower)
+import Data.String (CodePoint, null, toLower)
+import Data.String.CodePoints (codePointFromChar)
+import Data.String.CodeUnits (toChar, singleton) as CodeUnits
 import Data.String.CodeUnits as SCU
+import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
 import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
 import Text.Parsing.Parser.Combinators (skipMany1, try, tryRethrow, skipMany, notFollowedBy, option, choice, between, sepBy1, sepBy, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
-import Text.Parsing.Parser.String (satisfy, oneOf, noneOf, string, char)
+import Text.Parsing.Parser.String (char, noneOf, oneOf, satisfy, satisfyCodePoint, string)
 
 -- | Create a parser which Returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
@@ -746,7 +746,7 @@ whiteSpace' langDef@(LanguageDef languageDef)
         skipMany (simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef <?> "")
 
 simpleSpace :: forall m . Monad m => ParserT String m Unit
-simpleSpace = skipMany1 (satisfyCP isSpace)
+simpleSpace = skipMany1 (satisfyCodePoint isSpace)
 
 oneLineComment :: forall m . Monad m => GenLanguageDef String m -> ParserT String m Unit
 oneLineComment (LanguageDef languageDef) =

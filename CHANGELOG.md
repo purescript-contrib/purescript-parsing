@@ -6,9 +6,27 @@ Notable changes to this project are documented in this file. The format is based
 
 Breaking changes:
 
+- `anyChar` will no longer always succeed. It will only succeed on a Basic
+  Multilingual Plane character. The new parser `anyCodePoint` will always
+  succeed. (#119 by @jamesdbrock)
+- Delete the `StringLike` typeclass. Users must delete all `StringLike`
+  constraints. (#119 by @jamesdbrock)
+- Move `updatePosString` to the `String` module and don’t
+  export it. (#119 by @jamesdbrock)
+- Change the definition of `whiteSpace` and `skipSpaces` to
+  `Data.CodePoint.Unicode.isSpace`. (#119 by @jamesdbrock)
+
 New features:
 
+- Add primitive parsers `anyCodePoint` and `satisfyCodePoint` for parsing
+  `CodePoint`s. (#119 by @jamesdbrock)
+- Add `match` combinator (#119 by @jamesdbrock)
+- Add benchmark suite (#119 by @jamesdbrock)
+- Split the dev dependencies out into `spago-dev.dhall`.
+
 Bugfixes:
+
+- Unicode correctness (#119 by @jamesdbrock)
 
 Other improvements:
 
@@ -26,12 +44,12 @@ Other improvements:
 ## [v6.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.0) - 2021-02-26
 
 Breaking changes:
-- Improved performance of `string` and update `StringLike` to have `stripPrefix` as a class member instead of `indexOf` (#93) 
+- Improved performance of `string` and update `StringLike` to have `stripPrefix` as a class member instead of `indexOf` (#93)
 - Non-empty combinators now return `NonEmptyList` (#102)
 - Added support for PureScript 0.14 and dropped support for all previous versions (#101)
 
 New features:
-- Derived `Generic` instance of Position (#87) 
+- Derived `Generic` instance of Position (#87)
 
 Bugfixes:
 
