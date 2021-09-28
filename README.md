@@ -3,8 +3,7 @@
 [![CI](https://github.com/purescript-contrib/purescript-parsing/workflows/CI/badge.svg?branch=main)](https://github.com/purescript-contrib/purescript-parsing/actions?query=workflow%3ACI+branch%3Amain)
 [![Release](https://img.shields.io/github/release/purescript-contrib/purescript-parsing.svg)](https://github.com/purescript-contrib/purescript-parsing/releases)
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-parsing/badge)](https://pursuit.purescript.org/packages/purescript-parsing)
-[![Maintainer: thomashoneyman](https://img.shields.io/badge/maintainer-thomashoneyman-teal.svg)](https://github.com/thomashoneyman)
-[![Maintainer: garyb](https://img.shields.io/badge/maintainer-garyb-teal.svg)](https://github.com/garyb)
+[![Maintainer: jamesdbrock](https://img.shields.io/badge/maintainer-jamesdbrock-teal.svg)](https://github.com/jamesdbrock)
 
 A parser combinator library based on Haskell's [Parsec](https://hackage.haskell.org/package/parsec).
 
