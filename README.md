@@ -4,6 +4,7 @@
 [![Release](https://img.shields.io/github/release/purescript-contrib/purescript-parsing.svg)](https://github.com/purescript-contrib/purescript-parsing/releases)
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-parsing/badge)](https://pursuit.purescript.org/packages/purescript-parsing)
 [![Maintainer: jamesdbrock](https://img.shields.io/badge/maintainer-jamesdbrock-teal.svg)](https://github.com/jamesdbrock)
+[![Maintainer: robertdp](https://img.shields.io/badge/maintainer-robertdp-teal.svg)](https://github.com/robertdp)
 
 A parser combinator library based on Haskell's [Parsec](https://hackage.haskell.org/package/parsec).
 
