@@ -1,7 +1,7 @@
 {
     "name": "purescript-parsing",
     "license": [
-        "BSD3"
+        "BSD-2-Clause"
     ],
     "repository": {
         "type": "git",
