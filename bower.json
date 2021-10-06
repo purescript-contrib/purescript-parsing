@@ -1,40 +1,35 @@
 {
-  "name": "purescript-parsing",
-  "homepage": "https://github.com/purescript-contrib/purescript-parsing",
-  "description": "Parser combinator library",
-  "keywords": [
-    "purescript"
-  ],
-  "license": "BSD-3-Clause",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/purescript-contrib/purescript-parsing.git"
-  },
-  "ignore": [
-    "**/.*",
-    "bower_components",
-    "node_modules",
-    "output",
-    "test",
-    "bower.json",
-    "package.json"
-  ],
-  "dependencies": {
-    "purescript-arrays": "^6.0.0",
-    "purescript-either": "^5.0.0",
-    "purescript-foldable-traversable": "^5.0.0",
-    "purescript-identity": "^5.0.0",
-    "purescript-integers": "^5.0.0",
-    "purescript-lists": "^6.0.0",
-    "purescript-maybe": "^5.0.0",
-    "purescript-prelude": "^5.0.0",
-    "purescript-strings": "^5.0.0",
-    "purescript-transformers": "^5.0.0",
-    "purescript-unicode": "^5.0.0"
-  },
-  "devDependencies": {
-    "purescript-assert": "^5.0.0",
-    "purescript-console": "^5.0.0",
-    "purescript-effect": "^3.0.0"
-  }
+    "name": "purescript-parsing",
+    "license": [
+        "BSD3"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/purescript-contrib/purescript-parsing.git"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "output"
+    ],
+    "dependencies": {
+        "purescript-arrays": "^v6.0.1",
+        "purescript-control": "^v5.0.0",
+        "purescript-either": "^v5.0.0",
+        "purescript-foldable-traversable": "^v5.0.1",
+        "purescript-identity": "^v5.0.0",
+        "purescript-integers": "^v5.0.0",
+        "purescript-lists": "^v6.0.1",
+        "purescript-math": "^v3.0.0",
+        "purescript-maybe": "^v5.0.0",
+        "purescript-newtype": "^v4.0.0",
+        "purescript-prelude": "^v5.0.1",
+        "purescript-strings": "^v5.0.0",
+        "purescript-tailrec": "^v5.0.1",
+        "purescript-transformers": "^v5.1.0",
+        "purescript-tuples": "^v6.0.1",
+        "purescript-unicode": "^v5.0.0",
+        "purescript-unsafe-coerce": "^v5.0.0"
+    }
 }
