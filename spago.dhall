@@ -1,5 +1,5 @@
 { name = "parsing"
-, license = "BSD3"
+, license = "BSD-2-Clause"
 , repository = "https://github.com/purescript-contrib/purescript-parsing.git"
 , dependencies =
   [ "arrays"
