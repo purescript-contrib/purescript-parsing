@@ -25,10 +25,10 @@ jobs:
             output
 
       - name: Install dependencies
-        run: spago install
+        run: spago -x spago-dev.dhall install
 
       - name: Build source
-        run: spago build --no-install --purs-args '--censor-lib --strict --censor-codes='UserDefinedWarning''
+        run: spago -x spago-dev.dhall build --no-install --purs-args '--censor-lib --strict --censor-codes='UserDefinedWarning''
 
       - name: Run tests
-        run: spago test --no-install
+        run: spago -x spago-dev.dhall test --no-install

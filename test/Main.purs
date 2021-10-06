@@ -1,6 +1,6 @@
 module Test.Main where
 
-import Prelude hiding (between,when)
+import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
@@ -9,7 +9,9 @@ import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
 import Data.Maybe (Maybe(..))
+import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
+import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
@@ -19,8 +21,8 @@ import Text.Parsing.Parser.Combinators (endBy1, sepBy1, optionMaybe, try, chainl
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (javaStyle, haskellStyle, haskellDef)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (eof, string, char, satisfy, anyChar)
-import Text.Parsing.Parser.Token (TokenParser, match, when, token, makeTokenParser)
+import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, satisfy, string, whiteSpace)
+import Text.Parsing.Parser.Token (TokenParser, letter, makeTokenParser, match, token, when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -39,7 +41,7 @@ parseTest input expected p = case runParser input p of
 
 parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
 parseErrorTestPosition p input expected = case runParser input p of
-  Right _ -> assert' "error: ParseError expected!" false
+  Right x -> assert' ("ParseError expected at " <> show expected <> " but parsed " <> show x) false
   Left err -> do
     let pos = parseErrorPosition err
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
@@ -447,6 +449,24 @@ main = do
   parseTest "a+b+c" "abc" opTest
   parseTest "1*2+3/4-5" (-3) exprTest
   parseTest "ab?" "ab" manySatisfyTest
+
+  parseErrorTestPosition
+    anyChar
+    "𝅘𝅥𝅯"
+    (Position {column:1,line:1})
+
+  parseTest "𝅘𝅥𝅘𝅥𝅮x𝅘𝅥𝅯" ["𝅘𝅥", "𝅘𝅥𝅮", "x", "𝅘𝅥𝅯"] do
+    quarter <- anyCodePoint
+    eighth <- (singleton <$> char 'x') <|> string "𝅘𝅥𝅮"
+    letterx <- string "𝅘𝅥𝅯" <|> string "x"
+    sixteenth <- string "𝅘𝅥𝅯" <|> (singleton <$> char 'x')
+    pure $ [SCP.singleton quarter, eighth, letterx, sixteenth]
+
+  parseTest "aa  bb" ["aa", "  ", "bb"] do
+    aa <- SCU.fromCharArray <$> some letter
+    w <- whiteSpace
+    bb <- SCU.fromCharArray <$> some letter
+    pure [aa, w, bb]
 
   let tokpos = const initialPos
   parseTest (fromFoldable [A, B]) A (token tokpos)

@@ -13,7 +13,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Text.Parsing.Parser (ParserT)
 import Text.Parsing.Parser.String (char, oneOf)
-import Text.Parsing.Parser.Token (LanguageDef, TokenParser, GenLanguageDef(..), unGenLanguageDef, makeTokenParser, alphaNum, letter)
+import Text.Parsing.Parser.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 
 -----------------------------------------------------------
 -- Styles: haskellStyle, javaStyle
