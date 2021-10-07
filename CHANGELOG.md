@@ -6,34 +6,35 @@ Notable changes to this project are documented in this file. The format is based
 
 Breaking changes:
 
-- `anyChar` will no longer always succeed. It will only succeed on a Basic
-  Multilingual Plane character. The new parser `anyCodePoint` will always
-  succeed. (#119 by @jamesdbrock)
-- Delete the `StringLike` typeclass. Users must delete all `StringLike`
-  constraints. (#119 by @jamesdbrock)
-- Move `updatePosString` to the `String` module and don’t
-  export it. (#119 by @jamesdbrock)
-- Change the definition of `whiteSpace` and `skipSpaces` to
-  `Data.CodePoint.Unicode.isSpace`. (#119 by @jamesdbrock)
-
 New features:
-
-- Add primitive parsers `anyCodePoint` and `satisfyCodePoint` for parsing
-  `CodePoint`s. (#119 by @jamesdbrock)
-- Add `match` combinator (#119 by @jamesdbrock)
-- Add benchmark suite (#119 by @jamesdbrock)
-- Split the dev dependencies out into `spago-dev.dhall`.
 
 Bugfixes:
 
-- Unicode correctness (#119 by @jamesdbrock)
+Other improvements:
+
+## [v7.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.0.0) - 2021-10-06
+
+Breaking changes:
+- `anyChar` no longer always succeeds. It will only succeed on a Basic Multilingual Plane character. The new parser `anyCodePoint` will always succeed. (#119 by @jamesdbrock)
+- Deleted the `StringLike` typeclass. Users must delete all `StringLike` constraints. (#119 by @jamesdbrock)
+- Moved `updatePosString` to the `String` module and don’t export it. (#119 by @jamesdbrock)
+- Changed the definition of `whiteSpace` and `skipSpaces` to `Data.CodePoint.Unicode.isSpace`. (#119 by @jamesdbrock)
+
+New features:
+- Added primitive parsers `anyCodePoint` and `satisfyCodePoint` for parsing `CodePoint`s. (#119 by @jamesdbrock)
+- Added `match` combinator (#119 by @jamesdbrock)
+
+Bugfixes:
+- Ensure Unicode correctness (#119 by @jamesdbrock)
 
 Other improvements:
+- Added benchmark suite (#119 by @jamesdbrock)
+- Split the dev dependencies out into `spago-dev.dhall`.
 
 ## [v6.0.2](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.2) - 2021-05-09
 
 Bugfixes:
-- Revert combinator implementation changes from #102 (@robertdp, https://github.com/purescript-contrib/purescript-parsing/pull/116)
+- Reverted combinator implementation changes from #102 (@robertdp, https://github.com/purescript-contrib/purescript-parsing/pull/116)
 
 ## [v6.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v6.0.1) - 2021-04-20
 
