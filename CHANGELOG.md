@@ -12,6 +12,12 @@ Bugfixes:
 
 Other improvements:
 
+## [v7.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.0.0) - 2021-11-17
+
+Other improvements:
+
+- Split license file (#125 by @maxdeviant)
+
 ## [v7.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.0.0) - 2021-10-06
 
 Breaking changes:
