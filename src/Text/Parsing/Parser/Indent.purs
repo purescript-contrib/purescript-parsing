@@ -88,13 +88,13 @@ put' :: forall s. Position -> IndentParser s Unit
 put' p = lift (put p)
 
 sourceColumn :: Position -> Int
-sourceColumn (Position {line: _, column: c}) = c
+sourceColumn (Position { line: _, column: c }) = c
 
 sourceLine :: Position -> Int
-sourceLine (Position {line: l, column: _}) = l
+sourceLine (Position { line: l, column: _ }) = l
 
 setSourceLine :: Position -> Int -> Position
-setSourceLine (Position {line: _, column: c}) l = Position {line: l, column: c}
+setSourceLine (Position { line: _, column: c }) l = Position { line: l, column: c }
 
 biAp :: forall a b c. (a -> b) -> (b -> b -> c) -> a -> a -> c
 biAp f c v1 v2 = c (f v1) (f v2)
@@ -104,18 +104,18 @@ many1 :: forall s m a. (Monad m) => ParserT s m a -> ParserT s m (List a)
 many1 p = lift2 Cons p (many p)
 
 symbol :: forall m. (Monad m) => String -> ParserT String m String
-symbol name = (many $ oneOf [' ','\t']) *> (string name)
+symbol name = (many $ oneOf [ ' ', '\t' ]) *> (string name)
 
 -- | `withBlock f a p` parses `a`
 -- | followed by an indented block of `p`
 -- | combining them with `f`.
 withBlock :: forall a b c s. (a -> List b -> c) -> IndentParser s a -> IndentParser s b -> IndentParser s c
 withBlock f a p = withPos $ do
-    r1 <- a
-    r  <- optionMaybe $ indented *> block p
-    case r of
-      Nothing -> pure (f r1 Nil)
-      Just r2 -> pure (f r1 r2)
+  r1 <- a
+  r <- optionMaybe $ indented *> block p
+  case r of
+    Nothing -> pure (f r1 Nil)
+    Just r2 -> pure (f r1 r2)
 
 -- | Like 'withBlock', but throws away initial parse result
 withBlock' :: forall a b s. IndentParser s a -> IndentParser s b -> IndentParser s (List b)
@@ -124,18 +124,19 @@ withBlock' = withBlock (flip const)
 -- | Parses only when indented past the level of the reference
 indented :: forall s. IndentParser s Unit
 indented = do
-    pos <- getPosition
-    s <- get'
-    if biAp sourceColumn (<=) pos s then fail "not indented" else do
-        put' $ setSourceLine s (sourceLine pos)
-        pure unit
+  pos <- getPosition
+  s <- get'
+  if biAp sourceColumn (<=) pos s then fail "not indented"
+  else do
+    put' $ setSourceLine s (sourceLine pos)
+    pure unit
 
 -- | Same as `indented`, but does not change internal state
 indented' :: forall s. IndentParser s Unit
 indented' = do
-    pos <- getPosition
-    s <- get'
-    if biAp sourceColumn (<=) pos s then fail "not indented" else pure unit
+  pos <- getPosition
+  s <- get'
+  if biAp sourceColumn (<=) pos s then fail "not indented" else pure unit
 
 -- | Parses only when indented past the level of the reference or on the same line
 sameOrIndented :: forall s. IndentParser s Unit
@@ -144,36 +145,36 @@ sameOrIndented = sameLine <|> indented
 -- | Parses only on the same line as the reference
 sameLine :: forall s. IndentParser s Unit
 sameLine = do
-    pos <- getPosition
-    s   <- get'
-    if biAp sourceLine (==) pos s then pure unit else fail "over one line"
+  pos <- getPosition
+  s <- get'
+  if biAp sourceLine (==) pos s then pure unit else fail "over one line"
 
 -- | Parses a block of lines at the same indentation level
 block1 :: forall s a. IndentParser s a -> IndentParser s (List a)
 block1 p = withPos $ do
-    r <- many1 $ checkIndent *> p
-    pure r
+  r <- many1 $ checkIndent *> p
+  pure r
 
 -- | Parses a block of lines at the same indentation level , empty Blocks allowed
 block :: forall s a. IndentParser s a -> IndentParser s (List a)
 block p = withPos $ do
-    r <- many $ checkIndent *> p
-    pure r
+  r <- many $ checkIndent *> p
+  pure r
 
 -- | Parses using the current location for indentation reference
 withPos :: forall s a. IndentParser s a -> IndentParser s a
 withPos x = do
-    a <- get'
-    p <- getPosition
-    r <- put' p *> x
-    put' a *> pure r
+  a <- get'
+  p <- getPosition
+  r <- put' p *> x
+  put' a *> pure r
 
 -- | Ensures the current indentation level matches that of the reference
 checkIndent :: forall s. IndentParser s Unit
 checkIndent = do
-    s <- get'
-    p <- getPosition
-    if biAp sourceColumn (==) p s then pure unit else fail "indentation doesn't match"
+  s <- get'
+  p <- getPosition
+  if biAp sourceColumn (==) p s then pure unit else fail "indentation doesn't match"
 
 -- | Run the result of an indentation sensitive parse
 runIndent :: forall a. State Position a -> a

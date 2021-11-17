@@ -122,9 +122,11 @@ sepEndBy p sep = map NEL.toList (sepEndBy1 p sep) <|> pure Nil
 sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1 p sep = do
   a <- p
-  (do _ <- sep
+  ( do
+      _ <- sep
       as <- sepEndBy p sep
-      pure (NEL.cons' a as)) <|> pure (NEL.singleton a)
+      pure (NEL.cons' a as)
+  ) <|> pure (NEL.singleton a)
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
@@ -155,9 +157,12 @@ chainl1 p f = do
   chainl1' p f a
 
 chainl1' :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
-chainl1' p f a = (do f' <- f
-                     a' <- p
-                     chainl1' p f (f' a a')) <|> pure a
+chainl1' p f a =
+  ( do
+      f' <- f
+      a' <- p
+      chainl1' p f (f' a a')
+  ) <|> pure a
 
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
 chainr1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
@@ -166,9 +171,12 @@ chainr1 p f = do
   chainr1' p f a
 
 chainr1' :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
-chainr1' p f a = (do f' <- f
-                     a' <- chainr1 p f
-                     pure $ f' a a') <|> pure a
+chainr1' p f a =
+  ( do
+      f' <- f
+      a' <- chainr1 p f
+      pure $ f' a a'
+  ) <|> pure a
 
 -- | Parse one of a set of alternatives.
 choice :: forall f m s a. Foldable f => Monad m => f (ParserT s m a) -> ParserT s m a
@@ -193,10 +201,11 @@ notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTill p end = scan
   where
-    scan = (end $> Nil)
-       <|> do x <- p
-              xs <- scan
-              pure (x : xs)
+  scan = (end $> Nil)
+    <|> do
+      x <- p
+      xs <- scan
+      pure (x : xs)
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)

@@ -15,20 +15,19 @@
 -- | can parse the full Unicode character set. All of the primitive parsers
 -- | in this module can be used together.
 module Text.Parsing.Parser.String
-( string
-, eof
-, anyChar
-, anyCodePoint
-, satisfy
-, satisfyCodePoint
-, char
-, whiteSpace
-, skipSpaces
-, oneOf
-, noneOf
-, match
-)
-where
+  ( string
+  , eof
+  , anyChar
+  , anyCodePoint
+  , satisfy
+  , satisfyCodePoint
+  , char
+  , whiteSpace
+  , skipSpaces
+  , oneOf
+  , noneOf
+  , match
+  ) where
 
 import Prelude hiding (between)
 
@@ -71,7 +70,7 @@ anyChar = tryRethrow do
   -- BMP, so we check that ourselves.
   -- https://github.com/purescript/purescript-strings/issues/153
   if cp > 65535 -- BMP
-    then fail "Not a Char"
+  then fail "Not a Char"
   else case fromCharCode cp of
     Nothing -> fail "Not a Char"
     Just c -> pure c
@@ -91,17 +90,15 @@ anyCodePoint = do
 satisfy :: forall m. Monad m => (Char -> Boolean) -> ParserT String m Char
 satisfy f = tryRethrow do
   c <- anyChar
-  if f c
-    then pure c
-    else fail "Predicate unsatisfied"
+  if f c then pure c
+  else fail "Predicate unsatisfied"
 
 -- | Match a Unicode character satisfying the predicate.
 satisfyCodePoint :: forall m. Monad m => (CodePoint -> Boolean) -> ParserT String m CodePoint
 satisfyCodePoint f = tryRethrow do
   c <- anyCodePoint
-  if f c
-    then pure c
-    else fail "Predicate unsatisfied"
+  if f c then pure c
+  else fail "Predicate unsatisfied"
 
 -- | Match the specified BMP `Char`.
 char :: forall m. Monad m => Char -> ParserT String m Char
@@ -128,16 +125,16 @@ noneOf ss = satisfy (flip notElem ss) <?> ("none of " <> show ss)
 updatePosString :: Position -> String -> Position
 updatePosString pos str = case uncons str of
   Nothing -> pos
-  Just {head,tail} -> updatePosString (updatePosSingle pos head) tail -- tail recursive
+  Just { head, tail } -> updatePosString (updatePosSingle pos head) tail -- tail recursive
 
 -- | Updates a `Position` by adding the columns and lines in a
 -- | single `CodePoint`.
 updatePosSingle :: Position -> CodePoint -> Position
-updatePosSingle (Position {line,column}) cp = case unCodePoint cp of
+updatePosSingle (Position { line, column }) cp = case unCodePoint cp of
   10 -> Position { line: line + 1, column: 1 } -- "\n"
   13 -> Position { line: line + 1, column: 1 } -- "\r"
-  9  -> Position { line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
-  _  -> Position { line, column: column + 1 }
+  9 -> Position { line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
+  _ -> Position { line, column: column + 1 }
 
 -- | Combinator which returns both the result of a parse and the portion of
 -- | the input that was consumed while it was being parsed.
