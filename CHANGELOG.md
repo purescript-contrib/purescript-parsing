@@ -11,6 +11,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Added `purs-tidy` formatter (#126 by @thomashoneyman)
 
 ## [v7.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.0.0) - 2021-11-17
 

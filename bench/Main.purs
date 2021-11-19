@@ -62,15 +62,19 @@ import Text.Parsing.StringParser.CodeUnits as StringParser.CodeUnits
 
 string23 :: String
 string23 = "23"
+
 string23_2 :: String
 string23_2 = fold $ replicate 2 string23
+
 string23_10000 :: String
 string23_10000 = fold $ replicate 10000 string23
 
 stringSkidoo :: String
 stringSkidoo = "skidoo"
+
 stringSkidoo_2 :: String
 stringSkidoo_2 = fold $ replicate 2 stringSkidoo
+
 stringSkidoo_10000 :: String
 stringSkidoo_10000 = fold $ replicate 10000 stringSkidoo
 
@@ -84,29 +88,31 @@ parse23Units :: StringParser.Parser (List Char)
 parse23Units = manyRec StringParser.CodeUnits.anyDigit
 
 pattern23 :: Regex
-pattern23 = either (unsafePerformEffect <<< throw) identity $
-  regex "\\d" $ RegexFlags
-    { dotAll: true
-    , global: true
-    , ignoreCase: false
-    , multiline: true
-    , sticky: false
-    , unicode: true
-    }
+pattern23 = either (unsafePerformEffect <<< throw) identity
+  $ regex "\\d"
+  $ RegexFlags
+      { dotAll: true
+      , global: true
+      , ignoreCase: false
+      , multiline: true
+      , sticky: false
+      , unicode: true
+      }
 
 parseSkidoo :: Parser String (List String)
 parseSkidoo = manyRec $ string "skidoo"
 
 patternSkidoo :: Regex
-patternSkidoo = either (unsafePerformEffect <<< throw) identity $
-  regex "skidoo" $ RegexFlags
-    { dotAll: true
-    , global: true
-    , ignoreCase: false
-    , multiline: true
-    , sticky: false
-    , unicode: true
-    }
+patternSkidoo = either (unsafePerformEffect <<< throw) identity
+  $ regex "skidoo"
+  $ RegexFlags
+      { dotAll: true
+      , global: true
+      , ignoreCase: false
+      , multiline: true
+      , sticky: false
+      , unicode: true
+      }
 
 main :: Effect Unit
 main = do

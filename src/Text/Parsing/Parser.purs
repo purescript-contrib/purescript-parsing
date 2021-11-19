@@ -20,16 +20,16 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Apply (lift2)
-import Control.Lazy (defer, class Lazy)
-import Control.Monad.Error.Class (class MonadThrow, throwError, catchError)
-import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT, mapExceptT)
+import Control.Lazy (class Lazy, defer)
+import Control.Monad.Error.Class (class MonadThrow, catchError, throwError)
+import Control.Monad.Except (class MonadError, ExceptT(..), mapExceptT, runExceptT)
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.State (class MonadState, StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Control.MonadPlus (class Alternative, class MonadZero, class MonadPlus, class Plus)
+import Control.MonadPlus (class Alternative, class MonadPlus, class MonadZero, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
-import Data.Newtype (class Newtype, unwrap, over)
+import Data.Newtype (class Newtype, over, unwrap)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
@@ -62,7 +62,8 @@ derive instance newtypeParserT :: Newtype (ParserT s m a) _
 
 -- | Apply a parser, keeping only the parsed result.
 runParserT :: forall m s a. Monad m => s -> ParserT s m a -> m (Either ParseError a)
-runParserT s p = evalStateT (runExceptT (unwrap p)) initialState where
+runParserT s p = evalStateT (runExceptT (unwrap p)) initialState
+  where
   initialState = ParseState s initialPos false
 
 -- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
@@ -76,10 +77,13 @@ hoistParserT :: forall s m n a. (m ~> n) -> ParserT s m a -> ParserT s n a
 hoistParserT = mapParserT
 
 -- | Change the underlying monad action and data type in a ParserT monad action.
-mapParserT :: forall b n s a m.
-  (  m (Tuple (Either ParseError a) (ParseState s))
-  -> n (Tuple (Either ParseError b) (ParseState s))
-  ) -> ParserT s m a -> ParserT s n b
+mapParserT
+  :: forall b n s a m
+   . ( m (Tuple (Either ParseError a) (ParseState s))
+       -> n (Tuple (Either ParseError b) (ParseState s))
+     )
+  -> ParserT s m a
+  -> ParserT s n b
 mapParserT = over ParserT <<< mapExceptT <<< mapStateT
 
 instance lazyParserT :: Lazy (ParserT s m a) where
