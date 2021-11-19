@@ -56,17 +56,18 @@ module Text.Parsing.Indent
   ) where
 
 import Prelude
+
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
-import Control.Monad.State (gets, State, evalState)
+import Control.Monad.State (State, evalState, gets)
 import Control.Monad.State.Trans (get, put)
 import Control.Monad.Trans.Class (lift)
 import Data.List (List(..), many)
 import Data.Maybe (Maybe(..))
-import Text.Parsing.Parser (ParserT, ParseState(ParseState), fail)
+import Text.Parsing.Parser (ParseState(ParseState), ParserT, fail)
 import Text.Parsing.Parser.Combinators (option, optionMaybe)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (string, oneOf)
+import Text.Parsing.Parser.String (oneOf, string)
 
 -- | Indentation sensitive parser type. Usually @ m @ will
 -- | be @ Identity @ as with any @ ParserT @

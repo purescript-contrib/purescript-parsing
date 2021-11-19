@@ -8,7 +8,7 @@ module Text.Parsing.Parser.Expr
 import Prelude hiding (between)
 
 import Control.Alt ((<|>))
-import Data.Foldable (foldr, foldl)
+import Data.Foldable (foldl, foldr)
 import Data.List (List(..), (:))
 import Text.Parsing.Parser (ParserT)
 import Text.Parsing.Parser.Combinators (choice, (<?>))

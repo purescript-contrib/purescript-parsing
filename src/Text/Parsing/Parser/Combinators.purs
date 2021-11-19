@@ -24,7 +24,7 @@ module Text.Parsing.Parser.Combinators where
 
 import Prelude
 
-import Control.Monad.Except (runExceptT, ExceptT(..))
+import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
@@ -35,7 +35,7 @@ import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (ParseState(..), ParserT(..), ParseError(..), fail)
+import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
@@ -201,11 +201,10 @@ notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTill p end = scan
   where
-  scan = (end $> Nil)
-    <|> do
-      x <- p
-      xs <- scan
-      pure (x : xs)
+  scan = (end $> Nil) <|> do
+    x <- p
+    xs <- scan
+    pure (x : xs)
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)

@@ -36,4 +36,4 @@ jobs:
         run: spago -x spago-dev.dhall test --no-install
 
       - name: Check formatting
-        run: purs-tidy check src test
+        run: purs-tidy check src test bench
