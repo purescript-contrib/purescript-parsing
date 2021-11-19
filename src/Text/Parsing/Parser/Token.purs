@@ -230,9 +230,9 @@ type GenTokenParser s m =
   , octal ::
       ParserT s m Int
 
-        -- | Lexeme parser `symbol s` parses `string` `s` and skips
-        -- | trailing white space.
-        symbol :: String -> ParserT s m String
+  -- | Lexeme parser `symbol s` parses `string` `s` and skips
+  -- | trailing white space.
+  , symbol :: String -> ParserT s m String
 
   -- | `lexeme p` first applies parser `p` and than the `whiteSpace`
   -- | parser, returning the value of `p`. Every lexical
