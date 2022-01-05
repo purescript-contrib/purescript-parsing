@@ -5,6 +5,7 @@ import Prelude hiding (between, when)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Data.Array (some)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
@@ -21,7 +22,7 @@ import Text.Parsing.Parser.Combinators (between, chainl, endBy1, optionMaybe, se
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, satisfy, string, whiteSpace)
+import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, satisfy, string, whiteSpace)
 import Text.Parsing.Parser.Token (TokenParser, letter, makeTokenParser, match, token, when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
@@ -464,6 +465,11 @@ main = do
     letterx <- string "𝅘𝅥𝅯" <|> string "x"
     sixteenth <- string "𝅘𝅥𝅯" <|> (singleton <$> char 'x')
     pure $ [ SCP.singleton quarter, eighth, letterx, sixteenth ]
+
+  parseTest "🤔💯✅🤔💯" [ "🤔💯", "✅🤔💯" ] do
+    none <- Array.many $ noneOfCodePoints $ SCP.toCodePointArray "❓✅"
+    one <- Array.many $ oneOfCodePoints $ SCP.toCodePointArray "🤔💯✅"
+    pure $ SCP.fromCodePointArray <$> [ none, one ]
 
   parseTest "aa  bb" [ "aa", "  ", "bb" ] do
     aa <- SCU.fromCharArray <$> some letter
