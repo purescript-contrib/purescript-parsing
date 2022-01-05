@@ -8,6 +8,9 @@ Breaking changes:
 
 New features:
 
+- Added primitive parsers `oneOfCodePoints` and `noneOfCodePoints` - `CodePoint`
+  versions of `oneOf` and `noneOf` respectively. (#127 by @fsoikin)
+
 Bugfixes:
 
 Other improvements:
