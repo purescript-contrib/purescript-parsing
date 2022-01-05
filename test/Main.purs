@@ -17,7 +17,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
-import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorPosition, region, runParser)
+import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, region, runParser)
 import Text.Parsing.Parser.Combinators (between, chainl, endBy1, optionMaybe, sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
@@ -48,6 +48,14 @@ parseErrorTestPosition p input expected = case runParser input p of
   Left err -> do
     let pos = parseErrorPosition err
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
+    logShow expected
+
+parseErrorTestMessage :: forall s a. Show a => Parser s a -> s -> String -> Effect Unit
+parseErrorTestMessage p input expected = case runParser input p of
+  Right x -> assert' ("ParseError expected '" <> expected <> "' but parsed " <> show x) false
+  Left err -> do
+    let msg = parseErrorMessage err
+    assert' ("expected: " <> expected <> ", message: " <> msg) (expected == msg)
     logShow expected
 
 opTest :: Parser String String
@@ -470,6 +478,16 @@ main = do
     none <- Array.many $ noneOfCodePoints $ SCP.toCodePointArray "❓✅"
     one <- Array.many $ oneOfCodePoints $ SCP.toCodePointArray "🤔💯✅"
     pure $ SCP.fromCodePointArray <$> [ none, one ]
+
+  parseErrorTestMessage
+    (noneOfCodePoints $ SCP.toCodePointArray "❓✅")
+    "❓"
+    "Expected none of [\"❓\",\"✅\"]"
+
+  parseErrorTestMessage
+    (oneOfCodePoints $ SCP.toCodePointArray "❓✅")
+    "abc"
+    "Expected one of [\"❓\",\"✅\"]"
 
   parseTest "aa  bb" [ "aa", "  ", "bb" ] do
     aa <- SCU.fromCharArray <$> some letter

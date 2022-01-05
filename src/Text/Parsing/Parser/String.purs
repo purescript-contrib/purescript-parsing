@@ -33,13 +33,15 @@ module Text.Parsing.Parser.String
 
 import Prelude hiding (between)
 
+import Control.Alt ((<|>))
+import Control.Lazy (defer)
 import Control.Monad.State (get, put)
 import Data.Array (notElem)
 import Data.Char (fromCharCode)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..))
-import Data.String (CodePoint, Pattern(..), null, stripPrefix, uncons)
+import Data.String (CodePoint, Pattern(..), null, singleton, stripPrefix, uncons)
 import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..), fst)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
@@ -125,11 +127,11 @@ noneOf ss = satisfy (flip notElem ss) <?> ("none of " <> show ss)
 
 -- | Match one of the Unicode characters in the array.
 oneOfCodePoints :: forall m. Monad m => Array CodePoint -> ParserT String m CodePoint
-oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <?> ("one of " <> show ss)
+oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <|> defer \_ -> fail ("Expected one of " <> show (singleton <$> ss))
 
 -- | Match any Unicode character not in the array.
 noneOfCodePoints :: forall m. Monad m => Array CodePoint -> ParserT String m CodePoint
-noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <?> ("none of " <> show ss)
+noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <|> defer \_ -> fail ("Expected none of " <> show (singleton <$> ss))
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> Position
