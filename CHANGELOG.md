@@ -8,7 +8,7 @@ New features:
 
 - Added a new operator `<~?>` (alias of `withLazyErrorMessage`), an analog of
   `<?>`, but allows the error message to be deferred until there is actually an
-  error. Handy when the error message is expensive to construct. (#128 by @fsoikin)
+  error. Handy when the error message is expensive to construct. (#129 by @fsoikin)
 
 ## [v7.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.1.0) - 2022-01-06
 
