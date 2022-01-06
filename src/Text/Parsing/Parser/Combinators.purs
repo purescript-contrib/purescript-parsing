@@ -24,6 +24,7 @@ module Text.Parsing.Parser.Combinators where
 
 import Prelude
 
+import Control.Lazy (defer)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
@@ -39,9 +40,22 @@ import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
-withErrorMessage p msg = p <|> fail ("Expected " <> msg)
+withErrorMessage p msg = withLazyErrorMessage p $ const msg
 
 infixl 3 withErrorMessage as <?>
+
+-- | Provide an error message in the case of failure, but lazily. This is handy
+-- | in cases where constructing the error message is expensive, so it's
+-- | preferable to defer it until an error actually happens.
+-- |
+-- |```purs
+-- |parseBang :: Parser Char
+-- |parseBang = char '!' <??> \_ -> "Expected a bang"
+-- |```
+withLazyErrorMessage :: forall m s a. Monad m => ParserT s m a -> (Unit -> String) -> ParserT s m a
+withLazyErrorMessage p msg = p <|> defer \_ -> fail ("Expected " <> msg unit)
+
+infixl 3 withLazyErrorMessage as <~?>
 
 -- | Flipped `(<?>)`.
 asErrorMessage :: forall m s a. Monad m => String -> ParserT s m a -> ParserT s m a
