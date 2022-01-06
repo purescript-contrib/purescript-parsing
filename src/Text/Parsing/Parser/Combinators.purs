@@ -50,7 +50,7 @@ infixl 3 withErrorMessage as <?>
 -- |
 -- |```purs
 -- |parseBang :: Parser Char
--- |parseBang = char '!' <??> \_ -> "Expected a bang"
+-- |parseBang = char '!' <~?> \_ -> "Expected a bang"
 -- |```
 withLazyErrorMessage :: forall m s a. Monad m => ParserT s m a -> (Unit -> String) -> ParserT s m a
 withLazyErrorMessage p msg = p <|> defer \_ -> fail ("Expected " <> msg unit)
