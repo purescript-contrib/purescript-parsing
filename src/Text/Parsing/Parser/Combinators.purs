@@ -140,16 +140,16 @@ sepEndBy1Rec p sep = do
   a <- p
   (NEL.cons' a <$> tailRecM go Nil) <|> pure (NEL.singleton a)
   where
-    go :: List a -> ParserT s m (Step (List a) (List a))
-    go acc = nextOne <|> done
-      where
-        nextOne = do
-          -- First make sure there's a separator.
-          _ <- sep
-          -- Then try the phrase and loop if it's there, or bail if it's not there.
-          (p <#> \a -> Loop $ a : acc) <|> done
+  go :: List a -> ParserT s m (Step (List a) (List a))
+  go acc = nextOne <|> done
+    where
+    nextOne = do
+      -- First make sure there's a separator.
+      _ <- sep
+      -- Then try the phrase and loop if it's there, or bail if it's not there.
+      (p <#> \a -> Loop $ a : acc) <|> done
 
-        done = defer \_ -> pure $ Done $ reverse acc
+    done = defer \_ -> pure $ Done $ reverse acc
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
@@ -233,9 +233,9 @@ manyTill p end = scan
 manyTillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTillRec p end = tailRecM go Nil
   where
-    go :: List a -> ParserT s m (Step (List a) (List a))
-    go acc =
-      (end <#> \_ -> Done $ reverse acc)
+  go :: List a -> ParserT s m (Step (List a) (List a))
+  go acc =
+    (end <#> \_ -> Done $ reverse acc)
       <|> (p <#> \x -> Loop $ x : acc)
 
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.

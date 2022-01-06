@@ -99,28 +99,28 @@ manySatisfyTest = do
 -- of clear explicit recursion.
 stackSafeLoopsTest :: TestM
 stackSafeLoopsTest = do
-  parseTest "aaabaa" (toUnfoldable ["a", "a", "a"]) $
+  parseTest "aaabaa" (toUnfoldable [ "a", "a", "a" ]) $
     manyTillRec (string "a") (string "b")
   parseTest "baa" Nil $
     manyTillRec (string "a") (string "b")
 
-  parseTest "aaabaa" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+  parseTest "aaabaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     many1TillRec (string "a") (string "b")
   parseErrorTestPosition
     (many1TillRec (string "a") (string "b"))
     "baa"
     (Position { line: 1, column: 1 })
 
-  parseTest "a,a,a,b,a,a" (toUnfoldable ["a", "a", "a"]) $
+  parseTest "a,a,a,b,a,a" (toUnfoldable [ "a", "a", "a" ]) $
     sepEndByRec (string "a") (string ",")
-  parseTest "a,a,abaa" (toUnfoldable ["a", "a", "a"]) $
+  parseTest "a,a,abaa" (toUnfoldable [ "a", "a", "a" ]) $
     sepEndByRec (string "a") (string ",")
   parseTest "b,a,a" Nil $
     sepEndByRec (string "a") (string ",")
 
-  parseTest "a,a,a,b,a,a" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+  parseTest "a,a,a,b,a,a" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     sepEndBy1Rec (string "a") (string ",")
-  parseTest "a,a,abaa" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+  parseTest "a,a,abaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     sepEndBy1Rec (string "a") (string ",")
   parseErrorTestPosition
     (sepEndBy1Rec (string "a") (string ","))
