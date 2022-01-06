@@ -4,6 +4,8 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
+## [v7.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.1.0) - 2022-01-06
+
 Breaking changes:
 
 New features:
@@ -16,7 +18,7 @@ Bugfixes:
 Other improvements:
 - Added `purs-tidy` formatter (#126 by @thomashoneyman)
 
-## [v7.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.0.0) - 2021-11-17
+## [v7.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.0.1) - 2021-11-17
 
 Other improvements:
 
