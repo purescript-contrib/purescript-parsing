@@ -4,11 +4,12 @@ import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Data.Array (some)
+import Data.Array (some, toUnfoldable)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
+import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..))
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
@@ -18,7 +19,7 @@ import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
 import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, region, runParser)
-import Text.Parsing.Parser.Combinators (between, chainl, endBy1, optionMaybe, sepBy1, try)
+import Text.Parsing.Parser.Combinators (between, chainl, endBy1, many1TillRec, manyTillRec, optionMaybe, sepBy1, sepEndBy1Rec, sepEndByRec, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
@@ -87,6 +88,44 @@ manySatisfyTest = do
   r <- some $ satisfy (\s -> s /= '?')
   _ <- char '?'
   pure (fromCharArray r)
+
+-- This test doesn't test the actual stack safety of these combinators, mainly
+-- because I don't know how to come up with an example guaranteed to be large
+-- enough to overflow the stack. But thankfully, their stack safety is more or
+-- less guaranteed by construction.
+--
+-- Instead, this test checks functional correctness of the combinators, since
+-- that's the more tricky part to get right (or to break later) in the absence
+-- of clear explicit recursion.
+stackSafeLoopsTest :: TestM
+stackSafeLoopsTest = do
+  parseTest "aaabaa" (toUnfoldable ["a", "a", "a"]) $
+    manyTillRec (string "a") (string "b")
+  parseTest "baa" Nil $
+    manyTillRec (string "a") (string "b")
+
+  parseTest "aaabaa" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+    many1TillRec (string "a") (string "b")
+  parseErrorTestPosition
+    (many1TillRec (string "a") (string "b"))
+    "baa"
+    (Position { line: 1, column: 1 })
+
+  parseTest "a,a,a,b,a,a" (toUnfoldable ["a", "a", "a"]) $
+    sepEndByRec (string "a") (string ",")
+  parseTest "a,a,abaa" (toUnfoldable ["a", "a", "a"]) $
+    sepEndByRec (string "a") (string ",")
+  parseTest "b,a,a" Nil $
+    sepEndByRec (string "a") (string ",")
+
+  parseTest "a,a,a,b,a,a" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+    sepEndBy1Rec (string "a") (string ",")
+  parseTest "a,a,abaa" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+    sepEndBy1Rec (string "a") (string ",")
+  parseErrorTestPosition
+    (sepEndBy1Rec (string "a") (string ","))
+    "b,a,a"
+    (Position { line: 1, column: 1 })
 
 data TestToken = A | B
 
@@ -509,6 +548,8 @@ main = do
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
   parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
   parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
+
+  stackSafeLoopsTest
 
   tokenParserIdentifierTest
   tokenParserReservedTest
