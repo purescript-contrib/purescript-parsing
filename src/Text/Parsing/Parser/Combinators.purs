@@ -40,7 +40,7 @@ import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
-withErrorMessage p msg = withLazyErrorMessage p $ const msg
+withErrorMessage p msg = p <|> fail ("Expected " <> msg unit)
 
 infixl 3 withErrorMessage as <?>
 
