@@ -5,6 +5,7 @@ import Prelude hiding (between, when)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Data.Array (some)
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
@@ -16,12 +17,12 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
-import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorPosition, region, runParser)
+import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, region, runParser)
 import Text.Parsing.Parser.Combinators (between, chainl, endBy1, optionMaybe, sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, satisfy, string, whiteSpace)
+import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, satisfy, string, whiteSpace)
 import Text.Parsing.Parser.Token (TokenParser, letter, makeTokenParser, match, token, when)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
@@ -47,6 +48,14 @@ parseErrorTestPosition p input expected = case runParser input p of
   Left err -> do
     let pos = parseErrorPosition err
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
+    logShow expected
+
+parseErrorTestMessage :: forall s a. Show a => Parser s a -> s -> String -> Effect Unit
+parseErrorTestMessage p input expected = case runParser input p of
+  Right x -> assert' ("ParseError expected '" <> expected <> "' but parsed " <> show x) false
+  Left err -> do
+    let msg = parseErrorMessage err
+    assert' ("expected: " <> expected <> ", message: " <> msg) (expected == msg)
     logShow expected
 
 opTest :: Parser String String
@@ -464,6 +473,21 @@ main = do
     letterx <- string "𝅘𝅥𝅯" <|> string "x"
     sixteenth <- string "𝅘𝅥𝅯" <|> (singleton <$> char 'x')
     pure $ [ SCP.singleton quarter, eighth, letterx, sixteenth ]
+
+  parseTest "🤔💯✅🤔💯" [ "🤔💯", "✅🤔💯" ] do
+    none <- Array.many $ noneOfCodePoints $ SCP.toCodePointArray "❓✅"
+    one <- Array.many $ oneOfCodePoints $ SCP.toCodePointArray "🤔💯✅"
+    pure $ SCP.fromCodePointArray <$> [ none, one ]
+
+  parseErrorTestMessage
+    (noneOfCodePoints $ SCP.toCodePointArray "❓✅")
+    "❓"
+    "Expected none of [\"❓\",\"✅\"]"
+
+  parseErrorTestMessage
+    (oneOfCodePoints $ SCP.toCodePointArray "❓✅")
+    "abc"
+    "Expected one of [\"❓\",\"✅\"]"
 
   parseTest "aa  bb" [ "aa", "  ", "bb" ] do
     aa <- SCU.fromCharArray <$> some letter
