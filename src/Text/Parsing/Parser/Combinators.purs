@@ -31,12 +31,13 @@ import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
-import Data.List (List(..), many, reverse, (:))
+import Data.List (List(..), many, manyRec, reverse, (:))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
+import Data.Tuple.Nested (type (/\), (/\))
 import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
@@ -112,6 +113,10 @@ lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
 many1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (NonEmptyList a)
 many1 p = NEL.cons' <$> p <*> many p
 
+-- | Stack-safe version of `many1` at the expense of `MonadRec` constraint
+many1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (NonEmptyList a)
+many1Rec p = NEL.cons' <$> p <*> manyRec p
+
 -- | Parse phrases delimited by a separator.
 -- |
 -- | For example:
@@ -122,11 +127,22 @@ many1 p = NEL.cons' <$> p <*> many p
 sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepBy p sep = map NEL.toList (sepBy1 p sep) <|> pure Nil
 
+-- | Stack-safe version of `sepBy` at the expense of `MonadRec` constraint
+sepByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepByRec p sep = map NEL.toList (sepBy1Rec p sep) <|> pure Nil
+
 -- | Parse phrases delimited by a separator, requiring at least one match.
 sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1 p sep = do
   a <- p
   as <- many $ sep *> p
+  pure (NEL.cons' a as)
+
+-- | Stack-safe version of `sepBy1` at the expense of `MonadRec` constraint
+sepBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+sepBy1Rec p sep = do
+  a <- p
+  as <- manyRec $ sep *> p
   pure (NEL.cons' a as)
 
 -- | Parse phrases delimited and optionally terminated by a separator.
@@ -168,51 +184,129 @@ sepEndBy1Rec p sep = do
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 endBy1 p sep = many1 $ p <* sep
 
+-- | Stack-safe version of `endBy1` at the expense of `MonadRec` constraint
+endBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+endBy1Rec p sep = many1Rec $ p <* sep
+
 -- | Parse phrases delimited and terminated by a separator.
 endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endBy p sep = many $ p <* sep
+
+-- | Stack-safe version of `endBy` at the expense of `MonadRec` constraint
+endByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+endByRec p sep = manyRec $ p <* sep
 
 -- | Parse phrases delimited by a right-associative operator.
 -- |
 -- | For example:
 -- |
 -- | ```purescript
--- | chainr digit (string "+" *> add) 0
+-- | chainr digit (string "+" $> add) 0
 -- | ```
 chainr :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainr p f a = chainr1 p f <|> pure a
 
+-- | Stack-safe version of `chainr` at the expense of `MonadRec` constraint.
+chainrRec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainrRec p f a = chainr1Rec p f <|> pure a
+
 -- | Parse phrases delimited by a left-associative operator.
+-- |
+-- | For example:
+-- |
+-- | ```purescript
+-- | chainr digit (string "+" $> add) 0
+-- | ```
 chainl :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainl p f a = chainl1 p f <|> pure a
+
+-- | Stack-safe version of `chainl` at the expense of `MonadRec` constraint.
+chainlRec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainlRec p f a = chainl1Rec p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator, requiring at least one match.
 chainl1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainl1 p f = do
   a <- p
-  chainl1' p f a
+  chainl1' a
+  where
+  chainl1' a =
+    ( do
+        f' <- f
+        a' <- p
+        chainl1' (f' a a')
+    ) <|> pure a
 
-chainl1' :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
-chainl1' p f a =
-  ( do
-      f' <- f
-      a' <- p
-      chainl1' p f (f' a a')
-  ) <|> pure a
+-- | Stack-safe version of `chainl1` at the expense of `MonadRec` constraint.
+chainl1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainl1Rec p f = do
+  a <- p
+  tailRecM go a
+  where
+  go :: a -> ParserT s m (Step a a)
+  go a =
+    ( do
+        op <- f
+        a' <- p
+        pure $ Loop $ op a a'
+    )
+    <|> pure (Done a)
 
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
 chainr1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainr1 p f = do
   a <- p
-  chainr1' p f a
+  chainr1' a
+  where
+  chainr1' a =
+    ( do
+        f' <- f
+        a' <- chainr1 p f
+        pure $ f' a a'
+    ) <|> pure a
 
-chainr1' :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
-chainr1' p f a =
-  ( do
-      f' <- f
-      a' <- chainr1 p f
-      pure $ f' a a'
-  ) <|> pure a
+-- | Stack-safe version of `chainr1` at the expense of `MonadRec` constraint.
+chainr1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainr1Rec p f = do
+  a <- p
+  tailRecM go { last: a, init: Nil }
+  where
+  -- This looks scary at first glance, so I'm leaving a comment in a vain
+  -- attempt to explain how it works.
+  --
+  -- The loop state is a record {init, last}, where `last` is the last (i.e.
+  -- rightmost) `a` value that has been parsed so far, and `init` is a list of
+  -- (value + operator) pairs that have been parsed before that.
+  --
+  -- The very first value is parsed at top level, and it becomes the initial
+  -- value of `last`, while the initial value of `init` is just `Nil`,
+  -- indicating that no pairs of (value + operator) have been parsed yet.
+  --
+  -- At every step, we parse an operator and a value, and then the newly parsed
+  -- value becomes `last` (because, well, it's been parsed last), and the pair
+  -- of (previous last + operator) is prepended to `init`.
+  --
+  -- After we can no longer parse a pair of (value + operation), we're done. At
+  -- that point, we have a list of (value + operation) pairs in reverse order
+  -- (since we prepend each pair as we go) and the very last value. All that's
+  -- left is combine them all via `foldl`.
+  go ::
+    { init :: List (a /\ (a -> a -> a)), last :: a }
+    -> ParserT s m (
+        Step
+          { init :: List (a /\ (a -> a -> a)), last :: a }
+          a
+    )
+  go { last, init } =
+    ( do
+        op <- f
+        a <- p
+        pure $ Loop { last: a, init: (last /\ op) : init }
+    )
+    <|> pure (Done $ foldl apply last init)
+
+  apply :: a -> (a /\ (a -> a -> a)) -> a
+  apply y (x /\ op) = x `op` y
 
 -- | Parse one of a set of alternatives.
 choice :: forall f m s a. Foldable f => Monad m => f (ParserT s m a) -> ParserT s m a
@@ -222,12 +316,22 @@ choice = foldl (<|>) empty
 skipMany :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
 skipMany p = skipMany1 p <|> pure unit
 
+-- | Stack-safe version of `skipMany` at the expense of `MonadRec` constraint.
+skipManyRec :: forall s a m. MonadRec m => ParserT s m a -> ParserT s m Unit
+skipManyRec p = skipMany1Rec p <|> pure unit
+
 -- | Skip at least one instance of a phrase.
 skipMany1 :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
 skipMany1 p = do
   _ <- p
   _ <- skipMany p
   pure unit
+
+-- | Stack-safe version of `skipMany1` at the expense of `MonadRec` constraint.
+skipMany1Rec :: forall s a m. MonadRec m => ParserT s m a -> ParserT s m Unit
+skipMany1Rec p = p *> tailRecM go unit
+  where
+  go _ = (p $> Loop unit) <|> pure (Done unit)
 
 -- | Fail if the specified parser matches.
 notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
