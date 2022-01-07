@@ -26,11 +26,12 @@ import Prelude
 
 import Control.Lazy (defer)
 import Control.Monad.Except (ExceptT(..), runExceptT)
+import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
 import Control.Monad.State (StateT(..), runStateT)
 import Control.Plus (empty, (<|>))
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
-import Data.List (List(..), many, (:))
+import Data.List (List(..), many, reverse, (:))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
@@ -132,6 +133,10 @@ sepBy1 p sep = do
 sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndBy p sep = map NEL.toList (sepEndBy1 p sep) <|> pure Nil
 
+-- | Stack-safe version of `sepEndBy` at the expense of `MonadRec` constraint
+sepEndByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepEndByRec p sep = map NEL.toList (sepEndBy1Rec p sep) <|> pure Nil
+
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
 sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1 p sep = do
@@ -141,6 +146,23 @@ sepEndBy1 p sep = do
       as <- sepEndBy p sep
       pure (NEL.cons' a as)
   ) <|> pure (NEL.singleton a)
+
+-- | Stack-safe version of `sepEndBy1` at the expense of `MonadRec` constraint
+sepEndBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+sepEndBy1Rec p sep = do
+  a <- p
+  (NEL.cons' a <$> tailRecM go Nil) <|> pure (NEL.singleton a)
+  where
+  go :: List a -> ParserT s m (Step (List a) (List a))
+  go acc = nextOne <|> done
+    where
+    nextOne = do
+      -- First make sure there's a separator.
+      _ <- sep
+      -- Then try the phrase and loop if it's there, or bail if it's not there.
+      (p <#> \a -> Loop $ a : acc) <|> done
+
+    done = defer \_ -> pure $ Done $ reverse acc
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
 endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
@@ -220,9 +242,22 @@ manyTill p end = scan
     xs <- scan
     pure (x : xs)
 
+-- | Stack-safe version of `manyTill` at the expense of `MonadRec` constraint
+manyTillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
+manyTillRec p end = tailRecM go Nil
+  where
+  go :: List a -> ParserT s m (Step (List a) (List a))
+  go acc =
+    (end <#> \_ -> Done $ reverse acc)
+      <|> (p <#> \x -> Loop $ x : acc)
+
 -- | Parse several phrases until the specified terminator matches, requiring at least one match.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1Till p end = do
   x <- p
   xs <- manyTill p end
   pure (NEL.cons' x xs)
+
+-- | Stack-safe version of `many1Till` at the expense of `MonadRec` constraint
+many1TillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
+many1TillRec p end = NEL.cons' <$> p <*> manyTillRec p end
