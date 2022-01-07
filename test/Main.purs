@@ -127,26 +127,24 @@ stackSafeLoopsTest = do
     "b,a,a"
     (Position { line: 1, column: 1 })
 
-  parseTest "8x8x2" 2 $ -- 8 `div` (8 `div` 2) == 2
-
+  -- 8 `div` (8 `div` 2) == 2
+  parseTest "8x8x2" 2 $
     chainrRec digit (string "x" $> div) 42
   parseTest "" 42 $
     chainrRec digit (string "x" $> div) 42
-  parseTest "8x8x2" 2 $ -- 8 `div` (8 `div` 2) == 2
-
+  parseTest "8x8x2" 2 $
     chainr1Rec digit (string "x" $> div)
   parseErrorTestPosition
     (chainr1Rec digit (string "x" $> div))
     ""
     (Position { line: 1, column: 1 })
 
-  parseTest "8x2x2" 2 $ -- (8 `div` 2) `div` 2 == 2
-
+  -- (8 `div` 2) `div` 2 == 2
+  parseTest "8x2x2" 2 $
     chainlRec digit (string "x" $> div) 42
   parseTest "" 42 $
     chainlRec digit (string "x" $> div) 42
-  parseTest "8x2x2" 2 $ -- (8 `div` 2) `div` 2 == 2
-
+  parseTest "8x2x2" 2 $
     chainl1Rec digit (string "x" $> div)
   parseErrorTestPosition
     (chainl1Rec digit (string "x" $> div))
