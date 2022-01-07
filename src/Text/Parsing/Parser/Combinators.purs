@@ -250,7 +250,7 @@ chainl1Rec p f = do
         a' <- p
         pure $ Loop $ op a a'
     )
-    <|> pure (Done a)
+      <|> pure (Done a)
 
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
 chainr1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
@@ -290,20 +290,20 @@ chainr1Rec p f = do
   -- that point, we have a list of (value + operation) pairs in reverse order
   -- (since we prepend each pair as we go) and the very last value. All that's
   -- left is combine them all via `foldl`.
-  go ::
-    { init :: List (a /\ (a -> a -> a)), last :: a }
-    -> ParserT s m (
-        Step
-          { init :: List (a /\ (a -> a -> a)), last :: a }
-          a
-    )
+  go
+    :: { init :: List (a /\ (a -> a -> a)), last :: a }
+    -> ParserT s m
+         ( Step
+             { init :: List (a /\ (a -> a -> a)), last :: a }
+             a
+         )
   go { last, init } =
     ( do
         op <- f
         a <- p
         pure $ Loop { last: a, init: (last /\ op) : init }
     )
-    <|> pure (Done $ foldl apply last init)
+      <|> pure (Done $ foldl apply last init)
 
   apply :: a -> (a /\ (a -> a -> a)) -> a
   apply y (x /\ op) = x `op` y

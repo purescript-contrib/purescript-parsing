@@ -127,22 +127,26 @@ stackSafeLoopsTest = do
     "b,a,a"
     (Position { line: 1, column: 1 })
 
-  parseTest "8x8x2" 2 $  -- 8 `div` (8 `div` 2) == 2
+  parseTest "8x8x2" 2 $ -- 8 `div` (8 `div` 2) == 2
+
     chainrRec digit (string "x" $> div) 42
   parseTest "" 42 $
     chainrRec digit (string "x" $> div) 42
-  parseTest "8x8x2" 2 $  -- 8 `div` (8 `div` 2) == 2
+  parseTest "8x8x2" 2 $ -- 8 `div` (8 `div` 2) == 2
+
     chainr1Rec digit (string "x" $> div)
   parseErrorTestPosition
     (chainr1Rec digit (string "x" $> div))
     ""
     (Position { line: 1, column: 1 })
 
-  parseTest "8x2x2" 2 $  -- (8 `div` 2) `div` 2 == 2
+  parseTest "8x2x2" 2 $ -- (8 `div` 2) `div` 2 == 2
+
     chainlRec digit (string "x" $> div) 42
   parseTest "" 42 $
     chainlRec digit (string "x" $> div) 42
-  parseTest "8x2x2" 2 $  -- (8 `div` 2) `div` 2 == 2
+  parseTest "8x2x2" 2 $ -- (8 `div` 2) `div` 2 == 2
+
     chainl1Rec digit (string "x" $> div)
   parseErrorTestPosition
     (chainl1Rec digit (string "x" $> div))
@@ -161,18 +165,18 @@ stackSafeLoopsTest = do
   parseTest "bcd" "b" $
     skipManyRec (string "a") *> string "b"
 
-  parseTest "aaa" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+  parseTest "aaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     many1Rec (string "a")
   parseErrorTestPosition
     (many1Rec (string "a"))
     ""
     (Position { line: 1, column: 1 })
 
-  parseTest "a,a,ab" (toUnfoldable ["a", "a", "a"]) $
+  parseTest "a,a,ab" (toUnfoldable [ "a", "a", "a" ]) $
     sepByRec (string "a") (string ",") <* string "b"
   parseTest "b" Nil $
     sepByRec (string "a") (string ",") <* string "b"
-  parseTest "a,a,ab" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+  parseTest "a,a,ab" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     sepBy1Rec (string "a") (string ",") <* string "b"
   parseErrorTestPosition
     (sepBy1Rec (string "a") (string ","))
@@ -183,11 +187,11 @@ stackSafeLoopsTest = do
     "a,"
     (Position { line: 1, column: 3 })
 
-  parseTest "a,a,a,b" (toUnfoldable ["a", "a", "a"]) $
+  parseTest "a,a,a,b" (toUnfoldable [ "a", "a", "a" ]) $
     endByRec (string "a") (string ",") <* string "b"
   parseTest "b" Nil $
     endByRec (string "a") (string ",") <* string "b"
-  parseTest "a,a,a,b" (NE.cons' "a" $ toUnfoldable ["a", "a"]) $
+  parseTest "a,a,a,b" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     endBy1Rec (string "a") (string ",") <* string "b"
   parseErrorTestPosition
     (endBy1Rec (string "a") (string ","))
