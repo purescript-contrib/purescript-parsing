@@ -4,6 +4,13 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
+New features:
+
+- Added more stack-safe (at the expense of `MonadRec` constraint) combinators
+  `many1Rec`, `sepByRec`, `sepBy1Rec`, `endByRec`, `endBy1Rec`, `chainrRec`,
+  `chainr1Rec`, `chainlRec`, `chainl1Rec`, `skipManyRec`, and `skipMany1Rec`.
+  (#131 by @fsoikin)
+
 ## [v7.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v7.2.0) - 2022-01-07
 
 New features:
