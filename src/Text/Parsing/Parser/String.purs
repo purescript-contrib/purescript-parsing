@@ -33,8 +33,6 @@ module Text.Parsing.Parser.String
 
 import Prelude hiding (between)
 
-import Control.Alt ((<|>))
-import Control.Lazy (defer)
 import Control.Monad.State (get, put)
 import Data.Array (notElem)
 import Data.Char (fromCharCode)
@@ -45,7 +43,7 @@ import Data.String (CodePoint, Pattern(..), null, singleton, stripPrefix, uncons
 import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..), fst)
 import Text.Parsing.Parser (ParseState(..), ParserT, fail)
-import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>))
+import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -119,19 +117,19 @@ skipSpaces = skipMany (satisfyCodePoint isSpace)
 
 -- | Match one of the BMP `Char`s in the array.
 oneOf :: forall m. Monad m => Array Char -> ParserT String m Char
-oneOf ss = satisfy (flip elem ss) <?> ("one of " <> show ss)
+oneOf ss = satisfy (flip elem ss) <~?> \_ -> "one of " <> show ss
 
 -- | Match any BMP `Char` not in the array.
 noneOf :: forall m. Monad m => Array Char -> ParserT String m Char
-noneOf ss = satisfy (flip notElem ss) <?> ("none of " <> show ss)
+noneOf ss = satisfy (flip notElem ss) <~?> \_ -> "none of " <> show ss
 
 -- | Match one of the Unicode characters in the array.
 oneOfCodePoints :: forall m. Monad m => Array CodePoint -> ParserT String m CodePoint
-oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <|> defer \_ -> fail $ "Expected one of " <> show (singleton <$> ss)
+oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <~?> \_ -> "one of " <> show (singleton <$> ss)
 
 -- | Match any Unicode character not in the array.
 noneOfCodePoints :: forall m. Monad m => Array CodePoint -> ParserT String m CodePoint
-noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <|> defer \_ -> fail $ "Expected none of " <> show (singleton <$> ss)
+noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <> show (singleton <$> ss)
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> Position
