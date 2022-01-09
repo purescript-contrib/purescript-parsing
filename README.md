@@ -24,7 +24,7 @@ Here is a basic introduction to monadic parsers.
 
 A parser in this library has the type `Parser s a`, where `s` the type of the input string, and `a` is the type of the data which the parser will produce on success. `Parser s a` is a monad. It’s defined in the module `Text.Parsing.Parser`.
 
-Monads can be used to provide context for a computation, and that’s how we use them in monadic parsing. The context provided by the `Parser` monad is *the current location of the input string*. Parsing starts at the beginning of the input string.
+Monads can be used to provide context for a computation, and that’s how we use them in monadic parsing. The context provided by the `Parser` monad is *our current location in the input string*. Parsing starts at the beginning of the input string.
 
 Parsing requires two more capabilities: *choice* and *failure*.
 
