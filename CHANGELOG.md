@@ -4,6 +4,21 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
+Breaking changes:
+
+New features:
+
+Bugfixes:
+
+Other improvements:
+
+## [v8.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.0.0) - 2022-01-10
+
+Breaking changes:
+
+- De-exported the private helper functions `chainl1'` and `chainr1'`.
+  (#131 by @fsoikin)
+
 New features:
 
 - Added more stack-safe (at the expense of `MonadRec` constraint) combinators
