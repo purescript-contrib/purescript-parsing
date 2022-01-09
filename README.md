@@ -30,7 +30,7 @@ Parsing requires two more capabilities: *choice* and *failure*.
 
 We need *choice* to be able to make decisions about what kind of thing we’re parsing depending on the input which we encouter. This is provided by the `Alt` typeclass instance of `Parser` monad, particularly the `<|>` operator.
 
-We need *failure* in case the input stream is not parseable. This is provided by the `fail` function, which calls the the `throwError` function of the `MonadThrow` typeclass instance of the `Parser` monad.
+We need *failure* in case the input stream is not parseable. This is provided by the `fail` function, which calls the `throwError` function of the `MonadThrow` typeclass instance of the `Parser` monad.
 
 Here is the original short classic [FUNCTIONAL PEARLS Monadic Parsing in Haskell](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer. There are lots of other great monadic parsing tutorials on the internet.
 
