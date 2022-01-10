@@ -6,7 +6,7 @@
 [![Maintainer: jamesdbrock](https://img.shields.io/badge/maintainer-jamesdbrock-teal.svg)](https://github.com/jamesdbrock)
 [![Maintainer: robertdp](https://img.shields.io/badge/maintainer-robertdp-teal.svg)](https://github.com/robertdp)
 
-A parser combinator library based on Haskell's [Parsec](https://hackage.haskell.org/package/parsec).
+A monadic parser combinator library based on Haskell's [Parsec](https://hackage.haskell.org/package/parsec).
 
 ## Installation
 
@@ -18,38 +18,38 @@ spago install parsing
 
 ## Quick start
 
-Here is a basic introduction to monadic parsers.
+Here is a basic introduction to monadic parsing with this package.
 
 ### Parsers
 
-A parser in this library has the type `Parser s a`, where `s` the type of the input string, and `a` is the type of the data which the parser will produce on success. `Parser s a` is a monad. It’s defined in the module `Text.Parsing.Parser`.
+A parser turns a string into a data structure. Parsers in this library have the type `Parser s a`, where `s` is the type of the input string, and `a` is the type of the data which the parser will produce on success. `Parser s a` is a monad. It’s defined in the module `Text.Parsing.Parser`.
 
-Monads can be used to provide context for a computation, and that’s how we use them in monadic parsing. The context provided by the `Parser` monad is *our current location in the input string*. Parsing starts at the beginning of the input string.
+Monads can be used to provide context for a computation, and that’s how we use them in monadic parsing. The context provided by the `Parser` monad is *the parser’s current location in the input string*. Parsing starts at the beginning of the input string.
 
 Parsing requires two more capabilities: *choice* and *failure*.
 
-We need *choice* to be able to make decisions about what kind of thing we’re parsing depending on the input which we encouter. This is provided by the `Alt` typeclass instance of `Parser` monad, particularly the `<|>` operator.
+We need *choice* to be able to make decisions about what kind of thing we’re parsing depending on the input which we encouter. This is provided by the `Alt` typeclass instance of `Parser` monad, particularly the `<|>` operator. That operator will first try the left parser and if that fails, then it will backtrack the input string and try the right parser.
 
-We need *failure* in case the input stream is not parseable. This is provided by the `fail` function, which calls the `throwError` function of the `MonadThrow` typeclass instance of the `Parser` monad.
+We need *failure* in case the input stream is not parseable. This is provided by the `fail` function, which calls the `throwError` function of the `MonadThrow` typeclass instance of the `Parser` monad. The result of running a parser has type `Either ParseError a`, so if the parse succeeds then the result is `Right a` and if the parse fails then the result is `Left ParseError`.
 
-Here is the original short classic [FUNCTIONAL PEARLS Monadic Parsing in Haskell](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer. There are lots of other great monadic parsing tutorials on the internet.
+Here is the original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer. There are lots of other great monadic parsing tutorials on the internet.
 
 ### Running a parser
 
-To run a parser, call the function `runParser` in the `Text.Parsing.Parser` module, and supply it with a parser and an input.
+To run a parser, call the function `runParser :: s -> Parser s a -> Either ParseError a` in the `Text.Parsing.Parser` module, and supply it with an input string and a parser.
 
 ### Primitive parsers
 
-Each type of input string needs primitive parsers. Primitive parsers for input string type `String` are in the `Text.Parsing.Parser.String` module. We can use these primitive parsers to write other parsers.
+Each type of input string needs primitive parsers. Primitive parsers for input string type `String` are in the `Text.Parsing.Parser.String` module. We can use these primitive parsers to write other `String` parsers.
 
-Here is a parser which will accept the input string `"ab"` or the input string `"aB"`, and will return only the `'b'` character, whether it’s lowercase or uppercase.
+Here is a parser `ayebee :: Parser String Boolean` which will accept only two input strings: `"ab"` or `"aB"`. It will return `True` if the `b` character is uppercase. It will return `False` if the `b` character is lowercase. It will fail with a `ParseError` if the input string is anything else. This parser is written in terms of the primitive parser `char :: Parser String Char`.
 
 ```purescript
-ayebee :: Parser String Char
+ayebee :: Parser String Boolean
 ayebee = do
   _ <- char 'a'
   b <- char 'b' <|> char 'B'
-  pure b
+  pure (b == 'B')
 ```
 
 We can run the parser `ayebee` like so
@@ -58,7 +58,9 @@ We can run the parser `ayebee` like so
 runParser "aB" ayebee
 ```
 
-and then the parser will succeed and return `Right 'B'`.
+and then the parser will succeed and return `Right True`.
+
+When you write a real parser you will usually want to return a more complicated data structure than a single `Boolean`. See [*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/).
 
 ### More parsers
 
@@ -66,7 +68,7 @@ There are other `String` parsers in the module `Text.Parsing.Parser.Token`, for 
 
 ### Parser combinators
 
-A parser combinator is a function which takes a parser as an argument and returns another parser. The `many` combinator, for example, will repeat a parser as many time as it can. So the parser `many letter` will have type `Parser String (Array Char)`. Parser combinators are in this package in the module `Text.Parsing.Parser.Combinators`.
+A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`. Parser combinators are in this package in the module `Text.Parsing.Parser.Combinators`.
 
 ## Related Packages
 
