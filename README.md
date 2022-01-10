@@ -28,7 +28,7 @@ Monads can be used to provide context for a computation, and that’s how we use
 
 Parsing requires two more capabilities: *choice* and *failure*.
 
-We need *choice* to be able to make decisions about what kind of thing we’re parsing depending on the input which we encouter. This is provided by the `Alt` typeclass instance of `Parser` monad, particularly the `<|>` operator. That operator will first try the left parser and if that fails, then it will backtrack the input string and try the right parser.
+We need *choice* to be able to make decisions about what kind of thing we’re parsing depending on the input which we encouter. This is provided by the `Alt` typeclass instance of the `Parser` monad, particularly the `<|>` operator. That operator will first try the left parser and if that fails, then it will backtrack the input string and try the right parser.
 
 We need *failure* in case the input stream is not parseable. This is provided by the `fail` function, which calls the `throwError` function of the `MonadThrow` typeclass instance of the `Parser` monad. The result of running a parser has type `Either ParseError a`, so if the parse succeeds then the result is `Right a` and if the parse fails then the result is `Left ParseError`.
 
