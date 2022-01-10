@@ -18,7 +18,7 @@ spago install parsing
 
 ## Quick start
 
-Here is a basic tutorial and introduction to monadic parsing with this package.
+Here is a basic tutorial introduction to monadic parsing with this package.
 
 ### Parsers
 
@@ -32,7 +32,6 @@ We need *choice* to be able to make decisions about what kind of thing we’re p
 
 We need *failure* in case the input stream is not parseable. This is provided by the `fail` function, which calls the `throwError` function of the `MonadThrow` typeclass instance of the `Parser` monad. The result of running a parser has type `Either ParseError a`, so if the parse succeeds then the result is `Right a` and if the parse fails then the result is `Left ParseError`.
 
-Here is the original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer. There are lots of other great monadic parsing tutorials on the internet.
 
 ### Running a parser
 
@@ -71,6 +70,16 @@ There are other `String` parsers in the module `Text.Parsing.Parser.Token`, for 
 ### Parser combinators
 
 A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`. Parser combinators are in this package in the module `Text.Parsing.Parser.Combinators`.
+
+## Further reading
+
+Here is the original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer. 
+
+[*Revisiting Monadic Parsing in Haskell*](https://vaibhavsagar.com/blog/2018/02/04/revisiting-monadic-parsing-haskell/) by Vaibhav Sagar is a reflection on the Hutton, Meijer FUNCTIONAL PEARL.
+
+[*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) by Alexis King is about what it means to “parse” something, without any mention of monads.
+
+There are lots of other great monadic parsing tutorials on the internet.
 
 ## Related Packages
 
