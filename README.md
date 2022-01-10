@@ -60,7 +60,7 @@ runParser "aB" ayebee
 
 and then the parser will succeed and return `Right True`.
 
-[Run the `ayebee` parser in your browser on *Try PureScript!*](https://try.purescript.org/?github=purescript-contrib/purescript-parsing/main/docs/examples/QuickStart.purs)
+[Run the `ayebee` parser in your browser on *Try PureScript!*](https://try.purescript.org/?github=/purescript-contrib/purescript-parsing/main/docs/examples/QuickStart.purs)
 
 When you write a real parser you will usually want to return a more complicated data structure than a single `Boolean`. See [*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/).
 
