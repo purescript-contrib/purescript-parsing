@@ -18,7 +18,7 @@ spago install parsing
 
 ## Quick start
 
-Here is a basic introduction to monadic parsing with this package.
+Here is a basic tutorial and introduction to monadic parsing with this package.
 
 ### Parsers
 
@@ -42,7 +42,7 @@ To run a parser, call the function `runParser :: s -> Parser s a -> Either Parse
 
 Each type of input string needs primitive parsers. Primitive parsers for input string type `String` are in the `Text.Parsing.Parser.String` module. We can use these primitive parsers to write other `String` parsers.
 
-Here is a parser `ayebee :: Parser String Boolean` which will accept only two input strings: `"ab"` or `"aB"`. It will return `True` if the `b` character is uppercase. It will return `False` if the `b` character is lowercase. It will fail with a `ParseError` if the input string is anything else. This parser is written in terms of the primitive parser `char :: Parser String Char`.
+Here is a parser `ayebee :: Parser String Boolean` which will accept only two input strings: `"ab"` or `"aB"`. It will return `true` if the `b` character is uppercase. It will return `false` if the `b` character is lowercase. It will fail with a `ParseError` if the input string is anything else. This parser is written in terms of the primitive parser `char :: Parser String Char`.
 
 ```purescript
 ayebee :: Parser String Boolean
@@ -58,7 +58,7 @@ We can run the parser `ayebee` like so
 runParser "aB" ayebee
 ```
 
-and then the parser will succeed and return `Right True`.
+and then the parser will succeed and return `Right true`.
 
 [Run the `ayebee` parser in your browser on *Try PureScript!*](https://try.purescript.org/?github=/purescript-contrib/purescript-parsing/main/docs/examples/QuickStart.purs)
 
@@ -74,10 +74,8 @@ A parser combinator is a function which takes a parser as an argument and return
 
 ## Related Packages
 
-- [`parsing-dataview`](https://pursuit.purescript.org/packages/purescript-parsing-dataview)
-  Provides the module `Text.Parsing.Parser.DataView` of primitive parsers for binary parsing of
-  `ArrayBuffer`.
-- [`parsing-replace`](https://pursuit.purescript.org/packages/purescript-parsing-replace) for finding text patterns, and also replacing or splitting on the found patterns.
+- [__`parsing-dataview`__](https://pursuit.purescript.org/packages/purescript-parsing-dataview) primitive parsers for binary parsing of `ArrayBuffer`.
+- [__`parsing-replace`__](https://pursuit.purescript.org/packages/purescript-parsing-replace) for finding text patterns, and also replacing or splitting on the found patterns.
 
 ## Documentation
 
