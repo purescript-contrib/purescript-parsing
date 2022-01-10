@@ -12,6 +12,10 @@ Bugfixes:
 
 Other improvements:
 
+## [v8.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.1.0) - 2022-01-10
+
+Other improvements: README Quick start monadic parsing tutorial
+
 ## [v8.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.0.0) - 2022-01-10
 
 Breaking changes:
