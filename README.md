@@ -60,6 +60,8 @@ runParser "aB" ayebee
 
 and then the parser will succeed and return `Right True`.
 
+[Run the `ayebee` parser in your browser on *Try PureScript!*](https://try.purescript.org/?github=purescript-contrib/purescript-parsing/main/docs/examples/QuickStart.purs)
+
 When you write a real parser you will usually want to return a more complicated data structure than a single `Boolean`. See [*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/).
 
 ### More parsers
@@ -75,6 +77,7 @@ A parser combinator is a function which takes a parser as an argument and return
 - [`parsing-dataview`](https://pursuit.purescript.org/packages/purescript-parsing-dataview)
   Provides the module `Text.Parsing.Parser.DataView` of primitive parsers for binary parsing of
   `ArrayBuffer`.
+- [`parsing-replace`](https://pursuit.purescript.org/packages/purescript-parsing-replace) for finding text patterns, and also replacing or splitting on the found patterns.
 
 ## Documentation
 
