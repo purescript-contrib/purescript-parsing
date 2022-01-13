@@ -172,4 +172,3 @@ failWithPosition message pos = throwError (ParseError message pos)
 -- | `region` as the parser backs out the call stack.
 region :: forall m s a. Monad m => (ParseError -> ParseError) -> ParserT s m a -> ParserT s m a
 region context p = catchError p $ \err -> throwError $ context err
-

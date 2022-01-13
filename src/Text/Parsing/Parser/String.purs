@@ -2,7 +2,7 @@
 -- |
 -- | All of these primitive parsers will consume their input when they succeed.
 -- |
--- | All of these primitive parsers will consume no input (backtrack) when they
+-- | All of these primitive parsers will consume no input when they
 -- | fail.
 -- |
 -- | The behavior of these primitive parsers is based on the behavior of the
@@ -22,11 +22,13 @@
 module Text.Parsing.Parser.String
   ( string
   , eof
+  , rest
   , anyChar
   , anyCodePoint
   , satisfy
   , satisfyCodePoint
   , char
+  , takeN
   , whiteSpace
   , skipSpaces
   , oneOf
@@ -44,10 +46,10 @@ import Data.Char (fromCharCode)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..))
-import Data.String (CodePoint, Pattern(..), null, singleton, stripPrefix, uncons)
+import Data.String (CodePoint, Pattern(..), length, null, singleton, splitAt, stripPrefix, uncons)
 import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..), fst)
-import Text.Parsing.Parser (ParseState(..), ParserT, fail)
+import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -56,7 +58,17 @@ import Unsafe.Coerce (unsafeCoerce)
 eof :: forall m. Monad m => ParserT String m Unit
 eof = do
   ParseState input _ _ <- get
-  unless (null input) (fail "Expected EOF")
+  if (null input)
+  -- We must consume so this combines correctly with notFollowedBy
+  then consume
+  else (fail "Expected EOF")
+
+-- | Match the entire rest of the input stream. Always succeeds.
+rest :: forall m. Monad m => ParserT String m String
+rest = do
+  ParseState input position _ <- get
+  put $ ParseState "" (updatePosString position input) true
+  pure input
 
 -- | Match the specified string.
 string :: forall m. Monad m => String -> ParserT String m String
@@ -111,8 +123,18 @@ satisfyCodePoint f = tryRethrow do
 char :: forall m. Monad m => Char -> ParserT String m Char
 char c = satisfy (_ == c) <?> show c
 
+-- | Match a `String` exactly *N* characters long.
+takeN :: forall m. Monad m => Int -> ParserT String m String
+takeN n = do
+  ParseState input position _ <- get
+  let { before, after } = splitAt n input
+  if length before == n then do
+    put $ ParseState after (updatePosString position before) true
+    pure before
+  else fail ("Could not take " <> show n <> " characters")
+
 -- | Match zero or more whitespace characters satisfying
--- | `Data.CodePoint.Unicode.isSpace`.
+-- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
 whiteSpace :: forall m. Monad m => ParserT String m String
 whiteSpace = fst <$> match skipSpaces
 

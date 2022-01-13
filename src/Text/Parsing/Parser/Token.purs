@@ -4,6 +4,7 @@ module Text.Parsing.Parser.Token
   ( token
   , when
   , match
+  , eof
   , LanguageDef
   , GenLanguageDef(LanguageDef)
   , unGenLanguageDef
@@ -23,7 +24,7 @@ module Text.Parsing.Parser.Token
 import Prelude hiding (between, when)
 
 import Control.Lazy (fix)
-import Control.Monad.State (gets, modify_)
+import Control.Monad.State (get, gets, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
@@ -43,12 +44,12 @@ import Data.String.CodeUnits as SCU
 import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
 import Math (pow)
-import Text.Parsing.Parser (ParseState(..), ParserT, fail)
+import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (char, noneOf, oneOf, satisfy, satisfyCodePoint, string)
 
--- | Create a parser which Returns the first token in the stream.
+-- | A parser which returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
 token tokpos = do
   input <- gets \(ParseState input _ _) -> input
@@ -59,7 +60,7 @@ token tokpos = do
         ParseState tail (tokpos head) true
       pure head
 
--- | Create a parser which matches any token satisfying the predicate.
+-- | A parser which matches any token satisfying the predicate.
 when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
 when tokpos f = tryRethrow do
   a <- token tokpos
@@ -69,6 +70,15 @@ when tokpos f = tryRethrow do
 -- | Match the specified token at the head of the stream.
 match :: forall a m. Monad m => Eq a => (a -> Position) -> a -> ParserT (List a) m a
 match tokpos tok = when tokpos (_ == tok)
+
+-- | Match the “end-of-file,” the end of the input stream.
+eof :: forall a m. Monad m => ParserT (List a) m Unit
+eof = do
+  ParseState input _ _ <- get
+  if (List.null input)
+  -- We must consume so this combines correctly with notFollowedBy
+  then consume
+  else (fail "Expected EOF")
 
 type LanguageDef = GenLanguageDef String Identity
 

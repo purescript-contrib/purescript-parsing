@@ -387,7 +387,6 @@ skipMany1Rec p = p *> tailRecM go unit
 -- | Fail if the specified parser matches.
 notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
 notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
--- why do we need the outer try?
 
 -- | Parse several phrases until the specified terminator matches.
 manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
