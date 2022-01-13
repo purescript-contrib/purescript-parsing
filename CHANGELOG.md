@@ -8,9 +8,18 @@ Breaking changes:
 
 New features:
 
+- `Parser.String.rest` (#140 by @jamesdbrock)
+- `Parser.String.takeN` (#140 by @jamesdbrock)
+- `Parser.Token.eof` (#140 by @jamesdbrock)
+
 Bugfixes:
 
+- `Parser.String.eof` Set consumed on success so that this parser combines
+  correctly with `notFollowedBy eof`. Added a test for this. (#140 by @jamesdbrock)
+
 Other improvements:
+
+- Documentation. (#140 by @jamesdbrock)
 
 ## [v8.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.1.0) - 2022-01-10
 

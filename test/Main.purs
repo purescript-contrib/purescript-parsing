@@ -18,13 +18,14 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
 import Test.Assert (assert')
-import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, region, runParser)
-import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, manyTillRec, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try)
+import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, manyTillRec, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, satisfy, string, whiteSpace)
+import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, rest, satisfy, string, takeN, whiteSpace)
 import Text.Parsing.Parser.Token (TokenParser, letter, makeTokenParser, match, token, when)
+import Text.Parsing.Parser.Token as Parser.Token
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -574,6 +575,17 @@ main = do
   parseTest "1*2+3/4-5" (-3) exprTest
   parseTest "ab?" "ab" manySatisfyTest
 
+  parseTest "ab" unit (char 'a' *> notFollowedBy (char 'a'))
+
+  parseTest "rest" "rest" rest
+  parseTest "rest" unit (rest *> eof)
+  parseTest "rest\nrest" (Position { line: 2, column: 5 }) (rest *> position)
+
+  parseErrorTestPosition
+    (rest *> notFollowedBy eof)
+    "aa\naa"
+    (Position { column: 3, line: 2 })
+
   parseErrorTestPosition
     anyChar
     "𝅘𝅥𝅯"
@@ -590,6 +602,11 @@ main = do
     none <- Array.many $ noneOfCodePoints $ SCP.toCodePointArray "❓✅"
     one <- Array.many $ oneOfCodePoints $ SCP.toCodePointArray "🤔💯✅"
     pure $ SCP.fromCodePointArray <$> [ none, one ]
+
+  parseTest "abcd" "ab" $ takeN 2
+  parseTest "abcd" "" $ takeN 0
+  parseErrorTestPosition (takeN 10) "abcd" (Position { column: 1, line: 1 })
+  parseErrorTestPosition (takeN (-1)) "abcd" (Position { column: 1, line: 1 })
 
   parseErrorTestMessage
     (noneOfCodePoints $ SCP.toCodePointArray "❓✅")
@@ -616,6 +633,8 @@ main = do
   parseTest (fromFoldable [ A ]) A (match tokpos A)
   parseTest (fromFoldable [ B ]) B (match tokpos B)
   parseTest (fromFoldable [ A, B ]) A (match tokpos A)
+
+  parseTest (fromFoldable []) unit Parser.Token.eof
 
   parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
