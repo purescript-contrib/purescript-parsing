@@ -1,3 +1,7 @@
+-- | This module is a port of the Haskell
+-- | [__Text.Parsec.Expr__](https://hackage.haskell.org/package/docs/Text-Parsec-Expr.html)
+-- | module.
+
 module Text.Parsing.Parser.Expr
   ( Assoc(..)
   , Operator(..)

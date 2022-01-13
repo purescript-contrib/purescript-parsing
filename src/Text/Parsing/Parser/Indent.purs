@@ -1,5 +1,7 @@
--- | This is purescript-port of Text.Parsing.Indent
--- | <https://hackage.haskell.org/package/indents-0.3.3/docs/Text-Parsec-Indent.html>, 05.07.2016.
+-- | This module is a port of the Haskell
+-- | [__Text.Parsec.Indent__](https://hackage.haskell.org/package/indents-0.3.3/docs/Text-Parsec-Indent.html)
+-- | module from 2016-05-07.
+-- |
 -- | A module to construct indentation aware parsers. Many programming
 -- | language have indentation based syntax rules e.g. python and Haskell.
 -- | This module exports combinators to create such parsers.

@@ -79,7 +79,7 @@ and then the parser will succeed and return `Right true`.
 
 ### More parsers
 
-There are other `String` parsers in the module `Text.Parsing.Parser.Token`, for example the parser `letter :: Parser String Char` which will accept any single alphabetic letter.
+There are other `String` parsers in the module `Text.Parsing.Parser.String.Basic`, for example the parser `letter :: Parser String Char` which will accept any single alphabetic letter.
 
 ### Parser combinators
 

@@ -1,3 +1,6 @@
+-- | This module is a port of the Haskell
+-- | [__Text.Parsec.Language__](https://hackage.haskell.org/package/parsec/docs/Text-Parsec-Language.html)
+-- | module.
 module Text.Parsing.Parser.Language
   ( haskellDef
   , haskell
@@ -11,7 +14,8 @@ import Prelude
 import Control.Alt ((<|>))
 import Text.Parsing.Parser (ParserT)
 import Text.Parsing.Parser.String (char, oneOf)
-import Text.Parsing.Parser.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
+import Text.Parsing.Parser.String.Basic (alphaNum, letter)
+import Text.Parsing.Parser.Token (GenLanguageDef(..), LanguageDef, TokenParser, makeTokenParser, unGenLanguageDef)
 
 -----------------------------------------------------------
 -- Styles: haskellStyle, javaStyle

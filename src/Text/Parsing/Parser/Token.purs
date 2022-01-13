@@ -1,4 +1,8 @@
 -- | Functions for working with streams of tokens.
+-- |
+-- | This module is a port of the Haskell
+-- | [__Text.Parsec.Token__](https://hackage.haskell.org/package/docs/Text-Parsec-Token.html)
+-- | module.
 
 module Text.Parsing.Parser.Token
   ( token
@@ -11,14 +15,7 @@ module Text.Parsing.Parser.Token
   , TokenParser
   , GenTokenParser
   , makeTokenParser
-  -- should these be exported?  Maybe they should go in a different module?
-  , digit
-  , hexDigit
-  , octDigit
-  , upper
-  , space
-  , letter
-  , alphaNum
+  , module Text.Parsing.Parser.String.Basic
   ) where
 
 import Prelude hiding (between, when)
@@ -28,7 +25,7 @@ import Control.Monad.State (get, gets, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
-import Data.CodePoint.Unicode (hexDigitToInt, isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper)
+import Data.CodePoint.Unicode (hexDigitToInt, isAlpha, isSpace)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldr)
 import Data.Identity (Identity)
@@ -37,7 +34,7 @@ import Data.List (List(..))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (Maybe(..), maybe)
-import Data.String (CodePoint, null, toLower)
+import Data.String (null, toLower)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (singleton, toChar) as CodeUnits
 import Data.String.CodeUnits as SCU
@@ -48,6 +45,8 @@ import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (char, noneOf, oneOf, satisfy, satisfyCodePoint, string)
+import Text.Parsing.Parser.String.Basic as Basic
+import Text.Parsing.Parser.String.Basic (digit, hexDigit, octDigit, upper, space, letter, alphaNum)
 
 -- | A parser which returns the first token in the stream.
 token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
@@ -475,7 +474,7 @@ makeTokenParser (LanguageDef languageDef) =
   escapeEmpty = char '&'
 
   escapeGap :: ParserT String m Char
-  escapeGap = Array.some space *> char '\\' <?> "end of string gap"
+  escapeGap = Array.some Basic.space *> char '\\' <?> "end of string gap"
 
   -- -- escape codes
   escapeCode :: ParserT String m Char
@@ -485,7 +484,7 @@ makeTokenParser (LanguageDef languageDef) =
   charControl :: ParserT String m Char
   charControl = do
     _ <- char '^'
-    code <- upper
+    code <- Basic.upper
     case fromCharCode (toCharCode code - toCharCode 'A' + 1) of
       Just c -> pure c
       Nothing -> fail "invalid character code (should not happen)"
@@ -493,8 +492,8 @@ makeTokenParser (LanguageDef languageDef) =
   charNum :: ParserT String m Char
   charNum = do
     code <- decimal
-      <|> (char 'o' *> number 8 octDigit)
-      <|> (char 'x' *> number 16 hexDigit)
+      <|> (char 'o' *> number 8 Basic.octDigit)
+      <|> (char 'x' *> number 16 Basic.hexDigit)
     if code > 0x10FFFF then fail "invalid escape sequence"
     else case fromCharCode code of
       Just c -> pure c
@@ -646,7 +645,7 @@ makeTokenParser (LanguageDef languageDef) =
   fraction :: ParserT String m Number
   fraction = "fraction" <??> do
     _ <- char '.'
-    digits <- Array.some digit <?> "fraction"
+    digits <- Array.some Basic.digit <?> "fraction"
     maybe (fail "not digit") pure $ foldr op (Just 0.0) digits
     where
     op :: Char -> Maybe Number -> Maybe Number
@@ -688,13 +687,13 @@ makeTokenParser (LanguageDef languageDef) =
       (hexadecimal <|> octal <|> decimal <|> pure 0) <?> ""
 
   decimal :: ParserT String m Int
-  decimal = number 10 digit
+  decimal = number 10 Basic.digit
 
   hexadecimal :: ParserT String m Int
-  hexadecimal = oneOf [ 'x', 'X' ] *> number 16 hexDigit
+  hexadecimal = oneOf [ 'x', 'X' ] *> number 16 Basic.hexDigit
 
   octal :: ParserT String m Int
-  octal = oneOf [ 'o', 'O' ] *> number 8 octDigit
+  octal = oneOf [ 'o', 'O' ] *> number 8 Basic.octDigit
 
   number :: Int -> ParserT String m Char -> ParserT String m Int
   number base baseDigit = do
@@ -878,38 +877,3 @@ inCommentSingle (LanguageDef languageDef) =
   startEnd :: Array Char
   startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
 
--------------------------------------------------------------------------
--- Helper functions that should maybe go in Text.Parsing.Parser.String --
--------------------------------------------------------------------------
-
-satisfyCP :: forall m. Monad m => (CodePoint -> Boolean) -> ParserT String m Char
-satisfyCP p = satisfy (p <<< codePointFromChar)
-
--- | Parse a digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isDecDigit`.
-digit :: forall m. Monad m => ParserT String m Char
-digit = satisfyCP isDecDigit <?> "digit"
-
--- | Parse a hex digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isHexDigit`.
-hexDigit :: forall m. Monad m => ParserT String m Char
-hexDigit = satisfyCP isHexDigit <?> "hex digit"
-
--- | Parse an octal digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isOctDigit`.
-octDigit :: forall m. Monad m => ParserT String m Char
-octDigit = satisfyCP isOctDigit <?> "oct digit"
-
--- | Parse an uppercase letter.  Matches any char that satisfies `Data.CodePoint.Unicode.isUpper`.
-upper :: forall m. Monad m => ParserT String m Char
-upper = satisfyCP isUpper <?> "uppercase letter"
-
--- | Parse a space character.  Matches any char that satisfies `Data.CodePoint.Unicode.isSpace`.
-space :: forall m. Monad m => ParserT String m Char
-space = satisfyCP isSpace <?> "space"
-
--- | Parse an alphabetical character.  Matches any char that satisfies `Data.CodePoint.Unicode.isAlpha`.
-letter :: forall m. Monad m => ParserT String m Char
-letter = satisfyCP isAlpha <?> "letter"
-
--- | Parse an alphabetical or numerical character.
--- | Matches any char that satisfies `Data.CodePoint.Unicode.isAlphaNum`.
-alphaNum :: forall m. Monad m => ParserT String m Char
-alphaNum = satisfyCP isAlphaNum <?> "letter or digit"
