@@ -1,5 +1,10 @@
 -- | Primitive parsers for working with an input stream of type `String`.
 -- |
+-- | All of these primitive parsers will consume their input when they succeed.
+-- |
+-- | All of these primitive parsers will consume no input (backtrack) when they
+-- | fail.
+-- |
 -- | The behavior of these primitive parsers is based on the behavior of the
 -- | `Data.String` module in the __strings__ package.
 -- | In most JavaScript runtime environments, the `String`
@@ -47,7 +52,7 @@ import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
 import Unsafe.Coerce (unsafeCoerce)
 
--- | Match end-of-file.
+-- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. Monad m => ParserT String m Unit
 eof = do
   ParseState input _ _ <- get
@@ -111,7 +116,7 @@ char c = satisfy (_ == c) <?> show c
 whiteSpace :: forall m. Monad m => ParserT String m String
 whiteSpace = fst <$> match skipSpaces
 
--- | Skip whitespace characters.
+-- | Skip whitespace characters and throw them away. Always succeeds.
 skipSpaces :: forall m. Monad m => ParserT String m Unit
 skipSpaces = skipMany (satisfyCodePoint isSpace)
 

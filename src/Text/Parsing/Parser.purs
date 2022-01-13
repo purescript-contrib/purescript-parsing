@@ -51,6 +51,18 @@ derive instance ordParseError :: Ord ParseError
 
 -- | Contains the remaining input and current position.
 data ParseState s = ParseState s Position Boolean
+-- ParseState constructor has three parameters,
+-- s: the remaining input
+-- Position: the current position
+-- Boolean: the consumed flag.
+--
+-- The consumed flag is used to implement the rule for `alt` that
+-- * If the left parser fails *without consuming any input*, then backtrack and try the right parser.
+-- * If the left parser fails and consumes input, then fail immediately.
+--
+-- https://hackage.haskell.org/package/parsec/docs/Text-Parsec.html#v:try
+--
+-- http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/
 
 -- | The Parser monad transformer.
 -- |
@@ -105,12 +117,25 @@ derive newtype instance monadStateParserT :: Monad m => MonadState (ParseState s
 derive newtype instance monadThrowParserT :: Monad m => MonadThrow ParseError (ParserT s m)
 derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (ParserT s m)
 
+-- | The alternative `Alt` instance provides the `alt` combinator `<|>`.
+-- |
+-- | The expression `p_left <|> p_right` will first try the `p_left` parser and if that fails
+-- | __and consumes no input__ then it will try the `p_right` parser.
+-- |
+-- | While we are parsing down the `p_left` branch we may reach a point where
+-- | we know this is the correct branch, but we cannot parse further. At
+-- | that point we want to fail the entire parse instead of trying the `p_right`
+-- | branch. To control the point at which we commit to the `p_left` branch
+-- | use the `try` combinator.
+-- |
+-- | The `alt` combinator works this way because it gives us good localized
+-- | error messages while also allowing an efficient implementation.
 instance altParserT :: Monad m => Alt (ParserT s m) where
   alt p1 p2 = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState i p _)) -> do
-    Tuple e s'@(ParseState _ _ c') <- runStateT (runExceptT (unwrap p1)) (ParseState i p false)
+    Tuple e s'@(ParseState _ _ consumed) <- runStateT (runExceptT (unwrap p1)) (ParseState i p false)
     case e of
       Left _
-        | not c' -> runStateT (runExceptT (unwrap p2)) s
+        | not consumed -> runStateT (runExceptT (unwrap p2)) s
       _ -> pure (Tuple e s')
 
 instance plusParserT :: Monad m => Plus (ParserT s m) where
