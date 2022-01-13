@@ -83,7 +83,7 @@ There are other `String` parsers in the module `Text.Parsing.Parser.Token`, for 
 
 ### Parser combinators
 
-A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`. Running that parser
+A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Boolean)`. Running that parser
 
 ```purescript
 runParser "aBabaB" (many ayebee)
