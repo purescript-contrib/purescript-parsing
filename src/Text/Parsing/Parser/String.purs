@@ -173,8 +173,24 @@ updatePosSingle (Position { line, column }) cp = case unCodePoint cp of
   9 -> Position { line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
   _ -> Position { line, column: column + 1 }
 
--- | Combinator which returns both the result of a parse and the portion of
+-- | Combinator which returns both the result of a parse and the slice of
 -- | the input that was consumed while it was being parsed.
+-- |
+-- | Because `String`s are not `Char` arrays in PureScript, `many` and `some`
+-- | on `Char` parsers need to
+-- | be used with `Data.String.CodeUnits.fromCharArray` to
+-- | construct a `String`.
+-- |
+-- | ```
+-- | fromCharArray <$> Data.Array.many (char 'x')
+-- | ```
+-- |
+-- | It’s more efficient to achieve the same result by using this `match` combinator
+-- | instead of `fromCharArray`.
+-- |
+-- | ```
+-- | fst <$> match (Combinators.skipMany (char 'x'))
+-- | ```
 match :: forall m a. Monad m => ParserT String m a -> ParserT String m (Tuple String a)
 match p = do
   ParseState input1 _ _ <- get

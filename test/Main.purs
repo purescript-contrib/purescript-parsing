@@ -10,16 +10,17 @@ import Data.Either (Either(..))
 import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
 import Data.List.NonEmpty as NE
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromJust)
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
+import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
 import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, manyTillRec, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try)
+import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
@@ -635,6 +636,19 @@ main = do
   parseTest (fromFoldable [ A, B ]) A (match tokpos A)
 
   parseTest (fromFoldable []) unit Parser.Token.eof
+
+  parseTest "aabb" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') (manyTill_ (char 'a') (char 'b'))
+  parseTest "aabb" (Tuple (unsafePartial $ fromJust (NE.fromFoldable [ 'a', 'a' ])) 'b') (many1Till_ (char 'a') (char 'b'))
+  parseTest "aabb" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') (manyTillRec_ (char 'a') (char 'b'))
+  parseTest "aabb" (Tuple (unsafePartial $ fromJust (NE.fromFoldable [ 'a', 'a' ])) 'b') (many1TillRec_ (char 'a') (char 'b'))
+
+  parseTest "aab" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') do
+    Tuple a b <- manyTill_ letter do
+      char 'b'
+    pure (Tuple a b)
+
+  parseTest "ababab" [ 'b', 'b', 'b' ] $ Array.many (char 'a' *> char 'b')
+  parseTest "abaXab" [ 'b' ] $ Array.many (try (char 'a' *> char 'b'))
 
   parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })

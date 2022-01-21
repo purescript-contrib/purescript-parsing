@@ -11,6 +11,10 @@ New features:
 - `Parser.String.rest` (#140 by @jamesdbrock)
 - `Parser.String.takeN` (#140 by @jamesdbrock)
 - `Parser.Token.eof` (#140 by @jamesdbrock)
+- `Parser.Combinators.manyTill_` (#143 by @jamesbrock)
+- `Parser.Combinators.many1Till_` (#143 by @jamesbrock)
+- `Parser.Combinators.manyTillRec_` (#143 by @jamesbrock)
+- `Parser.Combinators.many1TillRec_` (#143 by @jamesbrock)
 
 Bugfixes:
 
@@ -20,6 +24,7 @@ Bugfixes:
 Other improvements:
 
 - Documentation. (#140 by @jamesdbrock)
+- Documentation. (#143 by @jamesdbrock)
 
 ## [v8.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.1.0) - 2022-01-10
 
