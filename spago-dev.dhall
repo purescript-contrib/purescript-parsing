@@ -17,6 +17,8 @@ in conf //
   , "minibench"
   , "exceptions"
   , "string-parsers"
+  , "partial"
+  , "unfoldable"
   ]
 , packages = ./packages.dhall
 }

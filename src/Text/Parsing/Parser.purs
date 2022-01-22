@@ -125,8 +125,26 @@ derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (P
 -- | While we are parsing down the `p_left` branch we may reach a point where
 -- | we know this is the correct branch, but we cannot parse further. At
 -- | that point we want to fail the entire parse instead of trying the `p_right`
--- | branch. To control the point at which we commit to the `p_left` branch
--- | use the `try` combinator.
+-- | branch.
+-- |
+-- | For example, consider this `fileParser` which can parse either an HTML
+-- | file that begins with `<html>` or a shell script file that begins with `#!`.
+-- |
+-- | ```
+-- | fileParser =
+-- |   string "<html>" *> parseTheRestOfTheHtml
+-- |   <|>
+-- |   string "#!" *> parseTheRestOfTheScript
+-- | ```
+-- |
+-- | If we read a file from disk and run this `fileParser` on it and the
+-- | `string "<html>"` parser succeeds, then we know that the first branch
+-- | is the correct branch. Even if the `parseTheRestOfTheHtml` parser fails
+-- | we don’t want to try the other branch.
+-- |
+-- | To control the point at which we commit to the `p_left` branch
+-- | use the `try` combinator and the `lookAhead` combinator and
+-- | the `consume` function.
 -- |
 -- | The `alt` combinator works this way because it gives us good localized
 -- | error messages while also allowing an efficient implementation.
@@ -151,6 +169,10 @@ instance monadTransParserT :: MonadTrans (ParserT s) where
   lift = ParserT <<< lift <<< lift
 
 -- | Set the consumed flag.
+-- |
+-- | Setting the consumed flag means that we're committed to this parsing branch
+-- | of an alternative (`<|>`), so that if this branch fails then we want to
+-- | fail the entire parse instead of trying the other alternative.
 consume :: forall s m. Monad m => ParserT s m Unit
 consume = modify_ \(ParseState input pos _) ->
   ParseState input pos true

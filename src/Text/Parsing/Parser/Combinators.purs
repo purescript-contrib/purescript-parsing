@@ -1,27 +1,99 @@
--- | Parser combinators. A parser combinator is a function which takes some
+-- | ## Combinators in other packages
+-- |
+-- | Many variations of well-known monadic and applicative combinators used for parsing are
+-- | defined in other PureScript packages. It’s awkward to re-export
+-- | them because their names overlap so much, so we list them here.
+-- |
+-- | ### Data.Array
+-- | * [Data.Array.many](https://pursuit.purescript.org/packages/purescript-arrays/docs/Data.Array#v:many)
+-- | * [Data.Array.some](https://pursuit.purescript.org/packages/purescript-arrays/docs/Data.Array#v:some)
+-- |
+-- | ### Data.Array.NonEmpty
+-- | * [Data.Array.NonEmpty.some](https://pursuit.purescript.org/packages/purescript-arrays/docs/Data.Array.NonEmpty#v:some)
+-- |
+-- | ### Data.List
+-- | * [Data.List.many](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List#v:many)
+-- | * [Data.List.some](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List#v:some)
+-- | * [Data.List.someRec](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List#v:someRec)
+-- | * [Data.List.manyRec](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List#v:manyRec)
+-- |
+-- | ### Data.List.NonEmpty
+-- | * See the __many1__ combinator below.
+-- |
+-- | ### Data.List.Lazy
+-- | * [Data.List.Lazy.many](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List.Lazy#v:many)
+-- | * [Data.List.Lazy.some](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List.Lazy#v:some)
+-- | * [Data.List.Lazy.replicateM](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List.Lazy#v:replicateM)
+-- |
+-- | ## Combinators in this package
+-- |
+-- | A parser combinator is a function which takes some
 -- | parsers as arguments and returns a new parser.
 -- |
--- | A few of the well-known combinators from Haskell Parsec are missing in this module. That
--- | is because they have already been defined in other libraries.
+-- | The __many__ combinator applied to parser `p :: Parser s a` will return
+-- | a parser `many p :: Parser s (Array a)` which will repeat the
+-- | parser `p` as many times as possible. If `p` never consumes input when it
+-- | fails then `many p` will always succeed
+-- | but may return an empty array.
 -- |
--- | * `Text.Parsec.many` ⟶ `Data.Array.many` or `Data.List.many`
--- | * `Text.Parsec.(<|>)` ⟶ `Control.Alt.(<|>)`
--- |
--- | Note that `Data.(Array|List).(many|some)` are not stack safe. If you need to parse
--- | large numbers of items then consider
--- | using `Data.(Array|List).(manyRec|someRec)` instead.
--- |
--- | Because `String`s are not `Char` arrays in PureScript, `many` and `some` on `Char` parsers need to
--- | be used in conjunction with `Data.String.CodeUnits.fromCharArray` to
--- | construct a `String`.
--- |
--- | ```
--- | fromCharArray <$> Data.Array.many (char 'x')
--- | ```
--- |
--- | To repeat a parser exactly *N* times use `Data.Unfoldable.replicateA`.
-
-module Text.Parsing.Parser.Combinators where
+-- | The __replicateA n__ combinator applied to parser `p :: Parser s a` will
+-- | return a parser `replicateA n p :: Parser s (Array a)` which will
+-- | repeat parser `p` exactly `n` times. `replicateA n p` will only succeed
+-- | if it can match parser `p` exactly `n` consecutive times.
+module Text.Parsing.Parser.Combinators
+  ( (<?>)
+  , (<??>)
+  , (<~?>)
+  , asErrorMessage
+  , between
+  , chainl
+  , chainl1
+  , chainl1Rec
+  , chainlRec
+  , chainr
+  , chainr1
+  , chainr1Rec
+  , chainrRec
+  , choice
+  , endBy
+  , endBy1
+  , endBy1Rec
+  , endByRec
+  , lookAhead
+  , many1
+  , many1Rec
+  , many1Till
+  , many1TillRec
+  , many1TillRec_
+  , many1Till_
+  , manyTill
+  , manyTillRec
+  , manyTillRec_
+  , manyTill_
+  , module Control.Plus
+  , module Data.Unfoldable
+  , module Data.Unfoldable1
+  , notFollowedBy
+  , option
+  , optionMaybe
+  , optional
+  , sepBy
+  , sepBy1
+  , sepBy1Rec
+  , sepByRec
+  , sepEndBy
+  , sepEndBy1
+  , sepEndBy1Rec
+  , sepEndByRec
+  , skipMany
+  , skipMany1
+  , skipMany1Rec
+  , skipManyRec
+  , try
+  , tryRethrow
+  , withErrorMessage
+  , withLazyErrorMessage
+  ) where
 
 import Prelude
 
@@ -29,16 +101,18 @@ import Control.Lazy (defer)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
 import Control.Monad.State (StateT(..), runStateT)
-import Control.Plus (empty, (<|>))
+import Control.Plus (empty, (<|>), alt)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl)
 import Data.List (List(..), many, manyRec, reverse, (:))
-import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty (NonEmptyList, cons')
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
+import Data.Unfoldable (replicateA)
+import Data.Unfoldable1 (replicate1A)
 import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
@@ -81,14 +155,19 @@ option :: forall m s a. Monad m => a -> ParserT s m a -> ParserT s m a
 option a p = p <|> pure a
 
 -- | Optionally parse something, failing quietly.
+-- |
+-- | To optionally parse `p` and never fail: `optional (try p)`.
 optional :: forall m s a. Monad m => ParserT s m a -> ParserT s m Unit
 optional p = void p <|> pure unit
+
+-- TODO Is this optional parser correct? Isn't this parser supposed to succeed
+-- even if p fails? Otherwise what's the point? I think we need try (void p).
 
 -- | pure `Nothing` in the case where a parser fails without consuming input.
 optionMaybe :: forall m s a. Monad m => ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
--- | If the parser fails then reset the stream to the unconsumed state.
+-- | If the parser fails then backtrack the input stream to the unconsumed state.
 -- |
 -- | One use for this combinator is to ensure that the right parser of an
 -- | alternative will always be tried when the left parser fails.
@@ -108,7 +187,7 @@ try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ _ consumed)) -> do
     Left _ -> pure (Tuple e (ParseState input position consumed))
     _ -> pure (Tuple e s')
 
--- | If the parser fails then reset the stream to the unconsumed state.
+-- | If the parser fails then backtrack the input stream to the unconsumed state.
 -- |
 -- | Like `try`, but will relocate the error to the `try` point.
 -- |
@@ -140,7 +219,7 @@ many1 p = NEL.cons' <$> p <*> many p
 
 -- | Match one or more times.
 -- |
--- | Stack-safe version of `many1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `many1` at the expense of a `MonadRec` constraint.
 many1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (NonEmptyList a)
 many1Rec p = NEL.cons' <$> p <*> manyRec p
 
@@ -156,7 +235,7 @@ sepBy p sep = map NEL.toList (sepBy1 p sep) <|> pure Nil
 
 -- | Parse phrases delimited by a separator.
 -- |
--- | Stack-safe version of `sepBy` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `sepBy` at the expense of a `MonadRec` constraint.
 sepByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepByRec p sep = map NEL.toList (sepBy1Rec p sep) <|> pure Nil
 
@@ -169,7 +248,7 @@ sepBy1 p sep = do
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
 -- |
--- | Stack-safe version of `sepBy1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `sepBy1` at the expense of a `MonadRec` constraint.
 sepBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1Rec p sep = do
   a <- p
@@ -182,7 +261,7 @@ sepEndBy p sep = map NEL.toList (sepEndBy1 p sep) <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator.
 -- |
--- | Stack-safe version of `sepEndBy` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `sepEndBy` at the expense of a `MonadRec` constraint.
 sepEndByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndByRec p sep = map NEL.toList (sepEndBy1Rec p sep) <|> pure Nil
 
@@ -198,7 +277,7 @@ sepEndBy1 p sep = do
 
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
 -- |
--- | Stack-safe version of `sepEndBy1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `sepEndBy1` at the expense of a `MonadRec` constraint.
 sepEndBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1Rec p sep = do
   a <- p
@@ -221,7 +300,7 @@ endBy1 p sep = many1 $ p <* sep
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
 -- |
--- | Stack-safe version of `endBy1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `endBy1` at the expense of a `MonadRec` constraint.
 endBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 endBy1Rec p sep = many1Rec $ p <* sep
 
@@ -231,7 +310,7 @@ endBy p sep = many $ p <* sep
 
 -- | Parse phrases delimited and terminated by a separator.
 -- |
--- | Stack-safe version of `endBy` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `endBy` at the expense of a `MonadRec` constraint.
 endByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endByRec p sep = manyRec $ p <* sep
 
@@ -247,7 +326,7 @@ chainr p f a = chainr1 p f <|> pure a
 
 -- | Parse phrases delimited by a right-associative operator.
 -- |
--- | Stack-safe version of `chainr` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `chainr` at the expense of a `MonadRec` constraint.
 chainrRec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainrRec p f a = chainr1Rec p f <|> pure a
 
@@ -263,7 +342,7 @@ chainl p f a = chainl1 p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator.
 -- |
--- | Stack-safe version of `chainl` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `chainl` at the expense of a `MonadRec` constraint.
 chainlRec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainlRec p f a = chainl1Rec p f <|> pure a
 
@@ -282,7 +361,7 @@ chainl1 p f = do
 
 -- | Parse phrases delimited by a left-associative operator, requiring at least one match.
 -- |
--- | Stack-safe version of `chainl1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `chainl1` at the expense of a `MonadRec` constraint.
 chainl1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainl1Rec p f = do
   a <- p
@@ -312,7 +391,7 @@ chainr1 p f = do
 
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
 -- |
--- | Stack-safe version of `chainr1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `chainr1` at the expense of a `MonadRec` constraint.
 chainr1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainr1Rec p f = do
   a <- p
@@ -365,7 +444,7 @@ skipMany p = skipMany1 p <|> pure unit
 
 -- | Skip many instances of a phrase.
 -- |
--- | Stack-safe version of `skipMany` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `skipMany` at the expense of a `MonadRec` constraint.
 skipManyRec :: forall s a m. MonadRec m => ParserT s m a -> ParserT s m Unit
 skipManyRec p = skipMany1Rec p <|> pure unit
 
@@ -378,17 +457,19 @@ skipMany1 p = do
 
 -- | Skip at least one instance of a phrase.
 -- |
--- | Stack-safe version of `skipMany1` at the expense of `MonadRec` constraint.
+-- | Stack-safe version of `skipMany1` at the expense of a `MonadRec` constraint.
 skipMany1Rec :: forall s a m. MonadRec m => ParserT s m a -> ParserT s m Unit
 skipMany1Rec p = p *> tailRecM go unit
   where
   go _ = (p $> Loop unit) <|> pure (Done unit)
 
--- | Fail if the specified parser matches.
+-- | Fail if the parser succeeds.
+-- |
+-- | Will never consume input.
 notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
 notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 
--- | Parse several phrases until the specified terminator matches.
+-- | Parse many phrases until the terminator phrase matches.
 manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTill p end = scan
   where
@@ -397,9 +478,9 @@ manyTill p end = scan
     xs <- scan
     pure (x : xs)
 
--- | Parse several phrases until the specified terminator matches.
+-- | Parse many phrases until the terminator phrase matches.
 -- |
--- | Stack-safe version of `manyTill` at the expense of `MonadRec` constraint
+-- | Stack-safe version of `manyTill` at the expense of a `MonadRec` constraint.
 manyTillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTillRec p end = tailRecM go Nil
   where
@@ -408,15 +489,96 @@ manyTillRec p end = tailRecM go Nil
     (end <#> \_ -> Done $ reverse acc)
       <|> (p <#> \x -> Loop $ x : acc)
 
--- | Parse several phrases until the specified terminator matches, requiring at least one match.
+-- | Parse at least one phrase until the terminator phrase matches.
 many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1Till p end = do
   x <- p
   xs <- manyTill p end
   pure (NEL.cons' x xs)
 
--- | Parse several phrases until the specified terminator matches, requiring at least one match.
+-- | Parse at least one phrase until the terminator phrase matches.
 -- |
--- | Stack-safe version of `many1Till` at the expense of `MonadRec` constraint
+-- | Stack-safe version of `many1Till` at the expense of a `MonadRec` constraint.
 many1TillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1TillRec p end = NEL.cons' <$> p <*> manyTillRec p end
+
+-- | Parse many phrases until the terminator phrase matches.
+-- | Returns the list of phrases and the terminator phrase.
+-- |
+-- | Use the __manyTill_ __ combinator
+-- | to do non-greedy repetition of a pattern `p`, like we would in Regex
+-- | by writing `p*?`.
+-- | To repeat pattern `p` non-greedily, write
+-- | `manyTill_ p q` where `q` is the entire rest of the parser.
+-- |
+-- | For example, this parse fails because `many` repeats the pattern `letter`
+-- | greedily.
+-- |
+-- | ```
+-- | runParser "aab" do
+-- |   a <- many letter
+-- |   b <- char 'b'
+-- |   pure (Tuple a b)
+-- | ```
+-- | ```
+-- | (ParseError "Expected 'b'" (Position { line: 1, column: 4 }))
+-- | ```
+-- |
+-- | To repeat pattern `letter` non-greedily, use `manyTill_`.
+-- |
+-- | ```
+-- | runParser "aab" do
+-- |   Tuple a b <- manyTill_ letter do
+-- |     char 'b'
+-- |   pure (Tuple a b)
+-- | ```
+-- | ```
+-- | (Tuple ('a' : 'a' : Nil) 'b')
+-- | ```
+manyTill_ :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (List a) e)
+manyTill_ p end = scan
+  where
+  scan =
+    do
+      t <- end
+      pure $ Tuple Nil t
+      <|>
+        do
+          x <- p
+          Tuple xs t <- scan
+          pure $ Tuple (x : xs) t
+
+-- | Parse many phrases until the terminator phrase matches, requiring at least one match.
+-- | Returns the list of phrases and the terminator phrase.
+many1Till_ :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (NonEmptyList a) e)
+many1Till_ p end = do
+  x <- p
+  Tuple xs t <- manyTill_ p end
+  pure $ Tuple (cons' x xs) t
+
+-- | Parse many phrases until the terminator phrase matches.
+-- | Returns the list of phrases and the terminator phrase.
+-- |
+-- | Stack-safe version of `manyTill_` at the expense of a `MonadRec` constraint.
+manyTillRec_ :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (List a) e)
+manyTillRec_ p end = tailRecM go Nil
+  where
+  go :: List a -> ParserT s m (Step (List a) (Tuple (List a) e))
+  go xs =
+    do
+      t <- end
+      pure (Done (Tuple (reverse xs) t))
+      <|>
+        do
+          x <- p
+          pure (Loop (x : xs))
+
+-- | Parse many phrases until the terminator phrase matches, requiring at least one match.
+-- | Returns the list of phrases and the terminator phrase.
+-- |
+-- | Stack-safe version of `many1Till_` at the expense of a `MonadRec` constraint.
+many1TillRec_ :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (NonEmptyList a) e)
+many1TillRec_ p end = do
+  x <- p
+  Tuple xs t <- manyTillRec_ p end
+  pure $ Tuple (cons' x xs) t
