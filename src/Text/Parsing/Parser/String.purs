@@ -61,8 +61,8 @@ import Unsafe.Coerce (unsafeCoerce)
 -- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. Monad m => ParserT String m Unit
 eof = do
-  ParseState input _ _ <- get
-  if (null input)
+  ParseState input pos _ <- get
+  if (pos >= SCU.length input)
   -- We must consume so this combines correctly with notFollowedBy
   then consume
   else (fail "Expected EOF")
@@ -72,17 +72,25 @@ rest :: forall m. Monad m => ParserT String m String
 rest = do
   ParseState input position _ <- get
   -- put $ ParseState "" (updatePosString position input) true
-  put $ ParseState "" (position + CodeUnits.length input) true
-  pure input
+  -- put $ ParseState "" (position + CodeUnits.length input) true
+  let len = SCU.length input
+  case SCU.slice position len input of
+    Just s -> do
+      put $ ParseState input len true
+      pure s
+    Nothing -> fail "Unreachable case"
 
 -- | Match the specified string.
 string :: forall m. Monad m => String -> ParserT String m String
 string str = do
   ParseState input position _ <- get
-  case stripPrefix (Pattern str) input of
-    Just remainder -> do
+  -- case stripPrefix (Pattern str) input of
+  let newpos = position + SCU.length str
+  case SCU.slice position newpos input of
+    Just s | s == str -> do
       -- put $ ParseState remainder (updatePosString position str) true
-      put $ ParseState remainder (position + CodeUnits.length str) true
+      -- put $ ParseState remainder (position + CodeUnits.length str) true
+      put $ ParseState input newpos true
       pure str
     _ -> fail ("Expected " <> show str)
 
@@ -110,10 +118,12 @@ anyCodePoint = do
   --   Just { head, tail } -> do
   --     put $ ParseState tail (updatePosSingle position head) true
   --     pure head
-  case runFn4 _codePointAtIndex _codePointAtIndexSuccess Nothing 0 input of
+  case runFn4 _codePointAtIndexUnit _codePointAtIndexSuccess Nothing position input of
+  -- case runFn4 _codePointAtIndex _codePointAtIndexSuccess Nothing 0 input of
     Nothing -> fail "Unexpected EOF"
     Just (Tuple c n) -> do
-      put $ ParseState (CodeUnits.drop n input) (position + n) true
+      -- put $ ParseState (CodeUnits.drop n input) (position + n) true
+      put $ ParseState input (position + n) true
       pure c
 
 -- | Match a BMP `Char` satisfying the predicate.
@@ -141,7 +151,8 @@ takeN n = do
   let { before, after } = splitAt n input
   if length before == n then do
     -- put $ ParseState after (updatePosString position before) true
-    put $ ParseState after (position + CodeUnits.length before) true
+    -- put $ ParseState after (position + CodeUnits.length before) true
+    put $ ParseState input (position + CodeUnits.length before) true
     pure before
   else fail ("Could not take " <> show n <> " characters")
 
@@ -205,15 +216,18 @@ updatePosSingle (Position { line, column }) cp = case unCodePoint cp of
 -- | ```
 match :: forall m a. Monad m => ParserT String m a -> ParserT String m (Tuple String a)
 match p = do
-  ParseState input1 _ _ <- get
+  ParseState input pos0 _ <- get
   x <- p
-  ParseState input2 _ _ <- get
+  ParseState _ pos1 _ <- get
+  case SCU.slice pos0 pos1 input of
+    Just s -> pure $ Tuple s x
+    Nothing -> fail "Unreachable case"
   -- We use the `SCU.length`, which is in units of “code units”
   -- instead of `Data.String.length`. which is in units of “code points”.
   -- This is more efficient, and it will be correct as long as we can assume
   -- the invariant that the `ParseState input` always begins on a code point
   -- boundary.
-  pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) x
+  -- pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) x
 
 -- | The CodePoint newtype constructor is not exported, so here's a helper.
 -- | This will break at runtime if the definition of CodePoint ever changes
@@ -222,15 +236,20 @@ unCodePoint :: CodePoint -> Int
 unCodePoint = unsafeCoerce
 
 
--- | Takes a String and a CodeUnit index.
--- | Returns
--- | * the CodePoint at the CodeUnit index.
--- | * the CodeUnit width of the returned CodePoint (usually 1 or 2)
+-- | Takes a `String`` and a `CodeUnit` index into the `String`.
 -- |
--- | Preconditions:
--- | * the index must point to a BMP character or the first (high)
--- |   character of a surrogate pair.
-foreign import _codePointAtIndex :: Fn4
+-- | Returns
+-- | * the `CodePoint` at the `CodeUnit` index.
+-- | * the `CodeUnit` width of the returned `CodePoint` (either `1` or `2`).
+-- |
+-- | The index must point to a Basic Multilingual Plane character or the
+-- | first (high) character of a surrogate pair. If the index is out of bounds
+-- | or points to the low character of a surrogate pair then this
+-- | function returns `Nothing`.
+codePointAtIndexUnit :: Int -> String -> Maybe (Tuple CodePoint Int)
+codePointAtIndexUnit i s = runFn4 _codePointAtIndexUnit _codePointAtIndexSuccess Nothing i s
+
+foreign import _codePointAtIndexUnit :: Fn4
   (Fn2 CodePoint Int (Maybe (Tuple CodePoint Int))) -- success
   (Maybe (Tuple CodePoint Int)) -- failure
   Int
