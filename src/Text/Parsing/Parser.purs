@@ -26,7 +26,7 @@ import Control.Monad.Except (class MonadError, ExceptT(..), mapExceptT, runExcep
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.State (class MonadState, StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Control.MonadPlus (class Alternative, class MonadPlus, class MonadZero, class Plus)
+import Control.MonadPlus (class Alternative, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.Newtype (class Newtype, over, unwrap)
@@ -160,8 +160,6 @@ instance plusParserT :: Monad m => Plus (ParserT s m) where
   empty = fail "No alternative"
 
 instance alternativeParserT :: Monad m => Alternative (ParserT s m)
-
-instance monadZeroParserT :: Monad m => MonadZero (ParserT s m)
 
 instance monadPlusParserT :: Monad m => MonadPlus (ParserT s m)
 
