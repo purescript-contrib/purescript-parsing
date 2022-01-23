@@ -6,6 +6,7 @@
   , "control"
   , "either"
   , "foldable-traversable"
+  , "functions"
   , "identity"
   , "integers"
   , "lists"

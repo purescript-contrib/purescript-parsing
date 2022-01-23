@@ -45,8 +45,10 @@ import Data.Array (notElem)
 import Data.Char (fromCharCode)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Foldable (elem)
+import Data.Function.Uncurried (Fn2, Fn4, mkFn2, runFn4)
 import Data.Maybe (Maybe(..))
 import Data.String (CodePoint, Pattern(..), length, null, singleton, splitAt, stripPrefix, uncons)
+import Data.String.CodeUnits as CodeUnits
 import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..), fst)
 import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
@@ -99,11 +101,16 @@ anyChar = tryRethrow do
 anyCodePoint :: forall m. Monad m => ParserT String m CodePoint
 anyCodePoint = do
   ParseState input position _ <- get
-  case uncons input of
+  -- case uncons input of
+  --   Nothing -> fail "Unexpected EOF"
+  --   Just { head, tail } -> do
+  --     put $ ParseState tail (updatePosSingle position head) true
+  --     pure head
+  case runFn4 _codePointAtIndex _codePointAtIndexSuccess Nothing 0 input of
     Nothing -> fail "Unexpected EOF"
-    Just { head, tail } -> do
-      put $ ParseState tail (updatePosSingle position head) true
-      pure head
+    Just (Tuple c n) -> do
+      put $ ParseState (CodeUnits.drop n input) (updatePosSingle position c) true
+      pure c
 
 -- | Match a BMP `Char` satisfying the predicate.
 satisfy :: forall m. Monad m => (Char -> Boolean) -> ParserT String m Char
@@ -208,3 +215,25 @@ match p = do
 -- | to something other than `newtype CodePoint = CodePoint Int`.
 unCodePoint :: CodePoint -> Int
 unCodePoint = unsafeCoerce
+
+
+-- | Takes a String and a CodeUnit index.
+-- | Returns
+-- | * the CodePoint at the CodeUnit index.
+-- | * the CodeUnit width of the returned CodePoint (usually 1 or 2)
+-- |
+-- | Preconditions:
+-- | * the index must point to a BMP character or the first (high)
+-- |   character of a surrogate pair.
+foreign import _codePointAtIndex :: Fn4
+  (Fn2 CodePoint Int (Maybe (Tuple CodePoint Int))) -- success
+  (Maybe (Tuple CodePoint Int)) -- failure
+  Int
+  String
+  (Maybe (Tuple CodePoint Int))
+
+_codePointAtIndexSuccess :: Fn2 CodePoint Int (Maybe (Tuple CodePoint Int))
+_codePointAtIndexSuccess = mkFn2 \cp n -> Just (Tuple cp n)
+-- https://pursuit.purescript.org/packages/purescript-strings/5.0.0/docs/Data.String.CodeUnits#v:slice
+-- https://github.com/purescript/purescript-strings/blob/157e372a23e4becd594d7e7bff6f372a6f63dd82/src/Data/String/CodePoints.purs#L191-L191
+-- https://github.com/purescript/purescript-strings/blob/157e372a23e4becd594d7e7bff6f372a6f63dd82/src/Data/String/CodePoints.purs#L406
