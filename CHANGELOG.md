@@ -30,6 +30,7 @@ Other improvements:
 - Documentation. (#140 by @jamesdbrock)
 - Documentation. (#143 by @jamesdbrock)
 - Documentation. (#142 by @jamesdbrock)
+- Remove deprecated `MonadZero` constraint. (#142 by @jamesdbrock)
 
 ## [v8.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.1.0) - 2022-01-10
 
