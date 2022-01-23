@@ -34,12 +34,14 @@ import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser.Pos (Position, initialPos)
 
 -- | A parsing error, consisting of a message and position information.
-data ParseError = ParseError String Position
+data ParseError = ParseError String Int
+-- data ParseError = ParseError String Position
 
 parseErrorMessage :: ParseError -> String
 parseErrorMessage (ParseError msg _) = msg
 
-parseErrorPosition :: ParseError -> Position
+-- parseErrorPosition :: ParseError -> Position
+parseErrorPosition :: ParseError -> Int
 parseErrorPosition (ParseError _ pos) = pos
 
 instance showParseError :: Show ParseError where
@@ -50,7 +52,8 @@ derive instance eqParseError :: Eq ParseError
 derive instance ordParseError :: Ord ParseError
 
 -- | Contains the remaining input and current position.
-data ParseState s = ParseState s Position Boolean
+-- data ParseState s = ParseState s Position Boolean
+data ParseState s = ParseState s Int Boolean
 -- ParseState constructor has three parameters,
 -- s: the remaining input
 -- Position: the current position
@@ -76,7 +79,8 @@ derive instance newtypeParserT :: Newtype (ParserT s m a) _
 runParserT :: forall m s a. Monad m => s -> ParserT s m a -> m (Either ParseError a)
 runParserT s p = evalStateT (runExceptT (unwrap p)) initialState
   where
-  initialState = ParseState s initialPos false
+  -- initialState = ParseState s initialPos false
+  initialState = ParseState s 0 false
 
 -- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
 type Parser s = ParserT s Identity
@@ -176,7 +180,7 @@ consume = modify_ \(ParseState input pos _) ->
   ParseState input pos true
 
 -- | Returns the current position in the stream.
-position :: forall s m. Monad m => ParserT s m Position
+position :: forall s m. Monad m => ParserT s m Int
 position = gets \(ParseState _ pos _) -> pos
 
 -- | Fail with a message.
@@ -184,7 +188,8 @@ fail :: forall m s a. Monad m => String -> ParserT s m a
 fail message = failWithPosition message =<< position
 
 -- | Fail with a message and a position.
-failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
+failWithPosition :: forall m s a. Monad m => String -> Int -> ParserT s m a
+-- failWithPosition :: forall m s a. Monad m => String -> Position -> ParserT s m a
 failWithPosition message pos = throwError (ParseError message pos)
 
 -- | Contextualize parsing failures inside a region. If a parsing failure

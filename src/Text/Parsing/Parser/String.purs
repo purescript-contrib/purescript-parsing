@@ -20,23 +20,25 @@
 -- | can parse the full Unicode character set. All of the primitive parsers
 -- | in this module can be used together.
 module Text.Parsing.Parser.String
-  ( string
-  , eof
-  , rest
-  , anyChar
+  ( anyChar
   , anyCodePoint
-  , satisfy
-  , satisfyCodePoint
   , char
-  , takeN
-  , whiteSpace
-  , skipSpaces
-  , oneOf
-  , oneOfCodePoints
+  , positionFromIndex
+  , eof
+  , match
   , noneOf
   , noneOfCodePoints
-  , match
-  ) where
+  , oneOf
+  , oneOfCodePoints
+  , rest
+  , satisfy
+  , satisfyCodePoint
+  , skipSpaces
+  , string
+  , takeN
+  , whiteSpace
+  )
+  where
 
 import Prelude hiding (between)
 
@@ -53,7 +55,7 @@ import Data.String.CodeUnits as SCU
 import Data.Tuple (Tuple(..), fst)
 import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
-import Text.Parsing.Parser.Pos (Position(..))
+import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Match “end-of-file,” the end of the input stream.
@@ -69,7 +71,8 @@ eof = do
 rest :: forall m. Monad m => ParserT String m String
 rest = do
   ParseState input position _ <- get
-  put $ ParseState "" (updatePosString position input) true
+  -- put $ ParseState "" (updatePosString position input) true
+  put $ ParseState "" (position + CodeUnits.length input) true
   pure input
 
 -- | Match the specified string.
@@ -78,7 +81,8 @@ string str = do
   ParseState input position _ <- get
   case stripPrefix (Pattern str) input of
     Just remainder -> do
-      put $ ParseState remainder (updatePosString position str) true
+      -- put $ ParseState remainder (updatePosString position str) true
+      put $ ParseState remainder (position + CodeUnits.length str) true
       pure str
     _ -> fail ("Expected " <> show str)
 
@@ -109,7 +113,7 @@ anyCodePoint = do
   case runFn4 _codePointAtIndex _codePointAtIndexSuccess Nothing 0 input of
     Nothing -> fail "Unexpected EOF"
     Just (Tuple c n) -> do
-      put $ ParseState (CodeUnits.drop n input) (updatePosSingle position c) true
+      put $ ParseState (CodeUnits.drop n input) (position + n) true
       pure c
 
 -- | Match a BMP `Char` satisfying the predicate.
@@ -136,7 +140,8 @@ takeN n = do
   ParseState input position _ <- get
   let { before, after } = splitAt n input
   if length before == n then do
-    put $ ParseState after (updatePosString position before) true
+    -- put $ ParseState after (updatePosString position before) true
+    put $ ParseState after (position + CodeUnits.length before) true
     pure before
   else fail ("Could not take " <> show n <> " characters")
 
@@ -237,3 +242,8 @@ _codePointAtIndexSuccess = mkFn2 \cp n -> Just (Tuple cp n)
 -- https://pursuit.purescript.org/packages/purescript-strings/5.0.0/docs/Data.String.CodeUnits#v:slice
 -- https://github.com/purescript/purescript-strings/blob/157e372a23e4becd594d7e7bff6f372a6f63dd82/src/Data/String/CodePoints.purs#L191-L191
 -- https://github.com/purescript/purescript-strings/blob/157e372a23e4becd594d7e7bff6f372a6f63dd82/src/Data/String/CodePoints.purs#L406
+
+-- | From an input string, calculate the `Position` at the CodeUnit index
+-- | of the input string.
+positionFromIndex :: String -> Int -> Position
+positionFromIndex s cu  = updatePosString initialPos (CodeUnits.take cu s)

@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, 
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, rest, satisfy, string, takeN, whiteSpace)
+import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, positionFromIndex, rest, satisfy, string, takeN, whiteSpace)
 import Text.Parsing.Parser.String.Basic (intDecimal, number, letter)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser, match, token, when)
 import Text.Parsing.Parser.Token as Parser.Token
@@ -47,11 +47,11 @@ parseTest input expected p = case runParser input p of
     logShow actual
   Left err -> assert' ("error: " <> show err) false
 
-parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
+parseErrorTestPosition :: forall a. Show a => Parser String a -> String -> Position -> Effect Unit
 parseErrorTestPosition p input expected = case runParser input p of
   Right x -> assert' ("ParseError expected at " <> show expected <> " but parsed " <> show x) false
   Left err -> do
-    let pos = parseErrorPosition err
+    let pos = positionFromIndex input (parseErrorPosition err)
     assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
     logShow expected
 
@@ -582,7 +582,10 @@ main = do
 
   parseTest "rest" "rest" rest
   parseTest "rest" unit (rest *> eof)
-  parseTest "rest\nrest" (Position { line: 2, column: 5 }) (rest *> position)
+  (
+  let input = "rest\nrest"
+  in parseTest input (Position { line: 2, column: 5 }) (rest *> position <#> positionFromIndex input)
+  )
 
   parseErrorTestPosition
     (rest *> notFollowedBy eof)
@@ -627,15 +630,14 @@ main = do
     bb <- SCU.fromCharArray <$> some letter
     pure [ aa, w, bb ]
 
-  let tokpos = const initialPos
-  parseTest (fromFoldable [ A, B ]) A (token tokpos)
-  parseTest (fromFoldable [ B, A ]) B (token tokpos)
+  parseTest (fromFoldable [ A, B ]) A (token)
+  parseTest (fromFoldable [ B, A ]) B (token)
 
-  parseTest (fromFoldable [ A, B ]) A (when tokpos isA)
+  parseTest (fromFoldable [ A, B ]) A (when isA)
 
-  parseTest (fromFoldable [ A ]) A (match tokpos A)
-  parseTest (fromFoldable [ B ]) B (match tokpos B)
-  parseTest (fromFoldable [ A, B ]) A (match tokpos A)
+  parseTest (fromFoldable [ A ]) A (match A)
+  parseTest (fromFoldable [ B ]) B (match B)
+  parseTest (fromFoldable [ A, B ]) A (match A)
 
   parseTest (fromFoldable []) unit Parser.Token.eof
 

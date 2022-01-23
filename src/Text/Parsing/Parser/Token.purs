@@ -21,7 +21,7 @@ module Text.Parsing.Parser.Token
 import Prelude hiding (between, when)
 
 import Control.Lazy (fix)
-import Control.Monad.State (get, gets, modify_)
+import Control.Monad.State (get, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
@@ -43,32 +43,35 @@ import Data.Tuple (Tuple(..))
 import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
-import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (char, noneOf, oneOf, satisfy, satisfyCodePoint, string)
-import Text.Parsing.Parser.String.Basic as Basic
 import Text.Parsing.Parser.String.Basic (digit, hexDigit, octDigit, upper, space, letter, alphaNum)
+import Text.Parsing.Parser.String.Basic as Basic
 
 -- | A parser which returns the first token in the stream.
-token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
-token tokpos = do
-  input <- gets \(ParseState input _ _) -> input
+-- token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
+-- token tokpos = do
+token :: forall m a. Monad m => ParserT (List a) m a
+token = do
+  -- input <- gets \(ParseState input p _) -> input
+  ParseState input p _ <- get
   case List.uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
       modify_ \(ParseState _ _ _) ->
-        ParseState tail (tokpos head) true
+        -- ParseState tail (tokpos head) true
+        ParseState tail (p+1) true
       pure head
 
 -- | A parser which matches any token satisfying the predicate.
-when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
-when tokpos f = tryRethrow do
-  a <- token tokpos
+when :: forall m a. Monad m => (a -> Boolean) -> ParserT (List a) m a
+when f = tryRethrow do
+  a <- token
   guard $ f a
   pure a
 
 -- | Match the specified token at the head of the stream.
-match :: forall a m. Monad m => Eq a => (a -> Position) -> a -> ParserT (List a) m a
-match tokpos tok = when tokpos (_ == tok)
+match :: forall a m. Monad m => Eq a => a -> ParserT (List a) m a
+match tok = when (_ == tok)
 
 -- | Match the “end-of-file,” the end of the input stream.
 eof :: forall a m. Monad m => ParserT (List a) m Unit
