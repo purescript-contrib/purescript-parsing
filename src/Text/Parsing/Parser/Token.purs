@@ -1,7 +1,7 @@
 -- | Functions for working with streams of tokens.
 -- |
 -- | This module is a port of the Haskell
--- | [__Text.Parsec.Token__](https://hackage.haskell.org/package/docs/Text-Parsec-Token.html)
+-- | [__Text.Parsec.Token__](https://hackage.haskell.org/package/parsec/docs/Text-Parsec-Token.html)
 -- | module.
 
 module Text.Parsing.Parser.Token
