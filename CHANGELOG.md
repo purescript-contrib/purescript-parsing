@@ -8,6 +8,16 @@ Breaking changes:
 
 New features:
 
+Bugfixes:
+
+Other improvements:
+
+## [v8.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.2.0) - 2022-01-26
+
+Breaking changes:
+
+New features:
+
 - `Parser.String.rest` (#140 by @jamesdbrock)
 - `Parser.String.takeN` (#140 by @jamesdbrock)
 - `Parser.Token.eof` (#140 by @jamesdbrock)
