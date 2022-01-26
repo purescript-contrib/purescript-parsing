@@ -24,6 +24,7 @@
         "purescript-math": "^v3.0.0",
         "purescript-maybe": "^v5.0.0",
         "purescript-newtype": "^v4.0.0",
+        "purescript-numbers": "^v8.0.0",
         "purescript-prelude": "^v5.0.1",
         "purescript-strings": "^v5.0.0",
         "purescript-tailrec": "^v5.0.1",
