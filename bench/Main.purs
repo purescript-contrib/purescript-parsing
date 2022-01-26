@@ -55,7 +55,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Performance.Minibench (benchWith)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (string)
-import Text.Parsing.Parser.Token (digit)
+import Text.Parsing.Parser.String.Basic (digit)
 import Text.Parsing.StringParser as StringParser
 import Text.Parsing.StringParser.CodePoints as StringParser.CodePoints
 import Text.Parsing.StringParser.CodeUnits as StringParser.CodeUnits

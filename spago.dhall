@@ -12,6 +12,7 @@
   , "math"
   , "maybe"
   , "newtype"
+  , "numbers"
   , "prelude"
   , "strings"
   , "tailrec"

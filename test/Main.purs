@@ -11,6 +11,7 @@ import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
 import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..), fromJust)
+import Data.Number (infinity, isNaN)
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.String.CodeUnits as SCU
@@ -25,7 +26,8 @@ import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
 import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, rest, satisfy, string, takeN, whiteSpace)
-import Text.Parsing.Parser.Token (TokenParser, letter, makeTokenParser, match, token, when)
+import Text.Parsing.Parser.String.Basic (intDecimal, number, letter)
+import Text.Parsing.Parser.Token (TokenParser, makeTokenParser, match, token, when)
 import Text.Parsing.Parser.Token as Parser.Token
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
@@ -654,6 +656,32 @@ main = do
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
   parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
   parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
+
+  parseTest "Infinity" infinity number
+  parseTest "+Infinity" infinity number
+  parseTest "-Infinity" (negate infinity) number
+  parseErrorTestPosition number "+xxx" (mkPos 2)
+
+  parseTest "-3.0E-1.0" (-0.3) number
+
+  -- test from issue #73
+  parseTest "0.7531531167929774" 0.7531531167929774 number
+
+  -- test from issue #115
+  parseTest "-6.0" (-6.0) number
+  parseTest "+6.0" (6.0) number
+
+  -- we can't test "NaN" with `parseTest` because nan doesn't compare equal
+  case runParser "NaN" number of
+    Right actual -> do
+      assert' ("expected: NaN, actual: " <> show actual) (isNaN actual)
+      logShow actual
+    Left err -> assert' ("error: " <> show err) false
+
+  -- TODO This shows the current limitations of the number parser. Ideally this parse should fail.
+  parseTest "1..3" 1.0 $ number <* eof
+
+  parseTest "-300" (-300) intDecimal
 
   stackSafeLoopsTest
 

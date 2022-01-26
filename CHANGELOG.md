@@ -15,6 +15,8 @@ New features:
 - `Parser.Combinators.many1Till_` (#143 by @jamesbrock)
 - `Parser.Combinators.manyTillRec_` (#143 by @jamesbrock)
 - `Parser.Combinators.many1TillRec_` (#143 by @jamesbrock)
+- `Parser.String.Basic.number` (#142 by @jamesbrock)
+- `Parser.String.Basic.intDecimal` (#142 by @jamesbrock)
 
 Bugfixes:
 
@@ -23,8 +25,11 @@ Bugfixes:
 
 Other improvements:
 
+- Moved the `Parser.Token` parsers `digit`, `hexDigit`, `octDigit`, `upper`,
+  `space`, `letter`, `alphaNum` into the new module `Parser.String.Basic`. (#142 by @jamesdbrock)
 - Documentation. (#140 by @jamesdbrock)
 - Documentation. (#143 by @jamesdbrock)
+- Documentation. (#142 by @jamesdbrock)
 
 ## [v8.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.1.0) - 2022-01-10
 
