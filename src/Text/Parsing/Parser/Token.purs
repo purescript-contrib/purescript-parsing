@@ -1,4 +1,6 @@
--- | Functions for working with streams of tokens.
+-- | Primitive parsers for an input stream of type
+-- | `(`[__List__](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List.Types#t:List) `a)`
+-- | for working with streams of tokens.
 -- |
 -- | This module is a port of the Haskell
 -- | [__Text.Parsec.Token__](https://hackage.haskell.org/package/parsec/docs/Text-Parsec-Token.html)
