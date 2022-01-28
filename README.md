@@ -50,14 +50,18 @@ result is `Left ParseError`.
 
 Each type of input string needs primitive parsers.
 Primitive parsers for input string type `String` are in the `Text.Parsing.Parser.String` module.
+For example, the primitive `char :: Char -> Parser String Char` parser will exactly match
+one literal character and then advance by one position in the input string.
+
 We can use these primitive parsers to write other `String` parsers.
+
+### Writing a parser
 
 Here is a parser `ayebee :: Parser String Boolean` which will accept only two input
 strings: `"ab"` or `"aB"`.
 It will return `true` if the `b` character is uppercase.
 It will return `false` if the `b` character is lowercase.
 It will fail with a `ParseError` if the input string is anything else.
-This parser is written in terms of the primitive parser `char :: Parser String Char`.
 
 ```purescript
 ayebee :: Parser String Boolean
