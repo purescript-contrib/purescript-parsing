@@ -139,15 +139,18 @@ derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (P
 -- |
 -- | If we read a file from disk and run this `fileParser` on it and the
 -- | `string "<html>"` parser succeeds, then we know that the first branch
--- | is the correct branch. Even if the `parseTheRestOfTheHtml` parser fails
--- | we don’t want to try the other branch.
+-- | is the correct branch, so we want to commit to the first branch. 
+-- | Even if the `parseTheRestOfTheHtml` parser fails
+-- | we don’t want to try the second branch.
 -- |
 -- | To control the point at which we commit to the `p_left` branch
 -- | use the `try` combinator and the `lookAhead` combinator and
 -- | the `consume` function.
 -- |
 -- | The `alt` combinator works this way because it gives us good localized
--- | error messages while also allowing an efficient implementation.
+-- | error messages while also allowing an efficient implementation. See
+-- | [Parsec: Direct Style Monadic Parser Combinators For The Real World](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
+-- | section __2.3 Backtracking__.
 instance altParserT :: Monad m => Alt (ParserT s m) where
   alt p1 p2 = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState i p _)) -> do
     Tuple e s'@(ParseState _ _ consumed) <- runStateT (runExceptT (unwrap p1)) (ParseState i p false)
