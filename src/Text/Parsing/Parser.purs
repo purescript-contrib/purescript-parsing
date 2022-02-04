@@ -149,7 +149,7 @@ derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (P
 -- |
 -- | The `alt` combinator works this way because it gives us good localized
 -- | error messages while also allowing an efficient implementation. See
--- | [Parsec: Direct Style Monadic Parser Combinators For The Real World](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
+-- | [*Parsec: Direct Style Monadic Parser Combinators For The Real World*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
 -- | section __2.3 Backtracking__.
 instance altParserT :: Monad m => Alt (ParserT s m) where
   alt p1 p2 = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState i p _)) -> do
