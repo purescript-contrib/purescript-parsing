@@ -101,7 +101,9 @@ will return `Right [true, false, true]`.
 
 ## Further reading
 
-Here is the original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer.
+[*Monadic Parser Combinators*](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) by Graham Hutton and Erik Meijer 1996.
+
+The original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer 1998.
 
 [*Revisiting Monadic Parsing in Haskell*](https://vaibhavsagar.com/blog/2018/02/04/revisiting-monadic-parsing-haskell/) by Vaibhav Sagar is a reflection on the Hutton, Meijer FUNCTIONAL PEARL.
 
@@ -109,6 +111,10 @@ Here is the original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskel
 
 [*Parsec: “try a <|> b” considered harmful*](http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/) by Edward Z. Yang is about how to decide when to backtrack
 from a failed alternative.
+
+[*Parsec: Direct Style Monadic Parser Combinators For The Real World*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf) by Daan Leijen and Erik Meijer 2001.
+
+[*Parser Combinators in Haskell*](https://serokell.io/blog/parser-combinators-in-haskell) by Heitor Toledo Lassarote de Paula.
 
 There are lots of other great monadic parsing tutorials on the internet.
 
