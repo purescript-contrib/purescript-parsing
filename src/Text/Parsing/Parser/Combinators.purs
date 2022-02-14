@@ -505,6 +505,8 @@ many1TillRec p end = NEL.cons' <$> p <*> manyTillRec p end
 -- | Parse many phrases until the terminator phrase matches.
 -- | Returns the list of phrases and the terminator phrase.
 -- |
+-- | ## Non-greedy repetition
+-- |
 -- | Use the __manyTill_ __ combinator
 -- | to do non-greedy repetition of a pattern `p`, like we would in Regex
 -- | by writing `p*?`.
