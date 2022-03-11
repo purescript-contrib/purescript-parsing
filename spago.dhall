@@ -18,6 +18,7 @@
   , "tailrec"
   , "transformers"
   , "tuples"
+  , "unfoldable"
   , "unicode"
   , "unsafe-coerce"
   ]

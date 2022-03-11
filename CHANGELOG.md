@@ -10,7 +10,7 @@ New features:
 
 Bugfixes:
 
-Other improvements:
+Other improvements: Add `lower` parser to Text.Parsing.Parser.String.Basic.
 
 ## [v8.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.2.0) - 2022-01-26
 
