@@ -30,6 +30,7 @@
         "purescript-tailrec": "^v5.0.1",
         "purescript-transformers": "^v5.1.0",
         "purescript-tuples": "^v6.0.1",
+        "purescript-unfoldable": "^v5.0.0",
         "purescript-unicode": "^v5.0.0",
         "purescript-unsafe-coerce": "^v5.0.0"
     }
