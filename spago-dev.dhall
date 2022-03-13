@@ -18,7 +18,6 @@ in conf //
   , "exceptions"
   , "string-parsers"
   , "partial"
-  , "unfoldable"
   ]
 , packages = ./packages.dhall
 }
