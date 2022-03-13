@@ -10,7 +10,17 @@ New features:
 
 Bugfixes:
 
-Other improvements: Add `lower` parser to Text.Parsing.Parser.String.Basic.
+Other improvements:
+
+## [v8.3.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.3.0) - 2022-01-26
+
+New features:
+
+Add `lower` parser to Text.Parsing.Parser.String.Basic. (#152 by @mkohlhass)
+
+Bugfixes:
+
+Add `unfoldable` to `spago.dhall`. (#152 by @mkohlhass)
 
 ## [v8.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.2.0) - 2022-01-26
 
