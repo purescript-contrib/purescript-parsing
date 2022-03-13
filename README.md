@@ -99,6 +99,10 @@ runParser "aBabaB" (many ayebee)
 
 will return `Right [true, false, true]`.
 
+## Video tutorial
+
+[*Monadic Parsers at the Input Boundary*](https://www.youtube.com/watch?v=LLkbzt4ms6M) by James Brock
+
 ## Further reading
 
 [*Monadic Parser Combinators*](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) by Graham Hutton and Erik Meijer 1996.
