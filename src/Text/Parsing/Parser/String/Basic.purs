@@ -10,6 +10,7 @@ module Text.Parsing.Parser.String.Basic
   , octDigit
   , letter
   , space
+  , lower
   , upper
   , alphaNum
   , intDecimal
@@ -19,7 +20,7 @@ module Text.Parsing.Parser.String.Basic
 
 import Prelude
 
-import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace, isUpper)
+import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isLower, isOctDigit, isSpace, isUpper)
 import Data.Int as Data.Int
 import Data.Maybe (Maybe(..))
 import Data.Number (infinity, nan)
@@ -43,6 +44,10 @@ hexDigit = satisfyCP isHexDigit <?> "hex digit"
 -- | Parse an octal digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isOctDigit`.
 octDigit :: forall m. Monad m => ParserT String m Char
 octDigit = satisfyCP isOctDigit <?> "oct digit"
+
+-- | Parse a lowercase letter.  Matches any char that satisfies `Data.CodePoint.Unicode.isLower`.
+lower :: forall m. Monad m => ParserT String m Char
+lower = satisfyCP isLower <?> "lowercase letter"
 
 -- | Parse an uppercase letter.  Matches any char that satisfies `Data.CodePoint.Unicode.isUpper`.
 upper :: forall m. Monad m => ParserT String m Char
