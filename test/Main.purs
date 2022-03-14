@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, 
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, rest, satisfy, string, takeN, whiteSpace)
+import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, regex, rest, satisfy, string, takeN, whiteSpace)
 import Text.Parsing.Parser.String.Basic (intDecimal, number, letter)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser, match, token, when)
 import Text.Parsing.Parser.Token as Parser.Token
@@ -682,6 +682,18 @@ main = do
   parseTest "1..3" 1.0 $ number <* eof
 
   parseTest "-300" (-300) intDecimal
+
+  parseTest "regex-" "regex" (regex {} "regex" <* char '-' <* eof)
+  parseTest "-regex" "regex" (char '-' *> regex {} "regex" <* eof)
+  parseTest "regexregex" "regexregex" (regex {} "(regex)*")
+  parseTest "regexregex" "regex" (regex {} "(^regex)*")
+  parseTest "ReGeX" "ReGeX" (regex { ignoreCase: true } "regex")
+
+  -- Maybe it is nonsense to allow multiline regex.
+  -- Because an end-of-line regex pattern `$` will match but then the
+  -- newline character will not be consumed.
+  -- Also why does this test fail? I think it should succeed.
+  -- parseTest "regex\nregex\n" "regex\nregex\n" (regex {dotAll: false, multiline: true} "(^regex$)+")
 
   stackSafeLoopsTest
 

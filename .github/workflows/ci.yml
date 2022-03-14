@@ -26,11 +26,14 @@ jobs:
             .spago
             output
 
-      - name: Install dev dependencies
+      - name: Install dependencies
         run: spago install
 
       - name: Build source
         run: spago build --no-install --purs-args '--censor-lib --strict --censor-codes='UserDefinedWarning''
+
+      - name: Install dev dependencies
+        run: spago -x spago-dev.dhall install
 
       - name: Run tests
         run: spago -x spago-dev.dhall test --no-install
