@@ -8,6 +8,8 @@ Breaking changes:
 
 New features:
 
+Add `regex` parser.
+
 Bugfixes:
 
 Other improvements:

@@ -36,19 +36,27 @@ module Text.Parsing.Parser.String
   , noneOf
   , noneOfCodePoints
   , match
+  , regex
+  , RegexFlagsRow
   ) where
 
 import Prelude hiding (between)
 
 import Control.Monad.State (get, put)
 import Data.Array (notElem)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Char (fromCharCode)
 import Data.CodePoint.Unicode (isSpace)
+import Data.Either (Either(..))
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..))
 import Data.String (CodePoint, Pattern(..), length, null, singleton, splitAt, stripPrefix, uncons)
 import Data.String.CodeUnits as SCU
+import Data.String.Regex as Regex
+import Data.String.Regex.Flags (RegexFlags(..), RegexFlagsRec)
 import Data.Tuple (Tuple(..), fst)
+import Prim.Row (class Nub, class Union)
+import Record (merge)
 import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
@@ -208,3 +216,82 @@ match p = do
 -- | to something other than `newtype CodePoint = CodePoint Int`.
 unCodePoint :: CodePoint -> Int
 unCodePoint = unsafeCoerce
+
+-- | Parser which uses the `Data.String.Regex` module to match the regular
+-- | expression pattern passed as the `String`
+-- | argument to the parser.
+-- |
+-- | This parser will try to match the regular expression pattern starting
+-- | at the current parser position. On success, it will return the matched
+-- | substring.
+-- |
+-- | This parser may be useful for quickly consuming a large section of the
+-- | input `String`, because in a JavaScript runtime environment the `RegExp`
+-- | runtime is a lot faster than primitive parsers.
+-- |
+-- | [*MDN Regular Expressions Cheatsheet*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
+-- |
+-- | The `Record flags` argument to the parser is for `Regex` flags. Here are
+-- | the default flags.
+-- |
+-- | ```purescript
+-- | { dotAll: true
+-- |   ignoreCase: false
+-- |   unicode: true
+-- | }
+-- | ```
+-- |
+-- | If you want to use the defaults then pass
+-- | `{}` as the flags argument. For case-insensitive pattern matching, pass
+-- | `{ignoreCase: true}` as the flags argument.
+-- | The other `Data.String.Regex.Flags.RegexFlagsRec` fields are mostly
+-- | nonsense in the context of parsing
+-- | and use of the other flags may cause strange behavior in the parser.
+-- |
+-- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
+-- |
+-- | If the `Regex` pattern string fails to compile then this parser will fail.
+-- | (Note: It’s not possible to use a precompiled `Regex` because this parser
+-- | must set flags and make adjustments to the `Regex` pattern string.)
+regex
+  :: forall m flags f_
+   . Monad m
+  => Union flags RegexFlagsRow f_
+  => Nub f_ RegexFlagsRow
+  => Record flags
+  -> String
+  -> ParserT String m String
+regex flags pattern =
+  -- Prefix a ^ to ensure the pattern only matches the current position in the parse
+  case Regex.regex ("^(" <> pattern <> ")") flags' of
+    Left paterr ->
+      fail $ "Regex pattern error " <> paterr
+    Right regexobj -> do
+      ParseState input position _ <- get
+      case NonEmptyArray.head <$> Regex.match regexobj input of
+        Just (Just matched) -> do
+          let remainder = SCU.drop (SCU.length matched) input
+          put $ ParseState remainder (updatePosString position matched) true
+          pure matched
+        _ -> fail $ "No Regex pattern match"
+  where
+  flags' = RegexFlags
+    ( merge flags
+        { dotAll: true
+        , global: false
+        , ignoreCase: false
+        , multiline: false
+        , sticky: false
+        , unicode: true
+        } :: RegexFlagsRec
+    )
+
+-- | The fields from `Data.String.Regex.Flags.RegexFlagsRec`.
+type RegexFlagsRow =
+  ( dotAll :: Boolean
+  , global :: Boolean
+  , ignoreCase :: Boolean
+  , multiline :: Boolean
+  , sticky :: Boolean
+  , unicode :: Boolean
+  )

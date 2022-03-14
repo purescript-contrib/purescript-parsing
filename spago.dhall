@@ -14,6 +14,7 @@
   , "newtype"
   , "numbers"
   , "prelude"
+  , "record"
   , "strings"
   , "tailrec"
   , "transformers"
