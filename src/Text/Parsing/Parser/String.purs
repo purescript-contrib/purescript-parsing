@@ -247,14 +247,24 @@ unCodePoint = unsafeCoerce
 -- | }
 -- | ```
 -- |
--- | If you want to use the defaults then pass
+-- | To use the defaults, pass
 -- | `{}` as the flags argument. For case-insensitive pattern matching, pass
 -- | `{ignoreCase: true}` as the flags argument.
+-- |
 -- | The other `Data.String.Regex.Flags.RegexFlagsRec` fields are mostly
 -- | nonsense in the context of parsing
 -- | and use of the other flags may cause strange behavior in the parser.
 -- |
 -- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
+-- |
+-- | #### Example
+-- |
+-- | ```
+-- | runParser "ababXX" (regex {} "(ab)+")
+-- | ```
+-- | ```
+-- | (Right "abab")
+-- | ```
 regex
   :: forall m flags f_
    . Monad m
