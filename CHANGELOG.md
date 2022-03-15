@@ -8,13 +8,16 @@ Breaking changes:
 
 New features:
 
-Add `regex` parser.
-
 Bugfixes:
 
 Other improvements:
+## [v8.4.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.4.0) - 2022-03-15
 
-## [v8.3.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.3.0) - 2022-01-26
+New features:
+
+Add `regex` parser. (#153 by @jamesdbrock)
+
+## [v8.3.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.3.0) - 2022-03-13
 
 New features:
 
