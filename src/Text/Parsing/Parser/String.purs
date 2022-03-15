@@ -225,11 +225,17 @@ unCodePoint = unsafeCoerce
 -- | at the current parser position. On success, it will return the matched
 -- | substring.
 -- |
+-- | If the `Regex` pattern string fails to compile then this parser will fail.
+-- | (Note: It’s not possible to use a precompiled `Regex` because this parser
+-- | must set flags and make adjustments to the `Regex` pattern string.)
+-- |
 -- | This parser may be useful for quickly consuming a large section of the
 -- | input `String`, because in a JavaScript runtime environment the `RegExp`
 -- | runtime is a lot faster than primitive parsers.
 -- |
 -- | [*MDN Regular Expressions Cheatsheet*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
+-- |
+-- | #### Flags
 -- |
 -- | The `Record flags` argument to the parser is for `Regex` flags. Here are
 -- | the default flags.
@@ -249,10 +255,6 @@ unCodePoint = unsafeCoerce
 -- | and use of the other flags may cause strange behavior in the parser.
 -- |
 -- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
--- |
--- | If the `Regex` pattern string fails to compile then this parser will fail.
--- | (Note: It’s not possible to use a precompiled `Regex` because this parser
--- | must set flags and make adjustments to the `Regex` pattern string.)
 regex
   :: forall m flags f_
    . Monad m

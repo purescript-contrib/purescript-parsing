@@ -688,6 +688,8 @@ main = do
   parseTest "regexregex" "regexregex" (regex {} "(regex)*")
   parseTest "regexregex" "regex" (regex {} "(^regex)*")
   parseTest "ReGeX" "ReGeX" (regex { ignoreCase: true } "regex")
+  parseTest "regexcapregexcap" "regexcap" (regex {} "(?<CaptureGroupName>regexcap)")
+  parseTest "regexcapregexcap" "regexcap" (regex {} "(((?<CaptureGroupName>(r)e(g)excap)))")
 
   -- Maybe it is nonsense to allow multiline regex.
   -- Because an end-of-line regex pattern `$` will match but then the
