@@ -42,13 +42,14 @@ module Text.Parsing.Parser.String
 
 import Prelude hiding (between)
 
-import Control.Monad.State (get, put)
+import Control.Monad.State (get, put, state)
 import Data.Array (notElem)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Char (fromCharCode)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either(..))
 import Data.Foldable (elem)
+import Data.Function.Uncurried (mkFn5, runFn2)
 import Data.Maybe (Maybe(..))
 import Data.String (CodePoint, Pattern(..), length, null, singleton, splitAt, stripPrefix, uncons)
 import Data.String.CodeUnits as SCU
@@ -57,40 +58,40 @@ import Data.String.Regex.Flags (RegexFlags(..), RegexFlagsRec)
 import Data.Tuple (Tuple(..), fst)
 import Prim.Row (class Nub, class Union)
 import Record (merge)
-import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
+import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), consume, fail)
 import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Match “end-of-file,” the end of the input stream.
-eof :: forall m. Monad m => ParserT String m Unit
+eof :: forall m. ParserT String m Unit
 eof = do
   ParseState input _ _ <- get
   if (null input)
   -- We must consume so this combines correctly with notFollowedBy
   then consume
-  else (fail "Expected EOF")
+  else fail "Expected EOF"
 
 -- | Match the entire rest of the input stream. Always succeeds.
-rest :: forall m. Monad m => ParserT String m String
-rest = do
-  ParseState input position _ <- get
-  put $ ParseState "" (updatePosString position input) true
-  pure input
+rest :: forall m. ParserT String m String
+rest = state \(ParseState input position _) ->
+  Tuple input (ParseState "" (updatePosString position input) true)
 
 -- | Match the specified string.
-string :: forall m. Monad m => String -> ParserT String m String
-string str = do
-  ParseState input position _ <- get
-  case stripPrefix (Pattern str) input of
-    Just remainder -> do
-      put $ ParseState remainder (updatePosString position str) true
-      pure str
-    _ -> fail ("Expected " <> show str)
+string :: forall m. String -> ParserT String m String
+string str = ParserT
+  ( mkFn5 \state1@(ParseState input position _) _ _ throw done ->
+      case stripPrefix (Pattern str) input of
+        Just remainder ->
+          runFn2 done (ParseState remainder (updatePosString position str) true) str
+        _ ->
+          runFn2 throw state1 (ParseError ("Expected " <> show str) position)
+
+  )
 
 -- | Match any BMP `Char`.
 -- | Parser will fail if the character is not in the Basic Multilingual Plane.
-anyChar :: forall m. Monad m => ParserT String m Char
+anyChar :: forall m. ParserT String m Char
 anyChar = tryRethrow do
   cp :: Int <- unCodePoint <$> anyCodePoint
   -- the `fromCharCode` function doesn't check if this is beyond the
@@ -104,66 +105,64 @@ anyChar = tryRethrow do
 
 -- | Match any Unicode character.
 -- | Always succeeds.
-anyCodePoint :: forall m. Monad m => ParserT String m CodePoint
-anyCodePoint = do
-  ParseState input position _ <- get
+anyCodePoint :: forall m. ParserT String m CodePoint
+anyCodePoint = join $ state \state1@(ParseState input position _) ->
   case uncons input of
-    Nothing -> fail "Unexpected EOF"
-    Just { head, tail } -> do
-      put $ ParseState tail (updatePosSingle position head) true
-      pure head
+    Nothing ->
+      Tuple (fail "Unexpected EOF") state1
+    Just { head, tail } ->
+      Tuple (pure head) (ParseState tail (updatePosSingle position head) true)
 
 -- | Match a BMP `Char` satisfying the predicate.
-satisfy :: forall m. Monad m => (Char -> Boolean) -> ParserT String m Char
+satisfy :: forall m. (Char -> Boolean) -> ParserT String m Char
 satisfy f = tryRethrow do
   c <- anyChar
   if f c then pure c
   else fail "Predicate unsatisfied"
 
 -- | Match a Unicode character satisfying the predicate.
-satisfyCodePoint :: forall m. Monad m => (CodePoint -> Boolean) -> ParserT String m CodePoint
+satisfyCodePoint :: forall m. (CodePoint -> Boolean) -> ParserT String m CodePoint
 satisfyCodePoint f = tryRethrow do
   c <- anyCodePoint
   if f c then pure c
   else fail "Predicate unsatisfied"
 
 -- | Match the specified BMP `Char`.
-char :: forall m. Monad m => Char -> ParserT String m Char
+char :: forall m. Char -> ParserT String m Char
 char c = satisfy (_ == c) <?> show c
 
 -- | Match a `String` exactly *N* characters long.
-takeN :: forall m. Monad m => Int -> ParserT String m String
-takeN n = do
-  ParseState input position _ <- get
+takeN :: forall m. Int -> ParserT String m String
+takeN n = join $ state \state1@(ParseState input position _) -> do
   let { before, after } = splitAt n input
   if length before == n then do
-    put $ ParseState after (updatePosString position before) true
-    pure before
-  else fail ("Could not take " <> show n <> " characters")
+    Tuple (pure before) (ParseState after (updatePosString position before) true)
+  else
+    Tuple (fail ("Could not take " <> show n <> " characters")) state1
 
 -- | Match zero or more whitespace characters satisfying
 -- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
-whiteSpace :: forall m. Monad m => ParserT String m String
+whiteSpace :: forall m. ParserT String m String
 whiteSpace = fst <$> match skipSpaces
 
 -- | Skip whitespace characters and throw them away. Always succeeds.
-skipSpaces :: forall m. Monad m => ParserT String m Unit
+skipSpaces :: forall m. ParserT String m Unit
 skipSpaces = skipMany (satisfyCodePoint isSpace)
 
 -- | Match one of the BMP `Char`s in the array.
-oneOf :: forall m. Monad m => Array Char -> ParserT String m Char
+oneOf :: forall m. Array Char -> ParserT String m Char
 oneOf ss = satisfy (flip elem ss) <~?> \_ -> "one of " <> show ss
 
 -- | Match any BMP `Char` not in the array.
-noneOf :: forall m. Monad m => Array Char -> ParserT String m Char
+noneOf :: forall m. Array Char -> ParserT String m Char
 noneOf ss = satisfy (flip notElem ss) <~?> \_ -> "none of " <> show ss
 
 -- | Match one of the Unicode characters in the array.
-oneOfCodePoints :: forall m. Monad m => Array CodePoint -> ParserT String m CodePoint
+oneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
 oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <~?> \_ -> "one of " <> show (singleton <$> ss)
 
 -- | Match any Unicode character not in the array.
-noneOfCodePoints :: forall m. Monad m => Array CodePoint -> ParserT String m CodePoint
+noneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
 noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <> show (singleton <$> ss)
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
@@ -199,7 +198,7 @@ updatePosSingle (Position { line, column }) cp = case unCodePoint cp of
 -- | ```
 -- | fst <$> match (Combinators.skipMany (char 'x'))
 -- | ```
-match :: forall m a. Monad m => ParserT String m a -> ParserT String m (Tuple String a)
+match :: forall m a. ParserT String m a -> ParserT String m (Tuple String a)
 match p = do
   ParseState input1 _ _ <- get
   x <- p

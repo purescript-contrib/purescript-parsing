@@ -45,10 +45,10 @@ type SplitAccum m s a =
 -- |                 , [ Infix (string "+" $> add) AssocRight ]
 -- |                 ] digit
 -- | ```
-buildExprParser :: forall m s a. Monad m => OperatorTable m s a -> ParserT s m a -> ParserT s m a
+buildExprParser :: forall m s a. OperatorTable m s a -> ParserT s m a -> ParserT s m a
 buildExprParser operators simpleExpr = foldl makeParser simpleExpr operators
 
-makeParser :: forall m s a. Monad m => ParserT s m a -> Array (Operator m s a) -> ParserT s m a
+makeParser :: forall m s a. ParserT s m a -> Array (Operator m s a) -> ParserT s m a
 makeParser term ops = do
   x <- termP prefixP term postfixP
   rassocP x rassocOp prefixP term postfixP
@@ -82,7 +82,7 @@ splitOp (Infix op AssocRight) accum = accum { rassoc = op : accum.rassoc }
 splitOp (Prefix op) accum = accum { prefix = op : accum.prefix }
 splitOp (Postfix op) accum = accum { postfix = op : accum.postfix }
 
-rassocP :: forall m a b c s. Monad m => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+rassocP :: forall m a b c s. a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
 rassocP x rassocOp prefixP term postfixP = do
   f <- rassocOp
   y <- do
@@ -90,25 +90,25 @@ rassocP x rassocOp prefixP term postfixP = do
     rassocP1 z rassocOp prefixP term postfixP
   pure (f x y)
 
-rassocP1 :: forall m a b c s. Monad m => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+rassocP1 :: forall m a b c s. a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
 rassocP1 x rassocOp prefixP term postfixP = rassocP x rassocOp prefixP term postfixP <|> pure x
 
-lassocP :: forall m a b c s. Monad m => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+lassocP :: forall m a b c s. a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
 lassocP x lassocOp prefixP term postfixP = do
   f <- lassocOp
   y <- termP prefixP term postfixP
   lassocP1 (f x y) lassocOp prefixP term postfixP
 
-lassocP1 :: forall m a b c s. Monad m => a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
+lassocP1 :: forall m a b c s. a -> ParserT s m (a -> a -> a) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> a) -> ParserT s m a
 lassocP1 x lassocOp prefixP term postfixP = lassocP x lassocOp prefixP term postfixP <|> pure x
 
-nassocP :: forall m a b c d e s. Monad m => a -> ParserT s m (a -> d -> e) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> d) -> ParserT s m e
+nassocP :: forall m a b c d e s. a -> ParserT s m (a -> d -> e) -> ParserT s m (b -> c) -> ParserT s m b -> ParserT s m (c -> d) -> ParserT s m e
 nassocP x nassocOp prefixP term postfixP = do
   f <- nassocOp
   y <- termP prefixP term postfixP
   pure (f x y)
 
-termP :: forall m s a b c. Monad m => ParserT s m (a -> b) -> ParserT s m a -> ParserT s m (b -> c) -> ParserT s m c
+termP :: forall m s a b c. ParserT s m (a -> b) -> ParserT s m a -> ParserT s m (b -> c) -> ParserT s m c
 termP prefixP term postfixP = do
   pre <- prefixP
   x <- term

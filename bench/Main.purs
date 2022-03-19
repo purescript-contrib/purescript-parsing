@@ -43,7 +43,7 @@ import Prelude
 
 import Data.Array (fold, replicate)
 import Data.Either (either)
-import Data.List (manyRec)
+import Data.List (many, manyRec)
 import Data.List.Types (List)
 import Data.String.Regex (Regex, regex)
 import Data.String.Regex as Regex
@@ -100,7 +100,7 @@ pattern23 = either (unsafePerformEffect <<< throw) identity
       }
 
 parseSkidoo :: Parser String (List String)
-parseSkidoo = manyRec $ string "skidoo"
+parseSkidoo = many $ string "skidoo"
 
 patternSkidoo :: Regex
 patternSkidoo = either (unsafePerformEffect <<< throw) identity
