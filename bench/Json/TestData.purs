@@ -6,7 +6,8 @@ import Data.Array (replicate)
 import Data.String (joinWith)
 
 jsonProps :: String
-jsonProps = """
+jsonProps =
+  """
     "some_number": 42.00009
   , "some_string": "foobarbazquux"
   , "some_null": null

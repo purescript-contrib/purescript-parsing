@@ -100,9 +100,9 @@ anyChar = ParserT
           runFn2 throw state1 (ParseError "Unexpected EOF" pos)
         Just { head, tail } -> do
           let cp = fromEnum head
-        -- the `fromCharCode` function doesn't check if this is beyond the
-        -- BMP, so we check that ourselves.
-        -- https://github.com/purescript/purescript-strings/issues/153
+          -- the `fromCharCode` function doesn't check if this is beyond the
+          -- BMP, so we check that ourselves.
+          -- https://github.com/purescript/purescript-strings/issues/153
           if cp < 0 || cp > 65535 then
             runFn2 throw state1 (ParseError "Expected Char" pos)
           else
@@ -112,7 +112,7 @@ anyChar = ParserT
 -- | Match any Unicode character.
 -- | Always succeeds.
 anyCodePoint :: forall m. ParserT String m CodePoint
-anyCodePoint =  ParserT
+anyCodePoint = ParserT
   ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case uncons input of
         Nothing ->
