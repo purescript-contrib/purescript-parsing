@@ -12,6 +12,7 @@ in conf //
 , dependencies = conf.dependencies #
   [ "assert"
   , "console"
+  , "enums"
   , "effect"
   , "psci-support"
   , "minibench"

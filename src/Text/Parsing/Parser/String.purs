@@ -45,23 +45,23 @@ import Prelude hiding (between)
 import Control.Monad.State (get, put, state)
 import Data.Array (notElem)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Char (fromCharCode)
 import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either(..))
+import Data.Enum (fromEnum, toEnum)
 import Data.Foldable (elem)
 import Data.Function.Uncurried (mkFn5, runFn2)
-import Data.Maybe (Maybe(..))
-import Data.String (CodePoint, Pattern(..), length, null, singleton, splitAt, stripPrefix, uncons)
+import Data.Maybe (Maybe(..), fromJust)
+import Data.String (CodePoint, Pattern(..), codePointAt, length, null, singleton, splitAt, stripPrefix, takeWhile, uncons)
 import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags(..), RegexFlagsRec)
 import Data.Tuple (Tuple(..), fst)
+import Partial.Unsafe (unsafePartial)
 import Prim.Row (class Nub, class Union)
 import Record (merge)
 import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
-import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
+import Text.Parsing.Parser.Combinators (tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. ParserT String m Unit
@@ -93,26 +93,33 @@ string str = ParserT
 -- | Match any BMP `Char`.
 -- | Parser will fail if the character is not in the Basic Multilingual Plane.
 anyChar :: forall m. ParserT String m Char
-anyChar = tryRethrow do
-  cp :: Int <- unCodePoint <$> anyCodePoint
-  -- the `fromCharCode` function doesn't check if this is beyond the
-  -- BMP, so we check that ourselves.
-  -- https://github.com/purescript/purescript-strings/issues/153
-  if cp > 65535 -- BMP
-  then fail "Not a Char"
-  else case fromCharCode cp of
-    Nothing -> fail "Not a Char"
-    Just c -> pure c
+anyChar = ParserT
+  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
+      case uncons input of
+        Nothing ->
+          runFn2 throw state1 (ParseError "Unexpected EOF" pos)
+        Just { head, tail } -> do
+          let cp = fromEnum head
+        -- the `fromCharCode` function doesn't check if this is beyond the
+        -- BMP, so we check that ourselves.
+        -- https://github.com/purescript/purescript-strings/issues/153
+          if cp < 0 || cp > 65535 then
+            runFn2 throw state1 (ParseError "Expected Char" pos)
+          else
+            runFn2 done (ParseState tail (updatePosSingle pos head) true) (unsafePartial fromJust (toEnum cp))
+  )
 
 -- | Match any Unicode character.
 -- | Always succeeds.
 anyCodePoint :: forall m. ParserT String m CodePoint
-anyCodePoint = join $ state \state1@(ParseState input position _) ->
-  case uncons input of
-    Nothing ->
-      Tuple (fail "Unexpected EOF") state1
-    Just { head, tail } ->
-      Tuple (pure head) (ParseState tail (updatePosSingle position head) true)
+anyCodePoint =  ParserT
+  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
+      case uncons input of
+        Nothing ->
+          runFn2 throw state1 (ParseError "Unexpected EOF" pos)
+        Just { head, tail } ->
+          runFn2 done (ParseState tail (updatePosSingle pos head) true) head
+  )
 
 -- | Match a BMP `Char` satisfying the predicate.
 satisfy :: forall m. (Char -> Boolean) -> ParserT String m Char
@@ -148,7 +155,12 @@ whiteSpace = fst <$> match skipSpaces
 
 -- | Skip whitespace characters and throw them away. Always succeeds.
 skipSpaces :: forall m. ParserT String m Unit
-skipSpaces = skipMany (satisfyCodePoint isSpace)
+skipSpaces = ParserT
+  ( mkFn5 \(ParseState input pos _) _ _ _ done -> do
+      let head = takeWhile isSpace input
+      let tail = SCU.drop (SCU.length head) input
+      runFn2 done (ParseState tail (updatePosString pos head) true) unit
+  )
 
 -- | Match one of the BMP `Char`s in the array.
 oneOf :: forall m. Array Char -> ParserT String m Char
@@ -168,14 +180,16 @@ noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> Position
-updatePosString pos str = case uncons str of
-  Nothing -> pos
-  Just { head, tail } -> updatePosString (updatePosSingle pos head) tail -- tail recursive
+updatePosString = go 0
+  where
+  go ix pos str = case codePointAt ix str of
+    Nothing -> pos
+    Just cp -> go (ix + 1) (updatePosSingle pos cp) str
 
 -- | Updates a `Position` by adding the columns and lines in a
 -- | single `CodePoint`.
 updatePosSingle :: Position -> CodePoint -> Position
-updatePosSingle (Position { line, column }) cp = case unCodePoint cp of
+updatePosSingle (Position { line, column }) cp = case fromEnum cp of
   10 -> Position { line: line + 1, column: 1 } -- "\n"
   13 -> Position { line: line + 1, column: 1 } -- "\r"
   9 -> Position { line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
@@ -210,12 +224,6 @@ match p = do
   -- the invariant that the `ParseState input` always begins on a code point
   -- boundary.
   pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) x
-
--- | The CodePoint newtype constructor is not exported, so here's a helper.
--- | This will break at runtime if the definition of CodePoint ever changes
--- | to something other than `newtype CodePoint = CodePoint Int`.
-unCodePoint :: CodePoint -> Int
-unCodePoint = unsafeCoerce
 
 -- | Parser which uses the `Data.String.Regex` module to match the regular
 -- | expression pattern passed as the `String`

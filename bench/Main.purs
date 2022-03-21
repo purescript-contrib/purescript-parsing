@@ -147,7 +147,7 @@ main = do
     $ \_ -> runParser smallJson BenchParsing.json
 
   log "StringParser.runParser json smallJson"
-  benchWith 500
+  benchWith 1000
     $ \_ -> StringParser.runParser BenchStringParser.json smallJson
 
   log "runParser json mediumJson"
@@ -155,7 +155,7 @@ main = do
     $ \_ -> runParser mediumJson BenchParsing.json
 
   log "StringParser.runParser json mediumJson"
-  benchWith 1000
+  benchWith 500
     $ \_ -> StringParser.runParser BenchStringParser.json mediumJson
 
   log "runParser json largeJson"

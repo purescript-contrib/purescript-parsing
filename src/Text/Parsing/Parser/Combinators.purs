@@ -100,7 +100,7 @@ import Prelude
 import Control.Lazy (defer)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Plus (empty, (<|>), alt)
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (class Foldable, foldl, foldr)
 import Data.Function.Uncurried (mkFn2, mkFn5, runFn2, runFn5)
 import Data.List (List(..), many, manyRec, reverse, (:))
 import Data.List.NonEmpty (NonEmptyList, cons')
@@ -442,7 +442,7 @@ chainr1Rec p f = do
 
 -- | Parse one of a set of alternatives.
 choice :: forall f m s a. Foldable f => f (ParserT s m a) -> ParserT s m a
-choice = foldl (<|>) empty
+choice = foldr (<|>) empty
 
 -- | Skip many instances of a phrase.
 skipMany :: forall s a m. ParserT s m a -> ParserT s m Unit

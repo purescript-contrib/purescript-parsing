@@ -205,21 +205,20 @@ instance Bind (ParserT s m) where
 instance Monad (ParserT s m)
 
 instance MonadRec (ParserT s m) where
-  tailRecM next = go
-    where
-    go a = ParserT
-      ( mkFn5 \state1 more lift throw done ->
-          more \_ -> do
-            let (ParserT k1) = next a
-            runFn5 k1 state1 more lift throw
-              ( mkFn2 \state2 step -> case step of
-                  Loop b -> do
-                    let (ParserT k2) = go b
-                    runFn5 k2 state2 more lift throw done
-                  Done c ->
-                    runFn2 done state2 c
+  tailRecM next initArg = ParserT
+    ( mkFn5 \state1 more lift throw done -> do
+        let
+          loop = mkFn2 \state2 arg -> do
+            let (ParserT k1) = next arg
+            runFn5 k1 state2 more lift throw
+              ( mkFn2 \state3 step -> case step of
+                  Loop nextArg ->
+                    runFn2 loop state3 nextArg
+                  Done res ->
+                    runFn2 done state3 res
               )
-      )
+        runFn2 loop state1 initArg
+    )
 
 instance MonadState (ParseState s) (ParserT s m) where
   state k = ParserT
