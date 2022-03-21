@@ -58,19 +58,21 @@ import Data.String.Regex.Flags (RegexFlags(..), RegexFlagsRec)
 import Data.Tuple (Tuple(..), fst)
 import Prim.Row (class Nub, class Union)
 import Record (merge)
-import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), consume, fail)
+import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 import Text.Parsing.Parser.Combinators (skipMany, tryRethrow, (<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. ParserT String m Unit
-eof = do
-  ParseState input _ _ <- get
-  if (null input)
-  -- We must consume so this combines correctly with notFollowedBy
-  then consume
-  else fail "Expected EOF"
+eof = ParserT
+  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
+      if null input then
+        -- We must consume so this combines correctly with notFollowedBy
+        runFn2 done (ParseState input pos true) unit
+      else
+        runFn2 throw state1 (ParseError "Expected EOF" pos)
+  )
 
 -- | Match the entire rest of the input stream. Always succeeds.
 rest :: forall m. ParserT String m String
@@ -80,13 +82,12 @@ rest = state \(ParseState input position _) ->
 -- | Match the specified string.
 string :: forall m. String -> ParserT String m String
 string str = ParserT
-  ( mkFn5 \state1@(ParseState input position _) _ _ throw done ->
+  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case stripPrefix (Pattern str) input of
         Just remainder ->
-          runFn2 done (ParseState remainder (updatePosString position str) true) str
+          runFn2 done (ParseState remainder (updatePosString pos str) true) str
         _ ->
-          runFn2 throw state1 (ParseError ("Expected " <> show str) position)
-
+          runFn2 throw state1 (ParseError ("Expected " <> show str) pos)
   )
 
 -- | Match any BMP `Char`.

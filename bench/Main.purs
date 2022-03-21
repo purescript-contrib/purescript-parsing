@@ -41,14 +41,18 @@ module Bench.Main where
 
 import Prelude
 
+import Bench.Json.Parsing as BenchParsing
+import Bench.Json.StringParser as BenchStringParser
+import Bench.Json.TestData (largeJson, mediumJson, smallJson)
 import Data.Array (fold, replicate)
-import Data.Either (either)
+import Data.Either (Either(..), either)
 import Data.List (many, manyRec)
 import Data.List.Types (List)
 import Data.String.Regex (Regex, regex)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags(..))
 import Effect (Effect)
+import Effect.Class.Console (logShow)
 import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -56,9 +60,10 @@ import Performance.Minibench (benchWith)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.String.Basic (digit)
-import Text.Parsing.StringParser as StringParser
-import Text.Parsing.StringParser.CodePoints as StringParser.CodePoints
-import Text.Parsing.StringParser.CodeUnits as StringParser.CodeUnits
+import StringParser (ParseError)
+import StringParser as StringParser
+import StringParser.CodePoints as StringParser.CodePoints
+import StringParser.CodeUnits as StringParser.CodeUnits
 
 string23 :: String
 string23 = "23"
@@ -138,3 +143,27 @@ main = do
   log "Regex.match patternSkidoo"
   benchWith 200
     $ \_ -> Regex.match patternSkidoo stringSkidoo_10000
+
+  log "runParser json smallJson"
+  benchWith 1000
+    $ \_ -> runParser smallJson BenchParsing.json
+
+  log "StringParser.runParser json smallJson"
+  benchWith 500
+    $ \_ -> StringParser.runParser BenchStringParser.json smallJson
+
+  log "runParser json mediumJson"
+  benchWith 500
+    $ \_ -> runParser mediumJson BenchParsing.json
+
+  log "StringParser.runParser json mediumJson"
+  benchWith 1000
+    $ \_ -> StringParser.runParser BenchStringParser.json mediumJson
+
+  log "runParser json largeJson"
+  benchWith 100
+    $ \_ -> runParser largeJson BenchParsing.json
+
+  log "StringParser.runParser json largeJson"
+  benchWith 100
+    $ \_ -> StringParser.runParser BenchStringParser.json largeJson
