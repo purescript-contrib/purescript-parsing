@@ -16,6 +16,7 @@
   , "maybe"
   , "newtype"
   , "numbers"
+  , "partial"
   , "prelude"
   , "record"
   , "strings"
