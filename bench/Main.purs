@@ -45,14 +45,13 @@ import Bench.Json.Parsing as BenchParsing
 import Bench.Json.StringParser as BenchStringParser
 import Bench.Json.TestData (largeJson, mediumJson, smallJson)
 import Data.Array (fold, replicate)
-import Data.Either (Either(..), either)
+import Data.Either (either)
 import Data.List (many, manyRec)
 import Data.List.Types (List)
 import Data.String.Regex (Regex, regex)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags(..))
 import Effect (Effect)
-import Effect.Class.Console (logShow)
 import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -60,7 +59,6 @@ import Performance.Minibench (benchWith)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.String.Basic (digit)
-import StringParser (ParseError)
 import StringParser as StringParser
 import StringParser.CodePoints as StringParser.CodePoints
 import StringParser.CodeUnits as StringParser.CodeUnits
