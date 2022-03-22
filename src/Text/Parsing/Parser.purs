@@ -26,7 +26,7 @@ import Control.Monad.Except (class MonadError, ExceptT(..), mapExceptT, runExcep
 import Control.Monad.Rec.Class (class MonadRec)
 import Control.Monad.State (class MonadState, StateT(..), evalStateT, gets, mapStateT, modify_, runStateT)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Control.MonadPlus (class Alternative, class MonadPlus, class MonadZero, class Plus)
+import Control.MonadPlus (class Alternative, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Identity (Identity)
 import Data.Newtype (class Newtype, over, unwrap)
@@ -139,7 +139,7 @@ derive newtype instance monadErrorParserT :: Monad m => MonadError ParseError (P
 -- |
 -- | If we read a file from disk and run this `fileParser` on it and the
 -- | `string "<html>"` parser succeeds, then we know that the first branch
--- | is the correct branch, so we want to commit to the first branch. 
+-- | is the correct branch, so we want to commit to the first branch.
 -- | Even if the `parseTheRestOfTheHtml` parser fails
 -- | we don’t want to try the second branch.
 -- |
@@ -163,8 +163,6 @@ instance plusParserT :: Monad m => Plus (ParserT s m) where
   empty = fail "No alternative"
 
 instance alternativeParserT :: Monad m => Alternative (ParserT s m)
-
-instance monadZeroParserT :: Monad m => MonadZero (ParserT s m)
 
 instance monadPlusParserT :: Monad m => MonadPlus (ParserT s m)
 
