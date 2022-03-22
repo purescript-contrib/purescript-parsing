@@ -34,5 +34,8 @@
     "purescript-unfoldable": "master",
     "purescript-unicode": "main",
     "purescript-unsafe-coerce": "master"
+  },
+  "devDependencies": {
+    "purescript-assert": "master"
   }
 }
