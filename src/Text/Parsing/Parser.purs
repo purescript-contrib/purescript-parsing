@@ -27,7 +27,7 @@ import Control.Monad.State.Class (class MonadState, gets, modify_)
 import Control.Monad.Trans.Class (class MonadTrans)
 import Control.MonadPlus (class Alternative, class Plus)
 import Data.Either (Either(..))
-import Data.Function.Uncurried (Fn2, Fn5, mkFn2, mkFn5, runFn2, runFn5)
+import Data.Function.Uncurried (Fn2, Fn5, mkFn2, mkFn3, mkFn5, runFn2, runFn3, runFn5)
 import Data.Identity (Identity)
 import Data.Lazy as Lazy
 import Data.Newtype (unwrap)
@@ -70,19 +70,35 @@ data ParseState s = ParseState s Position Boolean
 -- | The first type argument is the stream type. Typically, this is either `String`,
 -- | or some sort of token stream.
 newtype ParserT s m a = ParserT
+  -- The parser is implemented using continuation-passing-style with uncurried
+  -- functions. In addition to the usual error and success continuations, there
+  -- are continuations for trampolining and lifting. Trampolining lets us retain
+  -- stack safety, and an explicit continuation for lifting lets us only pay
+  -- a transformer abstraction tax when it's actually used. Pure parsers which
+  -- never call `lift` pay no additional runtime cost. Additionally, this
+  -- approach lets us run a parser in terms of the base Monad's MonadRec instance,
+  -- so when lift _is_ used, it's still always stack safe.
+
+  -- When should the trampoline be invoked? Downstream combinators should not need
+  -- to worry about invoking the trampoline, as it's handled by the core instances
+  -- of the parser (the Monad and Alternative hierarchies). These instances invoke
+  -- the trampoline before calling continuations, so each step in the parser will
+  -- always progress in a fresh stack.
   ( forall r
      . Fn5
-         (ParseState s)
+         (ParseState s) -- Current state
          ((Unit -> r) -> r) -- Trampoline
          (m (Unit -> r) -> r) -- Lift
          (Fn2 (ParseState s) ParseError r) -- Throw
-         (Fn2 (ParseState s) a r) -- Pure
+         (Fn2 (ParseState s) a r) -- Done/Success
          r
   )
 
-data Run s m a
-  = More (Unit -> Run s m a)
-  | Lift (m (Unit -> Run s m a))
+-- When we want to run a parser, continuations are reified as data
+-- constructors and processed in a tail-recursive loop.
+data RunParser s m a
+  = More (Unit -> RunParser s m a)
+  | Lift (m (Unit -> RunParser s m a))
   | Stop (ParseState s) (Either ParseError a)
 
 -- | Apply a parser, keeping only the parsed result.
@@ -92,14 +108,21 @@ runParserT s p = fst <$> runParserT' initialState p
   initialState :: ParseState s
   initialState = ParseState s initialPos false
 
-runParserT' :: forall m s a. MonadRec m => ParseState s -> ParserT s m a -> m (Tuple (Either ParseError a) (ParseState s))
+runParserT'
+  :: forall m s a
+   . MonadRec m
+  => ParseState s
+  -> ParserT s m a
+  -> m (Tuple (Either ParseError a) (ParseState s))
 runParserT' state1 (ParserT k1) =
   tailRecM go \_ ->
     runFn5 k1 state1 More Lift
       (mkFn2 \state2 err -> Stop state2 (Left err))
       (mkFn2 \state2 res -> Stop state2 (Right res))
   where
-  go :: (Unit -> Run s m a) -> m (Step (Unit -> Run s m a) (Tuple (Either ParseError a) (ParseState s)))
+  go
+    :: (Unit -> RunParser s m a)
+    -> m (Step (Unit -> RunParser s m a) (Tuple (Either ParseError a) (ParseState s)))
   go step = case step unit of
     More next ->
       go next
@@ -208,16 +231,24 @@ instance MonadRec (ParserT s m) where
   tailRecM next initArg = ParserT
     ( mkFn5 \state1 more lift throw done -> do
         let
-          loop = mkFn2 \state2 arg -> do
+          -- In most cases, trampolining MonadRec is unnecessary since all the
+          -- core semantics are trampolined. But given the case where a loop might
+          -- otherwise be pure, we still want to guarantee stack usage so we use
+          -- a "gas" accumulator to avoid bouncing too much.
+          loop = mkFn3 \state2 arg gas -> do
             let (ParserT k1) = next arg
             runFn5 k1 state2 more lift throw
               ( mkFn2 \state3 step -> case step of
                   Loop nextArg ->
-                    runFn2 loop state3 nextArg
+                    if gas == 0 then
+                      more \_ ->
+                        runFn3 loop state3 nextArg 30
+                    else
+                      runFn3 loop state3 nextArg (gas - 1)
                   Done res ->
                     runFn2 done state3 res
               )
-        runFn2 loop state1 initArg
+        runFn3 loop state1 initArg 30
     )
 
 instance MonadState (ParseState s) (ParserT s m) where

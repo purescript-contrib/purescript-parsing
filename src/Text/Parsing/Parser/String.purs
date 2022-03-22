@@ -38,20 +38,21 @@ module Text.Parsing.Parser.String
   , match
   , regex
   , RegexFlagsRow
+  , splitMap
   ) where
 
 import Prelude hiding (between)
 
-import Control.Monad.State (get, put, state)
-import Data.Array (notElem)
+import Control.Monad.State (get, state)
+import Data.Array (elem, notElem)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either(..))
 import Data.Enum (fromEnum, toEnum)
-import Data.Foldable (elem)
 import Data.Function.Uncurried (mkFn5, runFn2)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.String (CodePoint, Pattern(..), codePointAt, length, null, singleton, splitAt, stripPrefix, takeWhile, uncons)
+import Data.String as String
 import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags(..), RegexFlagsRec)
@@ -77,7 +78,7 @@ eof = ParserT
 -- | Match the entire rest of the input stream. Always succeeds.
 rest :: forall m. ParserT String m String
 rest = state \(ParseState input position _) ->
-  Tuple input (ParseState "" (updatePosString position input) true)
+  Tuple input (ParseState "" (updatePosString position input "") true)
 
 -- | Match the specified string.
 string :: forall m. String -> ParserT String m String
@@ -85,7 +86,7 @@ string str = ParserT
   ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case stripPrefix (Pattern str) input of
         Just remainder ->
-          runFn2 done (ParseState remainder (updatePosString pos str) true) str
+          runFn2 done (ParseState remainder (updatePosString pos str remainder) true) str
         _ ->
           runFn2 throw state1 (ParseError ("Expected " <> show str) pos)
   )
@@ -106,7 +107,7 @@ anyChar = ParserT
           if cp < 0 || cp > 65535 then
             runFn2 throw state1 (ParseError "Expected Char" pos)
           else
-            runFn2 done (ParseState tail (updatePosSingle pos head) true) (unsafePartial fromJust (toEnum cp))
+            runFn2 done (ParseState tail (updatePosSingle pos head tail) true) (unsafePartial fromJust (toEnum cp))
   )
 
 -- | Match any Unicode character.
@@ -118,7 +119,7 @@ anyCodePoint = ParserT
         Nothing ->
           runFn2 throw state1 (ParseError "Unexpected EOF" pos)
         Just { head, tail } ->
-          runFn2 done (ParseState tail (updatePosSingle pos head) true) head
+          runFn2 done (ParseState tail (updatePosSingle pos head tail) true) head
   )
 
 -- | Match a BMP `Char` satisfying the predicate.
@@ -141,12 +142,12 @@ char c = satisfy (_ == c) <?> show c
 
 -- | Match a `String` exactly *N* characters long.
 takeN :: forall m. Int -> ParserT String m String
-takeN n = join $ state \state1@(ParseState input position _) -> do
+takeN n = splitMap \input -> do
   let { before, after } = splitAt n input
-  if length before == n then do
-    Tuple (pure before) (ParseState after (updatePosString position before) true)
+  if length before == n then
+    Right { value: before, before, after }
   else
-    Tuple (fail ("Could not take " <> show n <> " characters")) state1
+    Left $ "Could not take " <> show n <> " characters"
 
 -- | Match zero or more whitespace characters satisfying
 -- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
@@ -155,12 +156,10 @@ whiteSpace = fst <$> match skipSpaces
 
 -- | Skip whitespace characters and throw them away. Always succeeds.
 skipSpaces :: forall m. ParserT String m Unit
-skipSpaces = ParserT
-  ( mkFn5 \(ParseState input pos _) _ _ _ done -> do
-      let head = takeWhile isSpace input
-      let tail = SCU.drop (SCU.length head) input
-      runFn2 done (ParseState tail (updatePosString pos head) true) unit
-  )
+skipSpaces = splitMap \input -> do
+  let before = takeWhile isSpace input
+  let after = SCU.drop (SCU.length before) input
+  Right { value: unit, before, after }
 
 -- | Match one of the BMP `Char`s in the array.
 oneOf :: forall m. Array Char -> ParserT String m Char
@@ -179,19 +178,25 @@ noneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
 noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <> show (singleton <$> ss)
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
-updatePosString :: Position -> String -> Position
-updatePosString = go 0
-  where
-  go ix pos str = case codePointAt ix str of
-    Nothing -> pos
-    Just cp -> go (ix + 1) (updatePosSingle pos cp) str
+updatePosString :: Position -> String -> String -> Position
+updatePosString pos before after = case uncons before of
+  Nothing -> pos
+  Just { head, tail } -> do
+    let
+      newPos
+        | String.null tail = updatePosSingle pos head after
+        | otherwise = updatePosSingle pos head tail
+    updatePosString newPos tail after
 
 -- | Updates a `Position` by adding the columns and lines in a
 -- | single `CodePoint`.
-updatePosSingle :: Position -> CodePoint -> Position
-updatePosSingle (Position { line, column }) cp = case fromEnum cp of
+updatePosSingle :: Position -> CodePoint -> String -> Position
+updatePosSingle (Position { line, column }) cp after = case fromEnum cp of
   10 -> Position { line: line + 1, column: 1 } -- "\n"
-  13 -> Position { line: line + 1, column: 1 } -- "\r"
+  13 ->
+    case codePointAt 0 after of
+      Just nextCp | fromEnum nextCp == 10 -> Position { line, column } -- "\r\n" lookahead
+      _ -> Position { line: line + 1, column: 1 } -- "\r"
   9 -> Position { line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
   _ -> Position { line, column: column + 1 }
 
@@ -286,14 +291,14 @@ regex flags pattern =
   case Regex.regex ("^(" <> pattern <> ")") flags' of
     Left paterr ->
       fail $ "Regex pattern error " <> paterr
-    Right regexobj -> do
-      ParseState input position _ <- get
-      case NonEmptyArray.head <$> Regex.match regexobj input of
-        Just (Just matched) -> do
-          let remainder = SCU.drop (SCU.length matched) input
-          put $ ParseState remainder (updatePosString position matched) true
-          pure matched
-        _ -> fail $ "No Regex pattern match"
+    Right regexobj ->
+      splitMap \input -> do
+        case NonEmptyArray.head <$> Regex.match regexobj input of
+          Just (Just before) -> do
+            let after = SCU.drop (SCU.length before) input
+            Right { value: before, before, after }
+          _ ->
+            Left "No Regex pattern match"
   where
   flags' = RegexFlags
     ( merge flags
@@ -314,4 +319,21 @@ type RegexFlagsRow =
   , multiline :: Boolean
   , sticky :: Boolean
   , unicode :: Boolean
+  )
+
+-- | Splits the input string while yielding a value.
+-- | * `value` is the value to return.
+-- | * `before` is the input that was consumed and is used to update the parser position.
+-- | * `after` is the new input state.
+splitMap
+  :: forall m a
+   . (String -> Either String { value :: a, before :: String, after :: String })
+  -> ParserT String m a
+splitMap f = ParserT
+  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
+      case f input of
+        Left err ->
+          runFn2 throw state1 (ParseError err pos)
+        Right { value, before, after } ->
+          runFn2 done (ParseState after (updatePosString pos before after) true) value
   )
