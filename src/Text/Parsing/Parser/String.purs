@@ -43,7 +43,7 @@ module Text.Parsing.Parser.String
 
 import Prelude hiding (between)
 
-import Control.Monad.State (get, state)
+import Control.Monad.State (get)
 import Data.Array (elem, notElem)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.CodePoint.Unicode (isSpace)
@@ -61,7 +61,7 @@ import Partial.Unsafe (unsafePartial)
 import Prim.Row (class Nub, class Union)
 import Record (merge)
 import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
-import Text.Parsing.Parser.Combinators (tryRethrow, (<?>), (<~?>))
+import Text.Parsing.Parser.Combinators ((<?>), (<~?>))
 import Text.Parsing.Parser.Pos (Position(..))
 
 -- | Match “end-of-file,” the end of the input stream.
@@ -77,64 +77,63 @@ eof = ParserT
 
 -- | Match the entire rest of the input stream. Always succeeds.
 rest :: forall m. ParserT String m String
-rest = state \(ParseState input position _) ->
-  Tuple input (ParseState "" (updatePosString position input "") true)
+rest = splitMap \before ->
+  Right { value: before, before, after: "" }
 
 -- | Match the specified string.
 string :: forall m. String -> ParserT String m String
-string str = ParserT
-  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
-      case stripPrefix (Pattern str) input of
-        Just remainder ->
-          runFn2 done (ParseState remainder (updatePosString pos str remainder) true) str
-        _ ->
-          runFn2 throw state1 (ParseError ("Expected " <> show str) pos)
-  )
+string str = splitMap \input ->
+  case stripPrefix (Pattern str) input of
+    Just after ->
+      Right { value: str, before: str, after }
+    _ ->
+      Left $ "Expected " <> show str
 
 -- | Match any BMP `Char`.
 -- | Parser will fail if the character is not in the Basic Multilingual Plane.
 anyChar :: forall m. ParserT String m Char
-anyChar = ParserT
+anyChar = satisfy (const true)
+
+-- | Match any Unicode character.
+-- | Always succeeds.
+anyCodePoint :: forall m. ParserT String m CodePoint
+anyCodePoint = satisfyCodePoint (const true)
+
+-- | Match a BMP `Char` satisfying the predicate.
+satisfy :: forall m. (Char -> Boolean) -> ParserT String m Char
+satisfy f = ParserT
   ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case uncons input of
         Nothing ->
           runFn2 throw state1 (ParseError "Unexpected EOF" pos)
         Just { head, tail } -> do
           let cp = fromEnum head
-          -- the `fromCharCode` function doesn't check if this is beyond the
+          -- the `fromEnum` function doesn't check if this is beyond the
           -- BMP, so we check that ourselves.
           -- https://github.com/purescript/purescript-strings/issues/153
           if cp < 0 || cp > 65535 then
             runFn2 throw state1 (ParseError "Expected Char" pos)
-          else
-            runFn2 done (ParseState tail (updatePosSingle pos head tail) true) (unsafePartial fromJust (toEnum cp))
+          else do
+            let ch = unsafePartial (fromJust (toEnum cp))
+            if f ch then
+              runFn2 done (ParseState tail (updatePosSingle pos head tail) true) ch
+            else
+              runFn2 throw state1 (ParseError "Predicate unsatisfied" pos)
   )
 
--- | Match any Unicode character.
--- | Always succeeds.
-anyCodePoint :: forall m. ParserT String m CodePoint
-anyCodePoint = ParserT
+-- | Match a Unicode character satisfying the predicate.
+satisfyCodePoint :: forall m. (CodePoint -> Boolean) -> ParserT String m CodePoint
+satisfyCodePoint f = ParserT
   ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case uncons input of
         Nothing ->
           runFn2 throw state1 (ParseError "Unexpected EOF" pos)
         Just { head, tail } ->
-          runFn2 done (ParseState tail (updatePosSingle pos head tail) true) head
+          if f head then
+            runFn2 done (ParseState tail (updatePosSingle pos head tail) true) head
+          else
+            runFn2 throw state1 (ParseError "Predicate unsatisfied" pos)
   )
-
--- | Match a BMP `Char` satisfying the predicate.
-satisfy :: forall m. (Char -> Boolean) -> ParserT String m Char
-satisfy f = tryRethrow do
-  c <- anyChar
-  if f c then pure c
-  else fail "Predicate unsatisfied"
-
--- | Match a Unicode character satisfying the predicate.
-satisfyCodePoint :: forall m. (CodePoint -> Boolean) -> ParserT String m CodePoint
-satisfyCodePoint f = tryRethrow do
-  c <- anyCodePoint
-  if f c then pure c
-  else fail "Predicate unsatisfied"
 
 -- | Match the specified BMP `Char`.
 char :: forall m. Char -> ParserT String m Char
