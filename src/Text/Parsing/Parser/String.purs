@@ -77,15 +77,15 @@ eof = ParserT
 
 -- | Match the entire rest of the input stream. Always succeeds.
 rest :: forall m. ParserT String m String
-rest = splitMap \before ->
-  Right { value: before, before, after: "" }
+rest = splitMap \consumed ->
+  Right { value: consumed, consumed, remainder: "" }
 
 -- | Match the specified string.
 string :: forall m. String -> ParserT String m String
 string str = splitMap \input ->
   case stripPrefix (Pattern str) input of
-    Just after ->
-      Right { value: str, before: str, after }
+    Just remainder ->
+      Right { value: str, consumed: str, remainder }
     _ ->
       Left $ "Expected " <> show str
 
@@ -144,7 +144,7 @@ takeN :: forall m. Int -> ParserT String m String
 takeN n = splitMap \input -> do
   let { before, after } = splitAt n input
   if length before == n then
-    Right { value: before, before, after }
+    Right { value: before, consumed: before, remainder: after }
   else
     Left $ "Could not take " <> show n <> " characters"
 
@@ -156,9 +156,9 @@ whiteSpace = fst <$> match skipSpaces
 -- | Skip whitespace characters and throw them away. Always succeeds.
 skipSpaces :: forall m. ParserT String m Unit
 skipSpaces = splitMap \input -> do
-  let before = takeWhile isSpace input
-  let after = SCU.drop (SCU.length before) input
-  Right { value: unit, before, after }
+  let consumed = takeWhile isSpace input
+  let remainder = SCU.drop (SCU.length consumed) input
+  Right { value: unit, consumed, remainder }
 
 -- | Match one of the BMP `Char`s in the array.
 oneOf :: forall m. Array Char -> ParserT String m Char
@@ -293,9 +293,9 @@ regex flags pattern =
     Right regexobj ->
       splitMap \input -> do
         case NonEmptyArray.head <$> Regex.match regexobj input of
-          Just (Just before) -> do
-            let after = SCU.drop (SCU.length before) input
-            Right { value: before, before, after }
+          Just (Just consumed) -> do
+            let remainder = SCU.drop (SCU.length consumed) input
+            Right { value: consumed, consumed, remainder }
           _ ->
             Left "No Regex pattern match"
   where
@@ -322,17 +322,17 @@ type RegexFlagsRow =
 
 -- | Splits the input string while yielding a value.
 -- | * `value` is the value to return.
--- | * `before` is the input that was consumed and is used to update the parser position.
--- | * `after` is the new input state.
+-- | * `consumed` is the input that was consumed and is used to update the parser position.
+-- | * `remainder` is the new input state.
 splitMap
   :: forall m a
-   . (String -> Either String { value :: a, before :: String, after :: String })
+   . (String -> Either String { value :: a, consumed :: String, remainder :: String })
   -> ParserT String m a
 splitMap f = ParserT
   ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case f input of
         Left err ->
           runFn2 throw state1 (ParseError err pos)
-        Right { value, before, after } ->
-          runFn2 done (ParseState after (updatePosString pos before after) true) value
+        Right { value, consumed, remainder } ->
+          runFn2 done (ParseState remainder (updatePosString pos consumed remainder) true) value
   )
