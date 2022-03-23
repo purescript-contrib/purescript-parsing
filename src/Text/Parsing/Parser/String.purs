@@ -38,7 +38,7 @@ module Text.Parsing.Parser.String
   , match
   , regex
   , RegexFlagsRow
-  , splitMap
+  , consumeWith
   ) where
 
 import Prelude hiding (between)
@@ -77,12 +77,12 @@ eof = ParserT
 
 -- | Match the entire rest of the input stream. Always succeeds.
 rest :: forall m. ParserT String m String
-rest = splitMap \consumed ->
+rest = consumeWith \consumed ->
   Right { value: consumed, consumed, remainder: "" }
 
 -- | Match the specified string.
 string :: forall m. String -> ParserT String m String
-string str = splitMap \input ->
+string str = consumeWith \input ->
   case stripPrefix (Pattern str) input of
     Just remainder ->
       Right { value: str, consumed: str, remainder }
@@ -141,7 +141,7 @@ char c = satisfy (_ == c) <?> show c
 
 -- | Match a `String` exactly *N* characters long.
 takeN :: forall m. Int -> ParserT String m String
-takeN n = splitMap \input -> do
+takeN n = consumeWith \input -> do
   let { before, after } = splitAt n input
   if length before == n then
     Right { value: before, consumed: before, remainder: after }
@@ -155,7 +155,7 @@ whiteSpace = fst <$> match skipSpaces
 
 -- | Skip whitespace characters and throw them away. Always succeeds.
 skipSpaces :: forall m. ParserT String m Unit
-skipSpaces = splitMap \input -> do
+skipSpaces = consumeWith \input -> do
   let consumed = takeWhile isSpace input
   let remainder = SCU.drop (SCU.length consumed) input
   Right { value: unit, consumed, remainder }
@@ -291,7 +291,7 @@ regex flags pattern =
     Left paterr ->
       fail $ "Regex pattern error " <> paterr
     Right regexobj ->
-      splitMap \input -> do
+      consumeWith \input -> do
         case NonEmptyArray.head <$> Regex.match regexobj input of
           Just (Just consumed) -> do
             let remainder = SCU.drop (SCU.length consumed) input
@@ -320,15 +320,15 @@ type RegexFlagsRow =
   , unicode :: Boolean
   )
 
--- | Splits the input string while yielding a value.
+-- | Consumes a portion of the input string while yielding a value.
 -- | * `value` is the value to return.
 -- | * `consumed` is the input that was consumed and is used to update the parser position.
 -- | * `remainder` is the new input state.
-splitMap
+consumeWith
   :: forall m a
    . (String -> Either String { value :: a, consumed :: String, remainder :: String })
   -> ParserT String m a
-splitMap f = ParserT
+consumeWith f = ParserT
   ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
       case f input of
         Left err ->
