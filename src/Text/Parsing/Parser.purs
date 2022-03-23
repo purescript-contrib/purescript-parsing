@@ -25,7 +25,7 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
 import Control.Monad.State.Class (class MonadState, gets, modify_)
 import Control.Monad.Trans.Class (class MonadTrans)
-import Control.MonadPlus (class Alternative, class Plus)
+import Control.MonadPlus (class Alternative, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn2, Fn5, mkFn2, mkFn3, mkFn5, runFn2, runFn3, runFn5)
 import Data.Identity (Identity)
@@ -325,12 +325,11 @@ instance Alt (ParserT s m) where
     )
 
 instance Plus (ParserT s m) where
-  empty = ParserT
-    ( mkFn5 \state1@(ParseState _ pos _) _ _ throw _ ->
-        runFn2 throw state1 (ParseError "No alternative" pos)
-    )
+  empty = fail "No alternative"
 
 instance Alternative (ParserT s m)
+
+instance MonadPlus (ParserT s m)
 
 instance MonadTrans (ParserT s) where
   lift m = ParserT

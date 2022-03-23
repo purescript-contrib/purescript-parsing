@@ -5,7 +5,8 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
-
+- Update project and deps to PureScript v0.15.0 (#160 by @JordanMartinez)
+- Drop deprecated `MonadZero` instance (#160 by @JordanMartinez)
 - New optimized internals. `ParserT` now has a more efficient representation,
   resulting in (up to) 20x performance improvement. In addition to the performance,
   all parser execution is always stack-safe, even monadically, obviating the need
