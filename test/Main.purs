@@ -681,6 +681,10 @@ main = do
     "no"
     "Expected failure"
   parseErrorTestMessage
+    (string " " <?> "bad" <|> string "-" <?> "failure")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
     (string " " <~?> \_ -> "failure")
     "no"
     "Expected failure"
@@ -689,11 +693,19 @@ main = do
     "no"
     "Expected failure"
   parseErrorTestMessage
+    (string " " <~?> (\_ -> "bad") <|> string "-" <~?> \_ -> "failure")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
     ("failure" <??> string " ")
     "no"
     "Expected failure"
   parseErrorTestMessage
     ("failure" <??> string " " <|> string "-")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
+    (string "x" <|> "failure" <??> string " " <|> "bad" <??> string "-")
     "no"
     "Expected failure"
 
