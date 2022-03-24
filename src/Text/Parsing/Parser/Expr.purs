@@ -55,7 +55,7 @@ makeParser term ops = do
     <|> lassocP x lassocOp prefixP term postfixP
     <|> nassocP x nassocOp prefixP term postfixP
     <|> pure x
-    <?> "operator"
+      <?> "operator"
   where
   accum = foldr splitOp
     { rassoc: Nil

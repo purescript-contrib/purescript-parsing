@@ -7,11 +7,12 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 - Update project and deps to PureScript v0.15.0 (#160 by @JordanMartinez)
 - Drop deprecated `MonadZero` instance (#160 by @JordanMartinez)
-- Make `<?>` right-associative and increase prec from 3 to 2 (#163 by @JordanMartinez)
+- Make `<??>` right-associative (#164 by @JordanMartinez)
+- Drop `<?>` and `<~?>` prec from 3 to 4 (#163, #164 by @JordanMartinez)
 
-  `<|>` was made right associative. `<?>` was likewise changed to prevent a 
-  possible error and its precedence was increased so that `foo <|> bar <?> "err msg"`
-  works without parenthesis around `"err msg"` part.
+  `<|>` was made right associative. Decreasing these two operators
+  prevents a compiler error (i.e. `MixedAssociativityError`)
+  without causing issues with `<$>`.
 
 New features:
 
