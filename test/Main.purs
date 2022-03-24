@@ -156,17 +156,20 @@ stackSafeLoopsTest = do
     ""
     (Position { line: 1, column: 1 })
 
-  parseTest "aaaabcd" "b" $
-    skipMany1Rec (string "a") *> string "b"
+  parseTest "aaaabcd" "b"
+    $ skipMany1Rec (string "a")
+    *> string "b"
   parseErrorTestPosition
     (skipMany1Rec (string "a"))
     "bcd"
     (Position { line: 1, column: 1 })
 
-  parseTest "aaaabcd" "b" $
-    skipManyRec (string "a") *> string "b"
-  parseTest "bcd" "b" $
-    skipManyRec (string "a") *> string "b"
+  parseTest "aaaabcd" "b"
+    $ skipManyRec (string "a")
+    *> string "b"
+  parseTest "bcd" "b"
+    $ skipManyRec (string "a")
+    *> string "b"
 
   parseTest "aaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     many1Rec (string "a")
@@ -175,12 +178,15 @@ stackSafeLoopsTest = do
     ""
     (Position { line: 1, column: 1 })
 
-  parseTest "a,a,ab" (toUnfoldable [ "a", "a", "a" ]) $
-    sepByRec (string "a") (string ",") <* string "b"
-  parseTest "b" Nil $
-    sepByRec (string "a") (string ",") <* string "b"
-  parseTest "a,a,ab" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
-    sepBy1Rec (string "a") (string ",") <* string "b"
+  parseTest "a,a,ab" (toUnfoldable [ "a", "a", "a" ])
+    $ sepByRec (string "a") (string ",")
+    <* string "b"
+  parseTest "b" Nil
+    $ sepByRec (string "a") (string ",")
+    <* string "b"
+  parseTest "a,a,ab" (NE.cons' "a" $ toUnfoldable [ "a", "a" ])
+    $ sepBy1Rec (string "a") (string ",")
+    <* string "b"
   parseErrorTestPosition
     (sepBy1Rec (string "a") (string ","))
     ""
@@ -190,12 +196,15 @@ stackSafeLoopsTest = do
     "a,"
     (Position { line: 1, column: 3 })
 
-  parseTest "a,a,a,b" (toUnfoldable [ "a", "a", "a" ]) $
-    endByRec (string "a") (string ",") <* string "b"
-  parseTest "b" Nil $
-    endByRec (string "a") (string ",") <* string "b"
-  parseTest "a,a,a,b" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
-    endBy1Rec (string "a") (string ",") <* string "b"
+  parseTest "a,a,a,b" (toUnfoldable [ "a", "a", "a" ])
+    $ endByRec (string "a") (string ",")
+    <* string "b"
+  parseTest "b" Nil
+    $ endByRec (string "a") (string ",")
+    <* string "b"
+  parseTest "a,a,a,b" (NE.cons' "a" $ toUnfoldable [ "a", "a" ])
+    $ endBy1Rec (string "a") (string ",")
+    <* string "b"
   parseErrorTestPosition
     (endBy1Rec (string "a") (string ","))
     ""
@@ -680,10 +689,13 @@ main = do
         , string " " <?> "1"
         , string " " <|> string " " <?> "2"
         , string " " <?> "3" <|> string " " <?> "4"
-        , "" <$ string " " <?> "5"
-            <|> string " " $> ""
+        , "" <$ string " "
+            <?> "5"
+              <|> string " "
+              $> ""
             <?> "6"
-            <|> const "" <$> string " "
+              <|> const ""
+              <$> string " "
             <?> "7"
               <* string " "
               $> ""
@@ -695,21 +707,29 @@ main = do
         , string " " <~?> \_ -> "21"
         , string " " <|> string " " <~?> \_ -> "22"
         , string " " <~?> (\_ -> "23") <|> string " " <~?> \_ -> "24"
-        , "" <$ string " " <~?> (\_ -> "25")
-            <|> string " " $> "" <~?> (\_ -> "26")
-            <|> const "" <$> string " " <~?> (\_ -> "27")
+        , "" <$ string " "
+            <~?> (\_ -> "25")
+              <|> string " "
+              $> ""
+            <~?> (\_ -> "26")
+              <|> const ""
+              <$> string " "
+            <~?> (\_ -> "27")
               <* string " "
-              $> "" <~?> (\_ -> "28")
+              $> ""
+            <~?> (\_ -> "28")
               *> string " "
-              $> "" <~?> \_ -> "29"
+              $> ""
+            <~?> \_ -> "29"
         , fail "test <??>"
         , "41" <??> string " "
         , "42" <??> string " " <|> string " "
         , "43" <??> string " " <|> "44" <??> string " "
-        , "45" <??> "" <$ string " "
-            <|> "46"
+        , "45"
+            <??> "" <$ string " "
+              <|> "46"
             <??> string " " $> ""
-            <|> "47"
+              <|> "47"
             <??> const "" <$> string " "
               <* ("48" <??> string " ")
               *> ("49" <??> string " ")

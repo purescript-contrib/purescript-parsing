@@ -460,9 +460,10 @@ makeTokenParser (LanguageDef languageDef) =
     folder (Just c) chars = Cons c chars
 
   stringChar :: ParserT String m (Maybe Char)
-  stringChar = (Just <$> stringLetter)
-    <|> stringEscape
-    <?> "string character"
+  stringChar =
+    (Just <$> stringLetter)
+      <|> stringEscape
+      <?> "string character"
 
   stringLetter :: ParserT String m Char
   stringLetter = satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\x1A'))
@@ -860,21 +861,23 @@ inComment langDef@(LanguageDef languageDef) =
 
 inCommentMulti :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentMulti langDef@(LanguageDef languageDef) =
-  fix \p -> (void $ try (string languageDef.commentEnd))
-    <|> (multiLineComment langDef *> p)
-    <|> (skipMany1 (noneOf startEnd) *> p)
-    <|> (oneOf startEnd *> p)
-    <?> "end of comment"
+  fix \p ->
+    (void $ try (string languageDef.commentEnd))
+      <|> (multiLineComment langDef *> p)
+      <|> (skipMany1 (noneOf startEnd) *> p)
+      <|> (oneOf startEnd *> p)
+      <?> "end of comment"
   where
   startEnd :: Array Char
   startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
 
 inCommentSingle :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
 inCommentSingle (LanguageDef languageDef) =
-  fix \p -> (void $ try (string languageDef.commentEnd))
-    <|> (skipMany1 (noneOf startEnd) *> p)
-    <|> (oneOf startEnd *> p)
-    <?> "end of comment"
+  fix \p ->
+    (void $ try (string languageDef.commentEnd))
+      <|> (skipMany1 (noneOf startEnd) *> p)
+      <|> (oneOf startEnd *> p)
+      <?> "end of comment"
   where
   startEnd :: Array Char
   startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
