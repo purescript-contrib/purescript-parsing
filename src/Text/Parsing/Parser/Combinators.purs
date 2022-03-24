@@ -119,7 +119,7 @@ import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
 withErrorMessage p msg = p <|> fail ("Expected " <> msg)
 
-infixl 3 withErrorMessage as <?>
+infixr 2 withErrorMessage as <?>
 
 -- | Provide an error message in the case of failure, but lazily. This is handy
 -- | in cases where constructing the error message is expensive, so it's
