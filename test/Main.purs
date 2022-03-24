@@ -21,7 +21,7 @@ import Effect (Effect)
 import Effect.Console (logShow)
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
-import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Text.Parsing.Parser (ParseError(..), Parser, ParserT, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
 import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<~?>), (<??>))
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
@@ -676,18 +676,37 @@ main = do
   -- all the below operators should play well together
   parseErrorTestMessage
     (oneOf
-      [ string " " <?> "1"
+      [ fail "test <?>"
+      , string " " <?> "1"
       , string " " <|> string " " <?> "2"
       , string " " <?> "3" <|> string " " <?> "4"
-      , string " " <~?> \_ -> "5"
-      , string " " <|> string " " <~?> \_ -> "6"
-      , string " " <~?> (\_ -> "7") <|> string " " <~?> \_ -> "8"
-      , "9" <??> string " " <|> string " "
-      , string " " <|> "10" <??> string " " <|> "11" <??> string " "
+      , "" <$ string " " <?> "5"
+          <|> string " " $> "" <?> "6"
+          <|> const "" <$> string " " <?> "7"
+          <* string " " $> "" <?> "8"
+          *> string " " $> "" <?> "9"
+      , fail "test <~?>"
+      , string " " <~?> \_ -> "21"
+      , string " " <|> string " " <~?> \_ -> "22"
+      , string " " <~?> (\_ -> "23") <|> string " " <~?> \_ -> "24"
+      , "" <$ string " " <~?> (\_ -> "25")
+          <|> string " " $> "" <~?> (\_ -> "26")
+          <|> const "" <$> string " " <~?> (\_ -> "27")
+          <* string " " $> "" <~?> (\_ -> "28")
+          *> string " " $> "" <~?> \_ -> "29"
+      , fail "test <??>"
+      , "41" <??> string " "
+      , "42" <??> string " " <|> string " "
+      , "43" <??> string " " <|> "44" <??> string " "
+      , "" <$ "45" <??> string " "
+          <|> "46" <??> string " " $> ""
+          <|> const "" <$> "47" <??> string " "
+          <* "48" <??> string " "
+          *> "49" <??> string " "
       ]
     )
     "no"
-    "Expected failure"
+    "No alternative"
 
   -- we can't test "NaN" with `parseTest` because nan doesn't compare equal
   case runParser "NaN" number of
