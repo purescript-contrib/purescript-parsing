@@ -21,7 +21,7 @@ import Effect.Console (logShow)
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
 import Text.Parsing.Parser (ParseError(..), Parser, ParserT, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try)
+import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<~?>), (<??>))
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
@@ -670,6 +670,32 @@ main = do
   -- test from issue #115
   parseTest "-6.0" (-6.0) number
   parseTest "+6.0" (6.0) number
+
+  -- test from issue #161
+  parseErrorTestMessage
+    (string " " <?> "failure")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
+    (string " " <|> string "-" <?> "failure")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
+    (string " " <~?> \_ -> "failure")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
+    (string " " <|> string "-" <~?> \_ -> "failure")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
+    ("failure" <??> string " ")
+    "no"
+    "Expected failure"
+  parseErrorTestMessage
+    ("failure" <??> string " " <|> string "-")
+    "no"
+    "Expected failure"
 
   -- we can't test "NaN" with `parseTest` because nan doesn't compare equal
   case runParser "NaN" number of
