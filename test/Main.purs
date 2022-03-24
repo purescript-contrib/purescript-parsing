@@ -698,11 +698,11 @@ main = do
       , "41" <??> string " "
       , "42" <??> string " " <|> string " "
       , "43" <??> string " " <|> "44" <??> string " "
-      , "" <$ "45" <??> string " "
+      , "45" <??> "" <$ string " "
           <|> "46" <??> string " " $> ""
-          <|> const "" <$> "47" <??> string " "
-          <* "48" <??> string " "
-          *> "49" <??> string " "
+          <|> "47" <??> const "" <$> string " "
+          <* ("48" <??> string " ")
+          *> ("49" <??> string " ")
       ]
     )
     "no"
