@@ -158,7 +158,7 @@ stackSafeLoopsTest = do
 
   parseTest "aaaabcd" "b"
     $ skipMany1Rec (string "a")
-    *> string "b"
+        *> string "b"
   parseErrorTestPosition
     (skipMany1Rec (string "a"))
     "bcd"
@@ -166,10 +166,10 @@ stackSafeLoopsTest = do
 
   parseTest "aaaabcd" "b"
     $ skipManyRec (string "a")
-    *> string "b"
+        *> string "b"
   parseTest "bcd" "b"
     $ skipManyRec (string "a")
-    *> string "b"
+        *> string "b"
 
   parseTest "aaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
     many1Rec (string "a")
@@ -180,13 +180,13 @@ stackSafeLoopsTest = do
 
   parseTest "a,a,ab" (toUnfoldable [ "a", "a", "a" ])
     $ sepByRec (string "a") (string ",")
-    <* string "b"
+        <* string "b"
   parseTest "b" Nil
     $ sepByRec (string "a") (string ",")
-    <* string "b"
+        <* string "b"
   parseTest "a,a,ab" (NE.cons' "a" $ toUnfoldable [ "a", "a" ])
     $ sepBy1Rec (string "a") (string ",")
-    <* string "b"
+        <* string "b"
   parseErrorTestPosition
     (sepBy1Rec (string "a") (string ","))
     ""
@@ -198,13 +198,13 @@ stackSafeLoopsTest = do
 
   parseTest "a,a,a,b" (toUnfoldable [ "a", "a", "a" ])
     $ endByRec (string "a") (string ",")
-    <* string "b"
+        <* string "b"
   parseTest "b" Nil
     $ endByRec (string "a") (string ",")
-    <* string "b"
+        <* string "b"
   parseTest "a,a,a,b" (NE.cons' "a" $ toUnfoldable [ "a", "a" ])
     $ endBy1Rec (string "a") (string ",")
-    <* string "b"
+        <* string "b"
   parseErrorTestPosition
     (endBy1Rec (string "a") (string ","))
     ""
@@ -692,8 +692,12 @@ main = do
         , "" <$ string " " <?> "5"
             <|> string " " $> "" <?> "6"
             <|> const "" <$> string " " <?> "7"
-            <* string " " $> "" <?> "8"
-            *> string " " $> "" <?> "9"
+              <* string " "
+              $> ""
+              <?> "8"
+              *> string " "
+              $> ""
+              <?> "9"
         , fail "test <~?>"
         , string " " <~?> \_ -> "21"
         , string " " <|> string " " <~?> \_ -> "22"
@@ -701,17 +705,23 @@ main = do
         , "" <$ string " " <~?> (\_ -> "25")
             <|> string " " $> "" <~?> (\_ -> "26")
             <|> const "" <$> string " " <~?> (\_ -> "27")
-            <* string " " $> "" <~?> (\_ -> "28")
-            *> string " " $> "" <~?> \_ -> "29"
+              <* string " "
+              $> ""
+              <~?> (\_ -> "28")
+              *> string " "
+              $> ""
+              <~?> \_ -> "29"
         , fail "test <??>"
         , "41" <??> string " "
         , "42" <??> string " " <|> string " "
         , "43" <??> string " " <|> "44" <??> string " "
         , "45" <??> "" <$ string " "
-            <|> "46" <??> string " " $> ""
-            <|> "47" <??> const "" <$> string " "
-            <* ("48" <??> string " ")
-            *> ("49" <??> string " ")
+            <|> "46"
+            <??> string " " $> ""
+            <|> "47"
+            <??> const "" <$> string " "
+              <* ("48" <??> string " ")
+              *> ("49" <??> string " ")
         ]
     )
     "no"

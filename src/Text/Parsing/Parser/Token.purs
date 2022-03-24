@@ -463,7 +463,7 @@ makeTokenParser (LanguageDef languageDef) =
   stringChar =
     (Just <$> stringLetter)
       <|> stringEscape
-      <?> "string character"
+        <?> "string character"
 
   stringLetter :: ParserT String m Char
   stringLetter = satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\x1A'))
@@ -686,8 +686,9 @@ makeTokenParser (LanguageDef languageDef) =
 
   zeroNumber :: ParserT String m Int
   zeroNumber =
-    char '0' *>
-      (hexadecimal <|> octal <|> decimal <|> pure 0) <?> ""
+    char '0'
+      *> (hexadecimal <|> octal <|> decimal <|> pure 0)
+      <?> ""
 
   decimal :: ParserT String m Int
   decimal = number 10 Basic.digit
@@ -866,7 +867,7 @@ inCommentMulti langDef@(LanguageDef languageDef) =
       <|> (multiLineComment langDef *> p)
       <|> (skipMany1 (noneOf startEnd) *> p)
       <|> (oneOf startEnd *> p)
-      <?> "end of comment"
+        <?> "end of comment"
   where
   startEnd :: Array Char
   startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
@@ -877,7 +878,7 @@ inCommentSingle (LanguageDef languageDef) =
     (void $ try (string languageDef.commentEnd))
       <|> (skipMany1 (noneOf startEnd) *> p)
       <|> (oneOf startEnd *> p)
-      <?> "end of comment"
+        <?> "end of comment"
   where
   startEnd :: Array Char
   startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
