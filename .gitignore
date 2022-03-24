@@ -3,6 +3,7 @@
 !.github
 !.editorconfig
 !.tidyrc.json
+!.tidyoperators
 
 output
 generated-docs

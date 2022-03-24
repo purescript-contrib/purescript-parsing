@@ -1,0 +1,7 @@
+Text.Parsing.Indent.(<*/>) 11
+Text.Parsing.Indent.(<+/>) 9
+Text.Parsing.Indent.(<-/>) 10
+Text.Parsing.Indent.(<?/>) 12
+Text.Parsing.Parser.Combinators.(<?>) 4
+Text.Parsing.Parser.Combinators.(<??>) 3
+Text.Parsing.Parser.Combinators.(<~?>) 4
