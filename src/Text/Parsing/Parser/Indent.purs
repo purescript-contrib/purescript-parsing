@@ -77,7 +77,7 @@ type IndentParser s a = ParserT s (State Position) a
 
 -- | @ getPosition @ returns current position
 -- | should probably be added to Text.Parsing.Parser.Pos
-getPosition :: forall m s. (Monad m) => ParserT s m Position
+getPosition :: forall m s. ParserT s m Position
 getPosition = gets \(ParseState _ pos _) -> pos
 
 -- | simple helper function to avoid typ-problems with MonadState instance
@@ -103,10 +103,10 @@ biAp :: forall a b c. (a -> b) -> (b -> b -> c) -> a -> a -> c
 biAp f c v1 v2 = c (f v1) (f v2)
 
 -- | @ many1 @ should prabably be inside Text.Parsing.Parser.Combinators
-many1 :: forall s m a. (Monad m) => ParserT s m a -> ParserT s m (List a)
+many1 :: forall s m a. ParserT s m a -> ParserT s m (List a)
 many1 p = lift2 Cons p (many p)
 
-symbol :: forall m. (Monad m) => String -> ParserT String m String
+symbol :: forall m. String -> ParserT String m String
 symbol name = (many $ oneOf [ ' ', '\t' ]) *> (string name)
 
 -- | `withBlock f a p` parses `a`
