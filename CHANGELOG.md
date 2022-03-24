@@ -19,6 +19,12 @@ Breaking changes:
   but otherwise the interface is unchanged and parsers should just enjoy the speed boost.
 
   (#154 by @natefaubion)
+- Make `<??>` right-associative (#164 by @JordanMartinez)
+- Drop `<?>` and `<~?>` prec from 3 to 4 (#163, #164 by @JordanMartinez)
+
+  `<|>` was made right associative. Decreasing these two operators
+  prevents a compiler error (i.e. `MixedAssociativityError`)
+  without causing issues with `<$>`.
 
 New features:
 
