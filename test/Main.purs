@@ -7,6 +7,7 @@ import Control.Lazy (fix)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Foldable (oneOf)
 import Data.List (List(..), fromFoldable, many)
 import Data.List.NonEmpty (cons, cons')
 import Data.List.NonEmpty as NE
@@ -672,40 +673,19 @@ main = do
   parseTest "+6.0" (6.0) number
 
   -- test from issue #161
+  -- all the below operators should play well together
   parseErrorTestMessage
-    (string " " <?> "failure")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    (string " " <|> string "-" <?> "failure")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    (string " " <?> "bad" <|> string "-" <?> "failure")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    (string " " <~?> \_ -> "failure")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    (string " " <|> string "-" <~?> \_ -> "failure")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    (string " " <~?> (\_ -> "bad") <|> string "-" <~?> \_ -> "failure")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    ("failure" <??> string " ")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    ("failure" <??> string " " <|> string "-")
-    "no"
-    "Expected failure"
-  parseErrorTestMessage
-    (string "x" <|> "failure" <??> string " " <|> "bad" <??> string "-")
+    (oneOf
+      [ string " " <?> "1"
+      , string " " <|> string " " <?> "2"
+      , string " " <?> "3" <|> string " " <?> "4"
+      , string " " <~?> \_ -> "5"
+      , string " " <|> string " " <~?> \_ -> "6"
+      , string " " <~?> (\_ -> "7") <|> string " " <~?> \_ -> "8"
+      , "9" <??> string " " <|> string " "
+      , string " " <|> "10" <??> string " " <|> "11" <??> string " "
+      ]
+    )
     "no"
     "Expected failure"
 
