@@ -116,7 +116,7 @@ import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 withErrorMessage :: forall m s a. ParserT s m a -> String -> ParserT s m a
 withErrorMessage p msg = p <|> fail ("Expected " <> msg)
 
-infixl 3 withErrorMessage as <?>
+infix 2 withErrorMessage as <?>
 
 -- | Provide an error message in the case of failure, but lazily. This is handy
 -- | in cases where constructing the error message is expensive, so it's
@@ -129,13 +129,13 @@ infixl 3 withErrorMessage as <?>
 withLazyErrorMessage :: forall m s a. ParserT s m a -> (Unit -> String) -> ParserT s m a
 withLazyErrorMessage p msg = p <|> defer \_ -> fail ("Expected " <> msg unit)
 
-infixl 3 withLazyErrorMessage as <~?>
+infix 2 withLazyErrorMessage as <~?>
 
 -- | Flipped `(<?>)`.
 asErrorMessage :: forall m s a. String -> ParserT s m a -> ParserT s m a
 asErrorMessage = flip (<?>)
 
-infixl 3 asErrorMessage as <??>
+infix 2 asErrorMessage as <??>
 
 -- | Wrap a parser with opening and closing markers.
 -- |
