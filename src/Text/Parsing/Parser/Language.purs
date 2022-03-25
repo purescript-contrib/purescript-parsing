@@ -39,7 +39,7 @@ haskellStyle = LanguageDef (unGenLanguageDef emptyDef)
   , caseSensitive = true
   }
   where
-  op' :: forall m. (Monad m) => ParserT String m Char
+  op' :: forall m. ParserT String m Char
   op' = oneOf [ ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~' ]
 
 -- | This is a minimal token definition for Java style languages. It
@@ -81,7 +81,7 @@ emptyDef = LanguageDef
   , caseSensitive: true
   }
   where
-  op' :: forall m. (Monad m) => ParserT String m Char
+  op' :: forall m. ParserT String m Char
   op' = oneOf [ ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~' ]
 
 -- -----------------------------------------------------------

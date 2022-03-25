@@ -51,7 +51,7 @@ import Text.Parsing.Parser.String.Basic as Basic
 import Text.Parsing.Parser.String.Basic (digit, hexDigit, octDigit, upper, space, letter, alphaNum)
 
 -- | A parser which returns the first token in the stream.
-token :: forall m a. Monad m => (a -> Position) -> ParserT (List a) m a
+token :: forall m a. (a -> Position) -> ParserT (List a) m a
 token tokpos = do
   input <- gets \(ParseState input _ _) -> input
   case List.uncons input of
@@ -62,18 +62,18 @@ token tokpos = do
       pure head
 
 -- | A parser which matches any token satisfying the predicate.
-when :: forall m a. Monad m => (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
+when :: forall m a. (a -> Position) -> (a -> Boolean) -> ParserT (List a) m a
 when tokpos f = tryRethrow do
   a <- token tokpos
   guard $ f a
   pure a
 
 -- | Match the specified token at the head of the stream.
-match :: forall a m. Monad m => Eq a => (a -> Position) -> a -> ParserT (List a) m a
+match :: forall a m. Eq a => (a -> Position) -> a -> ParserT (List a) m a
 match tokpos tok = when tokpos (_ == tok)
 
 -- | Match the “end-of-file,” the end of the input stream.
-eof :: forall a m. Monad m => ParserT (List a) m Unit
+eof :: forall a m. ParserT (List a) m Unit
 eof = do
   ParseState input _ _ <- get
   if (List.null input)
@@ -355,7 +355,7 @@ type GenTokenParser s m =
 -- | reserved    = tokenParser.reserved
 -- | ...
 -- | ```
-makeTokenParser :: forall m. Monad m => GenLanguageDef String m -> GenTokenParser String m
+makeTokenParser :: forall m. GenLanguageDef String m -> GenTokenParser String m
 makeTokenParser (LanguageDef languageDef) =
   { identifier: identifier
   , reserved: reserved
@@ -808,7 +808,7 @@ makeTokenParser (LanguageDef languageDef) =
 -- Identifiers & Reserved words
 -----------------------------------------------------------
 
-isReservedName :: forall m. Monad m => GenLanguageDef String m -> String -> Boolean
+isReservedName :: forall m. GenLanguageDef String m -> String -> Boolean
 isReservedName langDef@(LanguageDef languageDef) name =
   isReserved (theReservedNames langDef) caseName
   where
@@ -825,7 +825,7 @@ isReserved names name =
       EQ -> true
       GT -> false
 
-theReservedNames :: forall m. Monad m => GenLanguageDef String m -> Array String
+theReservedNames :: forall m. GenLanguageDef String m -> Array String
 theReservedNames (LanguageDef languageDef)
   | languageDef.caseSensitive = Array.sort languageDef.reservedNames
   | otherwise = Array.sort $ map toLower languageDef.reservedNames
@@ -834,7 +834,7 @@ theReservedNames (LanguageDef languageDef)
 -- White space & symbols
 -----------------------------------------------------------
 
-whiteSpace' :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
+whiteSpace' :: forall m. GenLanguageDef String m -> ParserT String m Unit
 whiteSpace' langDef@(LanguageDef languageDef)
   | null languageDef.commentLine && null languageDef.commentStart =
       skipMany (simpleSpace <?> "")
@@ -845,22 +845,22 @@ whiteSpace' langDef@(LanguageDef languageDef)
   | otherwise =
       skipMany (simpleSpace <|> oneLineComment langDef <|> multiLineComment langDef <?> "")
 
-simpleSpace :: forall m. Monad m => ParserT String m Unit
+simpleSpace :: forall m. ParserT String m Unit
 simpleSpace = skipMany1 (satisfyCodePoint isSpace)
 
-oneLineComment :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
+oneLineComment :: forall m. GenLanguageDef String m -> ParserT String m Unit
 oneLineComment (LanguageDef languageDef) =
   try (string languageDef.commentLine) *> skipMany (satisfy (_ /= '\n'))
 
-multiLineComment :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
+multiLineComment :: forall m. GenLanguageDef String m -> ParserT String m Unit
 multiLineComment langDef@(LanguageDef languageDef) =
   try (string languageDef.commentStart) *> inComment langDef
 
-inComment :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
+inComment :: forall m. GenLanguageDef String m -> ParserT String m Unit
 inComment langDef@(LanguageDef languageDef) =
   if languageDef.nestedComments then inCommentMulti langDef else inCommentSingle langDef
 
-inCommentMulti :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
+inCommentMulti :: forall m. GenLanguageDef String m -> ParserT String m Unit
 inCommentMulti langDef@(LanguageDef languageDef) =
   fix \p ->
     (void $ try (string languageDef.commentEnd))
@@ -872,7 +872,7 @@ inCommentMulti langDef@(LanguageDef languageDef) =
   startEnd :: Array Char
   startEnd = SCU.toCharArray languageDef.commentEnd <> SCU.toCharArray languageDef.commentStart
 
-inCommentSingle :: forall m. Monad m => GenLanguageDef String m -> ParserT String m Unit
+inCommentSingle :: forall m. GenLanguageDef String m -> ParserT String m Unit
 inCommentSingle (LanguageDef languageDef) =
   fix \p ->
     (void $ try (string languageDef.commentEnd))

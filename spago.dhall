@@ -5,14 +5,18 @@
   [ "arrays"
   , "control"
   , "either"
+  , "enums"
   , "foldable-traversable"
+  , "functions"
   , "identity"
   , "integers"
+  , "lazy"
   , "lists"
   , "math"
   , "maybe"
   , "newtype"
   , "numbers"
+  , "partial"
   , "prelude"
   , "record"
   , "strings"
@@ -21,7 +25,6 @@
   , "tuples"
   , "unfoldable"
   , "unicode"
-  , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

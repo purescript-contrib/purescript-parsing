@@ -98,17 +98,14 @@ module Text.Parsing.Parser.Combinators
 import Prelude
 
 import Control.Lazy (defer)
-import Control.Monad.Except (ExceptT(..), runExceptT)
-import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
-import Control.Monad.State (StateT(..), runStateT)
+import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Plus (empty, (<|>), alt)
-import Data.Either (Either(..))
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (class Foldable, foldl, foldr)
+import Data.Function.Uncurried (mkFn2, mkFn5, runFn2, runFn5)
 import Data.List (List(..), many, manyRec, reverse, (:))
 import Data.List.NonEmpty (NonEmptyList, cons')
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Unfoldable (replicateA)
@@ -116,7 +113,7 @@ import Data.Unfoldable1 (replicate1A)
 import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
-withErrorMessage :: forall m s a. Monad m => ParserT s m a -> String -> ParserT s m a
+withErrorMessage :: forall m s a. ParserT s m a -> String -> ParserT s m a
 withErrorMessage p msg = p <|> fail ("Expected " <> msg)
 
 infixl 4 withErrorMessage as <?>
@@ -129,13 +126,13 @@ infixl 4 withErrorMessage as <?>
 -- |parseBang :: Parser Char
 -- |parseBang = char '!' <~?> \_ -> "Expected a bang"
 -- |```
-withLazyErrorMessage :: forall m s a. Monad m => ParserT s m a -> (Unit -> String) -> ParserT s m a
+withLazyErrorMessage :: forall m s a. ParserT s m a -> (Unit -> String) -> ParserT s m a
 withLazyErrorMessage p msg = p <|> defer \_ -> fail ("Expected " <> msg unit)
 
 infixl 4 withLazyErrorMessage as <~?>
 
 -- | Flipped `(<?>)`.
-asErrorMessage :: forall m s a. Monad m => String -> ParserT s m a -> ParserT s m a
+asErrorMessage :: forall m s a. String -> ParserT s m a -> ParserT s m a
 asErrorMessage = flip (<?>)
 
 infixr 3 asErrorMessage as <??>
@@ -147,24 +144,24 @@ infixr 3 asErrorMessage as <??>
 -- | ```purescript
 -- | parens = between (string "(") (string ")")
 -- | ```
-between :: forall m s a open close. Monad m => ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
+between :: forall m s a open close. ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 between open close p = open *> p <* close
 
 -- | Provide a default result in the case where a parser fails without consuming input.
-option :: forall m s a. Monad m => a -> ParserT s m a -> ParserT s m a
+option :: forall m s a. a -> ParserT s m a -> ParserT s m a
 option a p = p <|> pure a
 
 -- | Optionally parse something, failing quietly.
 -- |
 -- | To optionally parse `p` and never fail: `optional (try p)`.
-optional :: forall m s a. Monad m => ParserT s m a -> ParserT s m Unit
+optional :: forall m s a. ParserT s m a -> ParserT s m Unit
 optional p = void p <|> pure unit
 
 -- TODO Is this optional parser correct? Isn't this parser supposed to succeed
 -- even if p fails? Otherwise what's the point? I think we need try (void p).
 
 -- | pure `Nothing` in the case where a parser fails without consuming input.
-optionMaybe :: forall m s a. Monad m => ParserT s m a -> ParserT s m (Maybe a)
+optionMaybe :: forall m s a. ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
 -- | If the parser fails then backtrack the input stream to the unconsumed state.
@@ -180,12 +177,15 @@ optionMaybe p = option Nothing (Just <$> p)
 -- | >>> runParser "ac" (try (char 'a' *> char 'b') <|> (char 'a' *> char 'c'))
 -- | Right 'c'
 -- | ```
-try :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
-try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ _ consumed)) -> do
-  Tuple e s'@(ParseState input position _) <- runStateT (runExceptT (unwrap p)) s
-  case e of
-    Left _ -> pure (Tuple e (ParseState input position consumed))
-    _ -> pure (Tuple e s')
+try :: forall m s a. ParserT s m a -> ParserT s m a
+try (ParserT k1) = ParserT
+  ( mkFn5 \state1@(ParseState _ _ consumed) more lift throw done ->
+      runFn5 k1 state1 more lift
+        ( mkFn2 \(ParseState input position _) err ->
+            runFn2 throw (ParseState input position consumed) err
+        )
+        done
+  )
 
 -- | If the parser fails then backtrack the input stream to the unconsumed state.
 -- |
@@ -200,27 +200,33 @@ try p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ _ consumed)) -> do
 -- | >>> runParser "ac" (tryRethrow (char 'a' *> char 'b'))
 -- | Left (ParseError "Expected 'b'" (Position { line: 1, column: 1 }))
 -- | ```
-tryRethrow :: forall m s a. Monad m => ParserT s m a -> ParserT s m a
-tryRethrow p = (ParserT <<< ExceptT <<< StateT) \(s@(ParseState _ position consumed)) -> do
-  Tuple e s'@(ParseState input' position' _) <- runStateT (runExceptT (unwrap p)) s
-  case e of
-    Left (ParseError err _) -> pure (Tuple (Left (ParseError err position)) (ParseState input' position' consumed))
-    _ -> pure (Tuple e s')
+tryRethrow :: forall m s a. ParserT s m a -> ParserT s m a
+tryRethrow (ParserT k1) = ParserT
+  ( mkFn5 \state1@(ParseState _ position consumed) more lift throw done ->
+      runFn5 k1 state1 more lift
+        ( mkFn2 \(ParseState input' position' _) (ParseError err _) ->
+            runFn2 throw (ParseState input' position' consumed) (ParseError err position)
+        )
+        done
+  )
 
 -- | Parse a phrase, without modifying the consumed state or stream position.
-lookAhead :: forall s a m. Monad m => ParserT s m a -> ParserT s m a
-lookAhead p = (ParserT <<< ExceptT <<< StateT) \s -> do
-  Tuple e _ <- runStateT (runExceptT (unwrap p)) s
-  pure (Tuple e s)
+lookAhead :: forall s a m. ParserT s m a -> ParserT s m a
+lookAhead (ParserT k1) = ParserT
+  ( mkFn5 \state1 more lift throw done ->
+      runFn5 k1 state1 more lift
+        (mkFn2 \_ err -> runFn2 throw state1 err)
+        (mkFn2 \_ res -> runFn2 done state1 res)
+  )
 
 -- | Match one or more times.
-many1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (NonEmptyList a)
+many1 :: forall m s a. ParserT s m a -> ParserT s m (NonEmptyList a)
 many1 p = NEL.cons' <$> p <*> many p
 
 -- | Match one or more times.
 -- |
 -- | Stack-safe version of `many1` at the expense of a `MonadRec` constraint.
-many1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (NonEmptyList a)
+many1Rec :: forall m s a. ParserT s m a -> ParserT s m (NonEmptyList a)
 many1Rec p = NEL.cons' <$> p <*> manyRec p
 
 -- | Parse phrases delimited by a separator.
@@ -230,17 +236,17 @@ many1Rec p = NEL.cons' <$> p <*> manyRec p
 -- | ```purescript
 -- | digit `sepBy` string ","
 -- | ```
-sepBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepBy :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepBy p sep = map NEL.toList (sepBy1 p sep) <|> pure Nil
 
 -- | Parse phrases delimited by a separator.
 -- |
 -- | Stack-safe version of `sepBy` at the expense of a `MonadRec` constraint.
-sepByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepByRec :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepByRec p sep = map NEL.toList (sepBy1Rec p sep) <|> pure Nil
 
 -- | Parse phrases delimited by a separator, requiring at least one match.
-sepBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+sepBy1 :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1 p sep = do
   a <- p
   as <- many $ sep *> p
@@ -249,24 +255,24 @@ sepBy1 p sep = do
 -- | Parse phrases delimited by a separator, requiring at least one match.
 -- |
 -- | Stack-safe version of `sepBy1` at the expense of a `MonadRec` constraint.
-sepBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+sepBy1Rec :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepBy1Rec p sep = do
   a <- p
   as <- manyRec $ sep *> p
   pure (NEL.cons' a as)
 
 -- | Parse phrases delimited and optionally terminated by a separator.
-sepEndBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepEndBy :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndBy p sep = map NEL.toList (sepEndBy1 p sep) <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator.
 -- |
 -- | Stack-safe version of `sepEndBy` at the expense of a `MonadRec` constraint.
-sepEndByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+sepEndByRec :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 sepEndByRec p sep = map NEL.toList (sepEndBy1Rec p sep) <|> pure Nil
 
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
-sepEndBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+sepEndBy1 :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1 p sep = do
   a <- p
   ( do
@@ -278,7 +284,7 @@ sepEndBy1 p sep = do
 -- | Parse phrases delimited and optionally terminated by a separator, requiring at least one match.
 -- |
 -- | Stack-safe version of `sepEndBy1` at the expense of a `MonadRec` constraint.
-sepEndBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+sepEndBy1Rec :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 sepEndBy1Rec p sep = do
   a <- p
   (NEL.cons' a <$> tailRecM go Nil) <|> pure (NEL.singleton a)
@@ -295,23 +301,23 @@ sepEndBy1Rec p sep = do
     done = defer \_ -> pure $ Done $ reverse acc
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
-endBy1 :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+endBy1 :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 endBy1 p sep = many1 $ p <* sep
 
 -- | Parse phrases delimited and terminated by a separator, requiring at least one match.
 -- |
 -- | Stack-safe version of `endBy1` at the expense of a `MonadRec` constraint.
-endBy1Rec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
+endBy1Rec :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (NonEmptyList a)
 endBy1Rec p sep = many1Rec $ p <* sep
 
 -- | Parse phrases delimited and terminated by a separator.
-endBy :: forall m s a sep. Monad m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+endBy :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endBy p sep = many $ p <* sep
 
 -- | Parse phrases delimited and terminated by a separator.
 -- |
 -- | Stack-safe version of `endBy` at the expense of a `MonadRec` constraint.
-endByRec :: forall m s a sep. MonadRec m => ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
+endByRec :: forall m s a sep. ParserT s m a -> ParserT s m sep -> ParserT s m (List a)
 endByRec p sep = manyRec $ p <* sep
 
 -- | Parse phrases delimited by a right-associative operator.
@@ -321,13 +327,13 @@ endByRec p sep = manyRec $ p <* sep
 -- | ```purescript
 -- | chainr digit (string "+" $> add) 0
 -- | ```
-chainr :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainr :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainr p f a = chainr1 p f <|> pure a
 
 -- | Parse phrases delimited by a right-associative operator.
 -- |
 -- | Stack-safe version of `chainr` at the expense of a `MonadRec` constraint.
-chainrRec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainrRec :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainrRec p f a = chainr1Rec p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator.
@@ -337,17 +343,17 @@ chainrRec p f a = chainr1Rec p f <|> pure a
 -- | ```purescript
 -- | chainr digit (string "+" $> add) 0
 -- | ```
-chainl :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainl :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainl p f a = chainl1 p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator.
 -- |
 -- | Stack-safe version of `chainl` at the expense of a `MonadRec` constraint.
-chainlRec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
+chainlRec :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> a -> ParserT s m a
 chainlRec p f a = chainl1Rec p f <|> pure a
 
 -- | Parse phrases delimited by a left-associative operator, requiring at least one match.
-chainl1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainl1 :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainl1 p f = do
   a <- p
   chainl1' a
@@ -362,7 +368,7 @@ chainl1 p f = do
 -- | Parse phrases delimited by a left-associative operator, requiring at least one match.
 -- |
 -- | Stack-safe version of `chainl1` at the expense of a `MonadRec` constraint.
-chainl1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainl1Rec :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainl1Rec p f = do
   a <- p
   tailRecM go a
@@ -377,7 +383,7 @@ chainl1Rec p f = do
       <|> pure (Done a)
 
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
-chainr1 :: forall m s a. Monad m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainr1 :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainr1 p f = do
   a <- p
   chainr1' a
@@ -392,7 +398,7 @@ chainr1 p f = do
 -- | Parse phrases delimited by a right-associative operator, requiring at least one match.
 -- |
 -- | Stack-safe version of `chainr1` at the expense of a `MonadRec` constraint.
-chainr1Rec :: forall m s a. MonadRec m => ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
+chainr1Rec :: forall m s a. ParserT s m a -> ParserT s m (a -> a -> a) -> ParserT s m a
 chainr1Rec p f = do
   a <- p
   tailRecM go { last: a, init: Nil }
@@ -435,21 +441,21 @@ chainr1Rec p f = do
   apply y (x /\ op) = x `op` y
 
 -- | Parse one of a set of alternatives.
-choice :: forall f m s a. Foldable f => Monad m => f (ParserT s m a) -> ParserT s m a
-choice = foldl (<|>) empty
+choice :: forall f m s a. Foldable f => f (ParserT s m a) -> ParserT s m a
+choice = foldr (<|>) empty
 
 -- | Skip many instances of a phrase.
-skipMany :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
+skipMany :: forall s a m. ParserT s m a -> ParserT s m Unit
 skipMany p = skipMany1 p <|> pure unit
 
 -- | Skip many instances of a phrase.
 -- |
 -- | Stack-safe version of `skipMany` at the expense of a `MonadRec` constraint.
-skipManyRec :: forall s a m. MonadRec m => ParserT s m a -> ParserT s m Unit
+skipManyRec :: forall s a m. ParserT s m a -> ParserT s m Unit
 skipManyRec p = skipMany1Rec p <|> pure unit
 
 -- | Skip at least one instance of a phrase.
-skipMany1 :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
+skipMany1 :: forall s a m. ParserT s m a -> ParserT s m Unit
 skipMany1 p = do
   _ <- p
   _ <- skipMany p
@@ -458,7 +464,7 @@ skipMany1 p = do
 -- | Skip at least one instance of a phrase.
 -- |
 -- | Stack-safe version of `skipMany1` at the expense of a `MonadRec` constraint.
-skipMany1Rec :: forall s a m. MonadRec m => ParserT s m a -> ParserT s m Unit
+skipMany1Rec :: forall s a m. ParserT s m a -> ParserT s m Unit
 skipMany1Rec p = p *> tailRecM go unit
   where
   go _ = (p $> Loop unit) <|> pure (Done unit)
@@ -466,11 +472,11 @@ skipMany1Rec p = p *> tailRecM go unit
 -- | Fail if the parser succeeds.
 -- |
 -- | Will never consume input.
-notFollowedBy :: forall s a m. Monad m => ParserT s m a -> ParserT s m Unit
+notFollowedBy :: forall s a m. ParserT s m a -> ParserT s m Unit
 notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 
 -- | Parse many phrases until the terminator phrase matches.
-manyTill :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
+manyTill :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTill p end = scan
   where
   scan = (end $> Nil) <|> do
@@ -481,7 +487,7 @@ manyTill p end = scan
 -- | Parse many phrases until the terminator phrase matches.
 -- |
 -- | Stack-safe version of `manyTill` at the expense of a `MonadRec` constraint.
-manyTillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (List a)
+manyTillRec :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (List a)
 manyTillRec p end = tailRecM go Nil
   where
   go :: List a -> ParserT s m (Step (List a) (List a))
@@ -490,7 +496,7 @@ manyTillRec p end = tailRecM go Nil
       <|> (p <#> \x -> Loop $ x : acc)
 
 -- | Parse at least one phrase until the terminator phrase matches.
-many1Till :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
+many1Till :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1Till p end = do
   x <- p
   xs <- manyTill p end
@@ -499,7 +505,7 @@ many1Till p end = do
 -- | Parse at least one phrase until the terminator phrase matches.
 -- |
 -- | Stack-safe version of `many1Till` at the expense of a `MonadRec` constraint.
-many1TillRec :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
+many1TillRec :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (NonEmptyList a)
 many1TillRec p end = NEL.cons' <$> p <*> manyTillRec p end
 
 -- | Parse many phrases until the terminator phrase matches.
@@ -537,7 +543,7 @@ many1TillRec p end = NEL.cons' <$> p <*> manyTillRec p end
 -- | ```
 -- | (Tuple ('a' : 'a' : Nil) 'b')
 -- | ```
-manyTill_ :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (List a) e)
+manyTill_ :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (List a) e)
 manyTill_ p end = scan
   where
   scan =
@@ -552,7 +558,7 @@ manyTill_ p end = scan
 
 -- | Parse many phrases until the terminator phrase matches, requiring at least one match.
 -- | Returns the list of phrases and the terminator phrase.
-many1Till_ :: forall s a m e. Monad m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (NonEmptyList a) e)
+many1Till_ :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (NonEmptyList a) e)
 many1Till_ p end = do
   x <- p
   Tuple xs t <- manyTill_ p end
@@ -562,7 +568,7 @@ many1Till_ p end = do
 -- | Returns the list of phrases and the terminator phrase.
 -- |
 -- | Stack-safe version of `manyTill_` at the expense of a `MonadRec` constraint.
-manyTillRec_ :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (List a) e)
+manyTillRec_ :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (List a) e)
 manyTillRec_ p end = tailRecM go Nil
   where
   go :: List a -> ParserT s m (Step (List a) (Tuple (List a) e))
@@ -579,7 +585,7 @@ manyTillRec_ p end = tailRecM go Nil
 -- | Returns the list of phrases and the terminator phrase.
 -- |
 -- | Stack-safe version of `many1Till_` at the expense of a `MonadRec` constraint.
-many1TillRec_ :: forall s a m e. MonadRec m => ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (NonEmptyList a) e)
+many1TillRec_ :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (Tuple (NonEmptyList a) e)
 many1TillRec_ p end = do
   x <- p
   Tuple xs t <- manyTillRec_ p end

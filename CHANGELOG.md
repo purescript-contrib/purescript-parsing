@@ -7,6 +7,18 @@ Notable changes to this project are documented in this file. The format is based
 Breaking changes:
 - Update project and deps to PureScript v0.15.0 (#160 by @JordanMartinez)
 - Drop deprecated `MonadZero` instance (#160 by @JordanMartinez)
+- New optimized internals. `ParserT` now has a more efficient representation,
+  resulting in (up to) 20x performance improvement. In addition to the performance,
+  all parser execution is always stack-safe, even monadically, obviating the need
+  to run parsers with `Trampoline` as the base Monad or to explicitly use `MonadRec`.
+
+  Code that was parametric over the underlying Monad no longer needs to propagate a
+  Monad constraint.
+
+  Code that constructs parsers via the underlying representation will need to be updated,
+  but otherwise the interface is unchanged and parsers should just enjoy the speed boost.
+
+  (#154 by @natefaubion)
 - Make `<??>` right-associative (#164 by @JordanMartinez)
 - Drop `<?>` and `<~?>` prec from 3 to 4 (#163, #164 by @JordanMartinez)
 

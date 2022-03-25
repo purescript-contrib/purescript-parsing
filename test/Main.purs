@@ -31,10 +31,10 @@ import Text.Parsing.Parser.String.Basic (intDecimal, number, letter)
 import Text.Parsing.Parser.Token (TokenParser, makeTokenParser, match, token, when)
 import Text.Parsing.Parser.Token as Parser.Token
 
-parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
+parens :: forall m a. ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
 
-nested :: forall m. Monad m => ParserT String m Int
+nested :: forall m. ParserT String m Int
 nested = fix \p ->
   ( do
       _ <- string "a"
