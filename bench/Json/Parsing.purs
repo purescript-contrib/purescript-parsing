@@ -8,11 +8,11 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Number as Number
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (Parser, fail)
+import Text.Parsing.Parser (ParserT, fail)
 import Text.Parsing.Parser.Combinators (between, choice, sepBy, try)
 import Text.Parsing.Parser.String (regex, skipSpaces, string)
 
-json :: Parser String Json
+json :: forall m. Monad m => ParserT String m Json
 json = defer \_ ->
   skipSpaces *> choice
     [ JsonObject <$> jsonObject
@@ -23,36 +23,36 @@ json = defer \_ ->
     , JsonNull <$ jsonNull
     ]
 
-jsonObject :: Parser String (List (Tuple String Json))
+jsonObject :: forall m. Monad m => ParserT String m (List (Tuple String Json))
 jsonObject = defer \_ ->
   between (string "{") (skipSpaces *> string "}") do
     skipSpaces *> jsonObjectPair `sepBy` (try (skipSpaces *> string ","))
 
-jsonObjectPair :: Parser String (Tuple String Json)
+jsonObjectPair :: forall m. Monad m => ParserT String m (Tuple String Json)
 jsonObjectPair = defer \_ ->
   Tuple <$> (skipSpaces *> jsonString <* skipSpaces <* string ":") <*> json
 
-jsonArray :: Parser String (List Json)
+jsonArray :: forall m. Monad m => ParserT String m (List Json)
 jsonArray = defer \_ ->
   between (string "[") (skipSpaces *> string "]") do
     json `sepBy` (try (skipSpaces *> string ","))
 
-jsonString :: Parser String String
+jsonString :: forall m. Monad m => ParserT String m String
 jsonString = between (string "\"") (string "\"") do
   regex {} """\\"|[^"]*"""
 
-jsonNumber :: Parser String Number
+jsonNumber :: forall m. Monad m => ParserT String m Number
 jsonNumber = do
   n <- regex {} """(\+|-)?(\d+(\.\d*)?|\d*\.\d+)([eE](\+|-)?\d+)?"""
   case Number.fromString n of
     Just n' -> pure n'
     Nothing -> fail "Expected number"
 
-jsonBoolean :: Parser String Boolean
+jsonBoolean :: forall m. Monad m => ParserT String m Boolean
 jsonBoolean = choice
   [ true <$ string "true"
   , false <$ string "false"
   ]
 
-jsonNull :: Parser String String
+jsonNull :: forall m. Monad m => ParserT String m String
 jsonNull = string "null"
