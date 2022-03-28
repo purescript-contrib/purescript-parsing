@@ -36,13 +36,13 @@ import Data.List (List(..))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Number (pow)
 import Data.String (null, toLower)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (singleton, toChar) as CodeUnits
 import Data.String.CodeUnits as SCU
 import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
-import Math (pow)
 import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
 import Text.Parsing.Parser.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
 import Text.Parsing.Parser.Pos (Position)
