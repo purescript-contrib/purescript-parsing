@@ -22,7 +22,7 @@ import Effect.Console (logShow)
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
 import Text.Parsing.Parser (ParseError(..), Parser, ParserT, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<~?>), (<??>))
+import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, choice, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<??>), (<~?>))
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
 import Text.Parsing.Parser.Pos (Position(..), initialPos)
@@ -726,6 +726,16 @@ main = do
     )
     "no"
     "No alternative"
+
+  -- Choice shouldn't always yield "No alternative", that's what `oneOf` is for.
+  parseErrorTestMessage
+    ( choice
+        [ string "a"
+        , string "b"
+        ]
+    )
+    "c"
+    "Expected \"b\""
 
   -- we can't test "NaN" with `parseTest` because nan doesn't compare equal
   case runParser "NaN" number of
