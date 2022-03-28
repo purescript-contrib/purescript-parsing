@@ -7,6 +7,7 @@ module Text.Parsing.Parser
   , Parser
   , runParser
   , runParserT
+  , runParserT'
   , hoistParserT
   , mapParserT
   , consume
