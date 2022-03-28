@@ -12,7 +12,6 @@
   , "integers"
   , "lazy"
   , "lists"
-  , "math"
   , "maybe"
   , "newtype"
   , "numbers"
