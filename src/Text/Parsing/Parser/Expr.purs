@@ -14,7 +14,7 @@ import Prelude hiding (between)
 import Control.Alt ((<|>))
 import Data.Foldable (foldl, foldr)
 import Data.List (List(..), (:))
-import Parsing(ParserT)
+import Parsing (ParserT)
 import Parsing.Combinators (choice, (<?>))
 
 data Assoc = AssocNone | AssocLeft | AssocRight

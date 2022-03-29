@@ -28,7 +28,7 @@ import Data.Number as Data.Number
 import Data.String (CodePoint)
 import Data.String.CodePoints (codePointFromChar)
 import Data.Tuple (Tuple(..))
-import Parsing(ParserT, fail)
+import Parsing (ParserT, fail)
 import Parsing.Combinators (choice, skipMany, (<?>))
 import Parsing.String (noneOf, noneOfCodePoints, oneOf, oneOfCodePoints, skipSpaces, whiteSpace)
 import Parsing.String as Parser.String
