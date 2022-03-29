@@ -25,6 +25,7 @@ Breaking changes:
   `<|>` was made right associative. Decreasing these two operators
   prevents a compiler error (i.e. `MixedAssociativityError`)
   without causing issues with `<$>`.
+- Rename module prefix from `Text.Parsing.Parser` to `Parsing` (#169 by @jamesdbrock)
 
 New features:
 

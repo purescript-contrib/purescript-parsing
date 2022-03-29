@@ -1,4 +1,4 @@
-module Text.Parsing.Parser.Pos where
+module Parsing.Pos where
 
 import Prelude
 

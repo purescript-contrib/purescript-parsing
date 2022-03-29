@@ -3,8 +3,8 @@
 -- | Note: In the future, the
 -- | __noneOf__, __noneOfCodePoints__, __oneOf__, __oneOfCodePoints__, __skipSpaces__, __whiteSpace__
 -- | should be moved into this module and removed from the
--- | __Text.Parsing.Parser.String__ module, because they are not primitive parsers.
-module Text.Parsing.Parser.String.Basic
+-- | __Parsing.String__ module, because they are not primitive parsers.
+module Parsing.String.Basic
   ( digit
   , hexDigit
   , octDigit
@@ -15,7 +15,7 @@ module Text.Parsing.Parser.String.Basic
   , alphaNum
   , intDecimal
   , number
-  , module Text.Parsing.Parser.String
+  , module Parsing.String
   ) where
 
 import Prelude
@@ -28,10 +28,10 @@ import Data.Number as Data.Number
 import Data.String (CodePoint)
 import Data.String.CodePoints (codePointFromChar)
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (ParserT, fail)
-import Text.Parsing.Parser.Combinators (choice, skipMany, (<?>))
-import Text.Parsing.Parser.String (noneOf, noneOfCodePoints, oneOf, oneOfCodePoints, skipSpaces, whiteSpace)
-import Text.Parsing.Parser.String as Parser.String
+import Parsing(ParserT, fail)
+import Parsing.Combinators (choice, skipMany, (<?>))
+import Parsing.String (noneOf, noneOfCodePoints, oneOf, oneOfCodePoints, skipSpaces, whiteSpace)
+import Parsing.String as Parser.String
 
 -- | Parse a digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isDecDigit`.
 digit :: forall m. ParserT String m Char

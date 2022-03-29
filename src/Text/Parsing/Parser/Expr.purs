@@ -2,7 +2,7 @@
 -- | [__Text.Parsec.Expr__](https://hackage.haskell.org/package/parsec/docs/Text-Parsec-Expr.html)
 -- | module.
 
-module Text.Parsing.Parser.Expr
+module Parsing.Expr
   ( Assoc(..)
   , Operator(..)
   , OperatorTable()
@@ -14,8 +14,8 @@ import Prelude hiding (between)
 import Control.Alt ((<|>))
 import Data.Foldable (foldl, foldr)
 import Data.List (List(..), (:))
-import Text.Parsing.Parser (ParserT)
-import Text.Parsing.Parser.Combinators (choice, (<?>))
+import Parsing(ParserT)
+import Parsing.Combinators (choice, (<?>))
 
 data Assoc = AssocNone | AssocLeft | AssocRight
 
