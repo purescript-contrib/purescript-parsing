@@ -105,7 +105,7 @@ import Data.Function.Uncurried (mkFn2, mkFn5, runFn2, runFn5)
 import Data.List (List(..), many, manyRec, reverse, (:))
 import Data.List.NonEmpty (NonEmptyList, cons')
 import Data.List.NonEmpty as NEL
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Unfoldable (replicateA)
@@ -442,7 +442,11 @@ chainr1Rec p f = do
 
 -- | Parse one of a set of alternatives.
 choice :: forall f m s a. Foldable f => f (ParserT s m a) -> ParserT s m a
-choice = foldr (<|>) empty
+choice = fromMaybe empty <<< foldr go Nothing
+  where
+  go p1 = case _ of
+    Nothing -> Just p1
+    Just p2 -> Just (p1 <|> p2)
 
 -- | Skip many instances of a phrase.
 skipMany :: forall s a m. ParserT s m a -> ParserT s m Unit
