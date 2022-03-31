@@ -70,9 +70,9 @@ import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 import Performance.Minibench (benchWith)
-import Text.Parsing.Parser (Parser, runParser, runParserT)
-import Text.Parsing.Parser.String (string)
-import Text.Parsing.Parser.String.Basic (digit)
+import Parsing (Parser, runParser, runParserT)
+import Parsing.String (string)
+import Parsing.String.Basic (digit)
 import StringParser as StringParser
 import StringParser.CodePoints as StringParser.CodePoints
 import StringParser.CodeUnits as StringParser.CodeUnits

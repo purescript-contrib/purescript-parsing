@@ -6,7 +6,7 @@
 -- | [__Text.Parsec.Token__](https://hackage.haskell.org/package/parsec/docs/Text-Parsec-Token.html)
 -- | module.
 
-module Text.Parsing.Parser.Token
+module Parsing.Token
   ( token
   , when
   , match
@@ -17,7 +17,7 @@ module Text.Parsing.Parser.Token
   , TokenParser
   , GenTokenParser
   , makeTokenParser
-  , module Text.Parsing.Parser.String.Basic
+  , module Parsing.String.Basic
   ) where
 
 import Prelude hiding (between, when)
@@ -43,12 +43,12 @@ import Data.String.CodeUnits (singleton, toChar) as CodeUnits
 import Data.String.CodeUnits as SCU
 import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (ParseState(..), ParserT, consume, fail)
-import Text.Parsing.Parser.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
-import Text.Parsing.Parser.Pos (Position)
-import Text.Parsing.Parser.String (char, noneOf, oneOf, satisfy, satisfyCodePoint, string)
-import Text.Parsing.Parser.String.Basic as Basic
-import Text.Parsing.Parser.String.Basic (digit, hexDigit, octDigit, upper, space, letter, alphaNum)
+import Parsing (ParseState(..), ParserT, consume, fail)
+import Parsing.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
+import Parsing.Pos (Position)
+import Parsing.String (char, noneOf, oneOf, satisfy, satisfyCodePoint, string)
+import Parsing.String.Basic as Basic
+import Parsing.String.Basic (digit, hexDigit, octDigit, upper, space, letter, alphaNum)
 
 -- | A parser which returns the first token in the stream.
 token :: forall m a. (a -> Position) -> ParserT (List a) m a
@@ -338,8 +338,8 @@ type GenTokenParser s m =
 -- | ```purescript
 -- | module Main where
 -- |
--- | import Text.Parsing.Parser.Language (haskellDef)
--- | import Text.Parsing.Parser.Token (makeTokenParser)
+-- | import Parsing.Language (haskellDef)
+-- | import Parsing.Token (makeTokenParser)
 -- |
 -- | -- The parser
 -- | expr = parens expr
@@ -688,7 +688,7 @@ makeTokenParser (LanguageDef languageDef) =
   zeroNumber =
     char '0'
       *> (hexadecimal <|> octal <|> decimal <|> pure 0)
-      <?> ""
+        <?> ""
 
   decimal :: ParserT String m Int
   decimal = number 10 Basic.digit

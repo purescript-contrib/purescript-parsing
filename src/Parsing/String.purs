@@ -19,7 +19,7 @@
 -- | The other primitive parsers, which return `CodePoint` and `String` types,
 -- | can parse the full Unicode character set. All of the primitive parsers
 -- | in this module can be used together.
-module Text.Parsing.Parser.String
+module Parsing.String
   ( string
   , eof
   , rest
@@ -60,9 +60,9 @@ import Data.Tuple (Tuple(..), fst)
 import Partial.Unsafe (unsafePartial)
 import Prim.Row (class Nub, class Union)
 import Record (merge)
-import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
-import Text.Parsing.Parser.Combinators ((<?>), (<~?>))
-import Text.Parsing.Parser.Pos (Position(..))
+import Parsing (ParseError(..), ParseState(..), ParserT(..), fail)
+import Parsing.Combinators ((<?>), (<~?>))
+import Parsing.Pos (Position(..))
 
 -- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. ParserT String m Unit

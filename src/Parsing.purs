@@ -1,4 +1,4 @@
-module Text.Parsing.Parser
+module Parsing
   ( ParseError(..)
   , parseErrorMessage
   , parseErrorPosition
@@ -33,7 +33,7 @@ import Data.Identity (Identity)
 import Data.Lazy as Lazy
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..), fst)
-import Text.Parsing.Parser.Pos (Position, initialPos)
+import Parsing.Pos (Position, initialPos)
 
 -- | A parsing error, consisting of a message and position information.
 data ParseError = ParseError String Position

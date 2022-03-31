@@ -8,9 +8,9 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Number as Number
 import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (ParserT, fail)
-import Text.Parsing.Parser.Combinators (between, choice, sepBy, try)
-import Text.Parsing.Parser.String (regex, skipSpaces, string)
+import Parsing (ParserT, fail)
+import Parsing.Combinators (between, choice, sepBy, try)
+import Parsing.String (regex, skipSpaces, string)
 
 json :: forall m. Monad m => ParserT String m Json
 json = defer \_ ->

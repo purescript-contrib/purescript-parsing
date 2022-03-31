@@ -40,7 +40,7 @@
 -- | return a parser `replicateA n p :: Parser s (Array a)` which will
 -- | repeat parser `p` exactly `n` times. `replicateA n p` will only succeed
 -- | if it can match parser `p` exactly `n` consecutive times.
-module Text.Parsing.Parser.Combinators
+module Parsing.Combinators
   ( (<?>)
   , (<??>)
   , (<~?>)
@@ -110,7 +110,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Unfoldable (replicateA)
 import Data.Unfoldable1 (replicate1A)
-import Text.Parsing.Parser (ParseError(..), ParseState(..), ParserT(..), fail)
+import Parsing (ParseError(..), ParseState(..), ParserT(..), fail)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. ParserT s m a -> String -> ParserT s m a

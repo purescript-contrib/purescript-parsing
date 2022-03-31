@@ -29,7 +29,7 @@
 -- |   a sequence of lines need to be /folded/ to a single line. An example
 -- |   is MIME headers. Line folding based binding separation is used in
 -- |   Haskell as well.
-module Text.Parsing.Indent
+module Parsing.Indent
   ( IndentParser
   , runIndent
   , withBlock
@@ -61,24 +61,19 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
-import Control.Monad.State (State, evalState, gets)
+import Control.Monad.State (State, evalState)
 import Control.Monad.State.Trans (get, put)
 import Control.Monad.Trans.Class (lift)
 import Data.List (List(..), many)
 import Data.Maybe (Maybe(..))
-import Text.Parsing.Parser (ParseState(ParseState), ParserT, fail)
-import Text.Parsing.Parser.Combinators (option, optionMaybe)
-import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (oneOf, string)
+import Parsing (ParserT, fail, position)
+import Parsing.Combinators (option, optionMaybe)
+import Parsing.Pos (Position(..), initialPos)
+import Parsing.String (oneOf, string)
 
 -- | Indentation sensitive parser type. Usually @ m @ will
 -- | be @ Identity @ as with any @ ParserT @
 type IndentParser s a = ParserT s (State Position) a
-
--- | @ getPosition @ returns current position
--- | should probably be added to Text.Parsing.Parser.Pos
-getPosition :: forall m s. ParserT s m Position
-getPosition = gets \(ParseState _ pos _) -> pos
 
 -- | simple helper function to avoid typ-problems with MonadState instance
 get' :: forall s. IndentParser s Position
@@ -102,7 +97,6 @@ setSourceLine (Position { line: _, column: c }) l = Position { line: l, column: 
 biAp :: forall a b c. (a -> b) -> (b -> b -> c) -> a -> a -> c
 biAp f c v1 v2 = c (f v1) (f v2)
 
--- | @ many1 @ should prabably be inside Text.Parsing.Parser.Combinators
 many1 :: forall s m a. ParserT s m a -> ParserT s m (List a)
 many1 p = lift2 Cons p (many p)
 
@@ -127,7 +121,7 @@ withBlock' = withBlock (flip const)
 -- | Parses only when indented past the level of the reference
 indented :: forall s. IndentParser s Unit
 indented = do
-  pos <- getPosition
+  pos <- position
   s <- get'
   if biAp sourceColumn (<=) pos s then fail "not indented"
   else do
@@ -137,7 +131,7 @@ indented = do
 -- | Same as `indented`, but does not change internal state
 indented' :: forall s. IndentParser s Unit
 indented' = do
-  pos <- getPosition
+  pos <- position
   s <- get'
   if biAp sourceColumn (<=) pos s then fail "not indented" else pure unit
 
@@ -148,7 +142,7 @@ sameOrIndented = sameLine <|> indented
 -- | Parses only on the same line as the reference
 sameLine :: forall s. IndentParser s Unit
 sameLine = do
-  pos <- getPosition
+  pos <- position
   s <- get'
   if biAp sourceLine (==) pos s then pure unit else fail "over one line"
 
@@ -168,7 +162,7 @@ block p = withPos $ do
 withPos :: forall s a. IndentParser s a -> IndentParser s a
 withPos x = do
   a <- get'
-  p <- getPosition
+  p <- position
   r <- put' p *> x
   put' a *> pure r
 
@@ -176,7 +170,7 @@ withPos x = do
 checkIndent :: forall s. IndentParser s Unit
 checkIndent = do
   s <- get'
-  p <- getPosition
+  p <- position
   if biAp sourceColumn (==) p s then pure unit else fail "indentation doesn't match"
 
 -- | Run the result of an indentation sensitive parse

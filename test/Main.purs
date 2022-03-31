@@ -21,15 +21,15 @@ import Effect (Effect)
 import Effect.Console (logShow)
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
-import Text.Parsing.Parser (ParseError(..), Parser, ParserT, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Text.Parsing.Parser.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, choice, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<??>), (<~?>))
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
-import Text.Parsing.Parser.Language (haskellDef, haskellStyle, javaStyle)
-import Text.Parsing.Parser.Pos (Position(..), initialPos)
-import Text.Parsing.Parser.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, regex, rest, satisfy, string, takeN, whiteSpace)
-import Text.Parsing.Parser.String.Basic (intDecimal, number, letter)
-import Text.Parsing.Parser.Token (TokenParser, makeTokenParser, match, token, when)
-import Text.Parsing.Parser.Token as Parser.Token
+import Parsing (ParseError(..), Parser, ParserT, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Parsing.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, choice, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<??>), (<~?>))
+import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
+import Parsing.Language (haskellDef, haskellStyle, javaStyle)
+import Parsing.Pos (Position(..), initialPos)
+import Parsing.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, regex, rest, satisfy, string, takeN, whiteSpace)
+import Parsing.String.Basic (intDecimal, number, letter)
+import Parsing.Token (TokenParser, makeTokenParser, match, token, when)
+import Parsing.Token as Parser.Token
 
 parens :: forall m a. ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -694,10 +694,10 @@ main = do
             <|> const "" <$> string " " <?> "7"
               <* string " "
               $> ""
-              <?> "8"
+                <?> "8"
               *> string " "
               $> ""
-              <?> "9"
+                <?> "9"
         , fail "test <~?>"
         , string " " <~?> \_ -> "21"
         , string " " <|> string " " <~?> \_ -> "22"
@@ -707,21 +707,23 @@ main = do
             <|> const "" <$> string " " <~?> (\_ -> "27")
               <* string " "
               $> ""
-              <~?> (\_ -> "28")
+                <~?> (\_ -> "28")
               *> string " "
               $> ""
-              <~?> \_ -> "29"
+                <~?> \_ -> "29"
         , fail "test <??>"
         , "41" <??> string " "
         , "42" <??> string " " <|> string " "
         , "43" <??> string " " <|> "44" <??> string " "
         , "45" <??> "" <$ string " "
-            <|> "46"
-            <??> string " " $> ""
-            <|> "47"
-            <??> const "" <$> string " "
-              <* ("48" <??> string " ")
-              *> ("49" <??> string " ")
+            <|>
+              "46"
+                <??> string " " $> ""
+            <|>
+              "47"
+                <??> const "" <$> string " "
+                <* ("48" <??> string " ")
+                *> ("49" <??> string " ")
         ]
     )
     "no"
