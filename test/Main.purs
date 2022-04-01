@@ -1,3 +1,8 @@
+-- Run tests:
+--
+--     spago -x spago-dev.dhall test
+--
+
 module Test.Main where
 
 import Prelude hiding (between, when)
@@ -16,6 +21,7 @@ import Data.Number (infinity, isNaN)
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.String.CodeUnits as SCU
+import Data.String.Regex.Flags (RegexFlags, ignoreCase, noFlags)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow)
@@ -26,7 +32,7 @@ import Parsing.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, 
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.Pos (Position(..), initialPos)
-import Parsing.String (anyChar, anyCodePoint, char, eof, noneOfCodePoints, oneOfCodePoints, regex, rest, satisfy, string, takeN, whiteSpace)
+import Parsing.String (anyChar, anyCodePoint, char, eof, regex, noneOfCodePoints, oneOfCodePoints, rest, satisfy, string, takeN, whiteSpace)
 import Parsing.String.Basic (intDecimal, number, letter)
 import Parsing.Token (TokenParser, makeTokenParser, match, token, when)
 import Parsing.Token as Parser.Token
@@ -94,6 +100,15 @@ manySatisfyTest = do
   _ <- char '?'
   pure (fromCharArray r)
 
+mkRegexTest :: String -> String -> String -> RegexFlags -> (Parser String String -> Parser String String) -> Effect Unit
+mkRegexTest input expected pattern flags pars =
+  case regex pattern flags of
+    Left err -> assert' ("error: " <> show err) false
+    Right p -> parseTest input expected $ pars p
+
+
+-- TODO everything is stack-safe now.
+--
 -- This test doesn't test the actual stack safety of these combinators, mainly
 -- because I don't know how to come up with an example guaranteed to be large
 -- enough to overflow the stack. But thankfully, their stack safety is more or
@@ -751,19 +766,13 @@ main = do
 
   parseTest "-300" (-300) intDecimal
 
-  parseTest "regex-" "regex" (regex {} "regex" <* char '-' <* eof)
-  parseTest "-regex" "regex" (char '-' *> regex {} "regex" <* eof)
-  parseTest "regexregex" "regexregex" (regex {} "(regex)*")
-  parseTest "regexregex" "regex" (regex {} "(^regex)*")
-  parseTest "ReGeX" "ReGeX" (regex { ignoreCase: true } "regex")
-  parseTest "regexcapregexcap" "regexcap" (regex {} "(?<CaptureGroupName>regexcap)")
-  parseTest "regexcapregexcap" "regexcap" (regex {} "(((?<CaptureGroupName>(r)e(g)excap)))")
-
-  -- Maybe it is nonsense to allow multiline regex.
-  -- Because an end-of-line regex pattern `$` will match but then the
-  -- newline character will not be consumed.
-  -- Also why does this test fail? I think it should succeed.
-  -- parseTest "regex\nregex\n" "regex\nregex\n" (regex {dotAll: false, multiline: true} "(^regex$)+")
+  mkRegexTest "regex-" "regex" "regex" noFlags (\p -> p <* char '-' <* eof)
+  mkRegexTest "-regex" "regex" "regex" noFlags (\p -> char '-' *> p <* eof)
+  mkRegexTest "regexregex" "regexregex" "(regex)*" noFlags identity
+  mkRegexTest "regexregex" "regex" "(^regex)*" noFlags identity
+  mkRegexTest "ReGeX" "ReGeX" "regex" ignoreCase identity
+  mkRegexTest "regexcapregexcap" "regexcap" "(?<CaptureGroupName>regexcap)" noFlags identity
+  mkRegexTest "regexcapregexcap" "regexcap" "(((?<CaptureGroupName>(r)e(g)excap)))" noFlags identity
 
   stackSafeLoopsTest
 
