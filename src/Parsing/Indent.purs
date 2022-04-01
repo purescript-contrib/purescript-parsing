@@ -85,18 +85,6 @@ get' = do
 put' :: forall s. Position -> IndentParser s Unit
 put' p = lift (put p)
 
-sourceColumn :: Position -> Int
-sourceColumn (Position { line: _, column: c }) = c
-
-sourceLine :: Position -> Int
-sourceLine (Position { line: l, column: _ }) = l
-
-setSourceLine :: Position -> Int -> Position
-setSourceLine (Position { line: _, column: c }) l = Position { line: l, column: c }
-
-biAp :: forall a b c. (a -> b) -> (b -> b -> c) -> a -> a -> c
-biAp f c v1 v2 = c (f v1) (f v2)
-
 many1 :: forall s m a. ParserT s m a -> ParserT s m (List a)
 many1 p = lift2 Cons p (many p)
 
@@ -121,19 +109,17 @@ withBlock' = withBlock (flip const)
 -- | Parses only when indented past the level of the reference
 indented :: forall s. IndentParser s Unit
 indented = do
-  pos <- position
-  s <- get'
-  if biAp sourceColumn (<=) pos s then fail "not indented"
-  else do
-    put' $ setSourceLine s (sourceLine pos)
-    pure unit
+  Position p <- position
+  Position s <- get'
+  if p.column <= s.column then fail "not indented"
+  else put' $ Position { index: 0, line: p.line, column: s.column }
 
 -- | Same as `indented`, but does not change internal state
 indented' :: forall s. IndentParser s Unit
 indented' = do
-  pos <- position
-  s <- get'
-  if biAp sourceColumn (<=) pos s then fail "not indented" else pure unit
+  Position p <- position
+  Position s <- get'
+  if p.column <= s.column then fail "not indented" else pure unit
 
 -- | Parses only when indented past the level of the reference or on the same line
 sameOrIndented :: forall s. IndentParser s Unit
@@ -142,9 +128,9 @@ sameOrIndented = sameLine <|> indented
 -- | Parses only on the same line as the reference
 sameLine :: forall s. IndentParser s Unit
 sameLine = do
-  pos <- position
-  s <- get'
-  if biAp sourceLine (==) pos s then pure unit else fail "over one line"
+  Position p <- position
+  Position s <- get'
+  if p.line == s.line then pure unit else fail "over one line"
 
 -- | Parses a block of lines at the same indentation level
 block1 :: forall s a. IndentParser s a -> IndentParser s (List a)
@@ -169,9 +155,9 @@ withPos x = do
 -- | Ensures the current indentation level matches that of the reference
 checkIndent :: forall s. IndentParser s Unit
 checkIndent = do
-  s <- get'
-  p <- position
-  if biAp sourceColumn (==) p s then pure unit else fail "indentation doesn't match"
+  Position p <- position
+  Position s <- get'
+  if p.column == s.column then pure unit else fail "indentation doesn't match"
 
 -- | Run the result of an indentation sensitive parse
 runIndent :: forall a. State Position a -> a

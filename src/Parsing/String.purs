@@ -19,6 +19,20 @@
 -- | The other primitive parsers, which return `CodePoint` and `String` types,
 -- | can parse the full Unicode character set. All of the primitive parsers
 -- | in this module can be used together.
+-- |
+-- | ### Position
+-- |
+-- | In a `String` parser, the `Position {index}` counts the number of
+-- | unicode `CodePoint`s since the beginning of the input string.
+-- |
+-- | Each tab character (`0x09`) encountered in a `String` parser will advance
+-- | the `Position {column}` by 8.
+-- |
+-- | These patterns will advance the `Position {line}` by 1 and reset
+-- | the `Position {column}` to 1:
+-- | - newline (`0x0A`)
+-- | - carriage-return (`0x0D`)
+-- | - carriage-return-newline (`0x0D 0x0A`)
 module Parsing.String
   ( string
   , eof
@@ -187,14 +201,14 @@ updatePosString pos before after = case uncons before of
 -- | Updates a `Position` by adding the columns and lines in a
 -- | single `CodePoint`.
 updatePosSingle :: Position -> CodePoint -> String -> Position
-updatePosSingle (Position { line, column }) cp after = case fromEnum cp of
-  10 -> Position { line: line + 1, column: 1 } -- "\n"
+updatePosSingle (Position { index, line, column }) cp after = case fromEnum cp of
+  10 -> Position { index: index + 1, line: line + 1, column: 1 } -- "\n"
   13 ->
     case codePointAt 0 after of
-      Just nextCp | fromEnum nextCp == 10 -> Position { line, column } -- "\r\n" lookahead
-      _ -> Position { line: line + 1, column: 1 } -- "\r"
-  9 -> Position { line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
-  _ -> Position { line, column: column + 1 }
+      Just nextCp | fromEnum nextCp == 10 -> Position { index: index + 1, line, column } -- "\r\n" lookahead
+      _ -> Position { index: index + 1, line: line + 1, column: 1 } -- "\r"
+  9 -> Position { index: index + 1, line, column: column + 8 - ((column - 1) `mod` 8) } -- "\t" Who says that one tab is 8 columns?
+  _ -> Position { index: index + 1, line, column: column + 1 }
 
 -- | Combinator which returns both the result of a parse and the slice of
 -- | the input that was consumed while it was being parsed.
