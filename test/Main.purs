@@ -24,7 +24,7 @@ import Data.String.CodeUnits as SCU
 import Data.String.Regex.Flags (RegexFlags, ignoreCase, noFlags)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Console (logShow)
+import Effect.Console (log, logShow)
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
 import Parsing (ParseError(..), Parser, ParserT, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
@@ -105,7 +105,6 @@ mkRegexTest input expected pattern flags pars =
   case regex pattern flags of
     Left err -> assert' ("error: " <> show err) false
     Right p -> parseTest input expected $ pars p
-
 
 -- TODO everything is stack-safe now.
 --
@@ -574,6 +573,7 @@ javaStyleTest = do
 main :: Effect Unit
 main = do
 
+  log "\nTESTS String\n"
   parseErrorTestPosition
     (many $ char 'f' *> char '?')
     "foo"
@@ -682,6 +682,8 @@ main = do
   parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
   parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
 
+  log "\nTESTS number\n"
+
   parseTest "Infinity" infinity number
   parseTest "+Infinity" infinity number
   parseTest "-Infinity" (negate infinity) number
@@ -696,6 +698,7 @@ main = do
   parseTest "-6.0" (-6.0) number
   parseTest "+6.0" (6.0) number
 
+  log "\nTESTS Operator\n"
   -- test from issue #161
   -- all the below operators should play well together
   parseErrorTestMessage
@@ -764,17 +767,22 @@ main = do
   -- TODO This shows the current limitations of the number parser. Ideally this parse should fail.
   parseTest "1..3" 1.0 $ number <* eof
 
+  log "\nTESTS intDecimal\n"
   parseTest "-300" (-300) intDecimal
 
-  mkRegexTest "regex-" "regex" "regex" noFlags (\p -> p <* char '-' <* eof)
-  mkRegexTest "-regex" "regex" "regex" noFlags (\p -> char '-' *> p <* eof)
+  log "\nTESTS Regex\n"
+  mkRegexTest "regex-" "regex" "regex" noFlags (\regex -> regex <* char '-' <* eof)
+  mkRegexTest "-regex" "regex" "regex" noFlags (\regex -> char '-' *> regex <* eof)
   mkRegexTest "regexregex" "regexregex" "(regex)*" noFlags identity
   mkRegexTest "regexregex" "regex" "(^regex)*" noFlags identity
   mkRegexTest "ReGeX" "ReGeX" "regex" ignoreCase identity
   mkRegexTest "regexcapregexcap" "regexcap" "(?<CaptureGroupName>regexcap)" noFlags identity
   mkRegexTest "regexcapregexcap" "regexcap" "(((?<CaptureGroupName>(r)e(g)excap)))" noFlags identity
 
+  log "\nTESTS Stack Safe Loops\n"
   stackSafeLoopsTest
+
+  log "\nTESTS Token Parser\n"
 
   tokenParserIdentifierTest
   tokenParserReservedTest
@@ -808,18 +816,21 @@ main = do
   tokenParserCommaSepTest
   tokenParserCommaSep1Test
 
+  log "\nTESTS Haskell Style\n"
   haskellStyleTest
+  log "\nTESTS Java Style\n"
   javaStyleTest
 
+  log "\nTESTS region\n"
+  let
+    prependContext m' (ParseError m pos) = ParseError (m' <> m) pos
+    p = region (prependContext "context1 ") $ do
+      _ <- string "a"
+      region (prependContext "context2 ") $ do
+        string "b"
   case runParser "aa" p of
     Right _ -> assert' "error: ParseError expected!" false
     Left (ParseError message _) -> do
       let messageExpected = "context1 context2 Expected \"b\""
       assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
       logShow messageExpected
-  where
-  prependContext m' (ParseError m pos) = ParseError (m' <> m) pos
-  p = region (prependContext "context1 ") $ do
-    _ <- string "a"
-    region (prependContext "context2 ") $ do
-      string "b"
