@@ -7,7 +7,7 @@
 -- |
 -- | This benchmark suite also compares parsers to equivalent Regex. This
 -- | provides an answer to the common question “How much slower is this package
--- | than Regex?” Answer: approximately 100×. The Regex benchmarks also give
+-- | than Regex?” Answer: approximately 10×. The Regex benchmarks also give
 -- | us a rough way to calibrate benchmarks run on different platforms.
 -- |
 -- | `--expose-gc` is from
@@ -55,10 +55,11 @@ import Prelude
 
 import Bench.Json.Parsing as BenchParsing
 import Bench.Json.StringParser as BenchStringParser
-import Bench.Json.TestData (largeJson, mediumJson, smallJson)
-import Control.Monad.Trampoline (runTrampoline)
+import Bench.Json.TestData (largeJson, mediumJson)
 import Control.Monad.Free (liftF)
+import Control.Monad.Trampoline (runTrampoline)
 import Data.Array (fold, replicate)
+import Data.Array as Array
 import Data.Either (either)
 import Data.List (many, manyRec)
 import Data.List.Types (List)
@@ -69,10 +70,11 @@ import Effect (Effect)
 import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
-import Performance.Minibench (benchWith)
 import Parsing (Parser, runParser, runParserT)
-import Parsing.String (string)
+import Parsing.Combinators (chainl, chainlRec, chainr, chainrRec, manyTill, manyTillRec, manyTillRec_, manyTill_, sepBy, sepByRec)
+import Parsing.String (anyChar, char, string)
 import Parsing.String.Basic (digit)
+import Performance.Minibench (benchWith)
 import StringParser as StringParser
 import StringParser.CodePoints as StringParser.CodePoints
 import StringParser.CodeUnits as StringParser.CodeUnits
@@ -80,26 +82,23 @@ import StringParser.CodeUnits as StringParser.CodeUnits
 string23 :: String
 string23 = "23"
 
-string23_2 :: String
-string23_2 = fold $ replicate 2 string23
+string23_10000 :: String
+string23_10000 = fold $ replicate 5000 string23
 
--- string23_10000 :: String
--- string23_10000 = fold $ replicate 10000 string23
+string23_10000x :: String
+string23_10000x = string23_10000 <> "x"
 
-string23_500 :: String
-string23_500 = fold $ replicate 500 string23
+string23_1000 :: String
+string23_1000 = fold $ replicate 500 string23
+
+string23_1000x :: String
+string23_1000x = string23_1000 <> "x"
 
 stringSkidoo :: String
-stringSkidoo = "skidoo"
+stringSkidoo = "skidoooooo"
 
-stringSkidoo_2 :: String
-stringSkidoo_2 = fold $ replicate 2 stringSkidoo
-
--- stringSkidoo_10000 :: String
--- stringSkidoo_10000 = fold $ replicate 10000 stringSkidoo
-
-stringSkidoo_1000 :: String
-stringSkidoo_1000 = fold $ replicate 1000 stringSkidoo
+stringSkidoo_100000 :: String
+stringSkidoo_100000 = fold $ replicate 10000 stringSkidoo
 
 parse23 :: Parser String (List Char)
 parse23 = many digit
@@ -132,14 +131,14 @@ pattern23 = either (unsafePerformEffect <<< throw) identity
       }
 
 parseSkidoo :: Parser String (List String)
-parseSkidoo = many $ string "skidoo"
+parseSkidoo = many $ string "skidoooooo"
 
 parseSkidooRec :: Parser String (List String)
-parseSkidooRec = manyRec $ string "skidoo"
+parseSkidooRec = manyRec $ string "skidoooooo"
 
 patternSkidoo :: Regex
 patternSkidoo = either (unsafePerformEffect <<< throw) identity
-  $ regex "skidoo"
+  $ regex "skidoooooo"
   $ RegexFlags
       { dotAll: true
       , global: true
@@ -161,38 +160,109 @@ htmlTableWrap caption benchmark = do
 main :: Effect Unit
 main = do
   log "<tr>"
-  htmlTableWrap "runParser parse23" $ benchWith 200
-    $ \_ -> runParser string23_500 parse23
-  htmlTableWrap "StringParser.runParser parse23Points" $ benchWith 20
-    $ \_ -> StringParser.runParser parse23Points string23_500
-  htmlTableWrap "StringParser.runParser parse23Units" $ benchWith 200
-    $ \_ -> StringParser.runParser parse23Units string23_500
-  htmlTableWrap "runParser parse23Rec" $ benchWith 200
-    $ \_ -> runParser string23_500 parse23Rec
-  htmlTableWrap "StringParser.runParser parse23PointsRec" $ benchWith 20
-    $ \_ -> StringParser.runParser parse23PointsRec string23_500
-  htmlTableWrap "StringParser.runParser parse23UnitsRec" $ benchWith 200
-    $ \_ -> StringParser.runParser parse23UnitsRec string23_500
-  htmlTableWrap "Regex.match pattern23" $ benchWith 200
-    $ \_ -> Regex.match pattern23 string23_500
-  htmlTableWrap "runParser parseSkidoo" $ benchWith 200
-    $ \_ -> runParser stringSkidoo_1000 parseSkidoo
-  htmlTableWrap "runParser parseSkidooRec" $ benchWith 200
-    $ \_ -> runParser stringSkidoo_1000 parseSkidooRec
-  htmlTableWrap "Regex.match patternSkidoo" $ benchWith 200
-    $ \_ -> Regex.match patternSkidoo stringSkidoo_1000
-  htmlTableWrap "runParser json smallJson" $ benchWith 1000
-    $ \_ -> runParser smallJson BenchParsing.json
-  htmlTableWrap "runTrampoline runParser json smallJson" $ benchWith 1000
-    $ \_ -> runTrampoline $ runParserT smallJson BenchParsing.json
-  htmlTableWrap "StringParser.runParser json smallJson" $ benchWith 500
-    $ \_ -> StringParser.runParser BenchStringParser.json smallJson
+
+  -- These inputs are too small for good measurement, but larger ones blow stack
+  -- log "<th><h2>digit 1000</h2></th>"
+  -- htmlTableWrap "runParser many digit 1000" $ benchWith 200
+  --   $ \_ -> runParser string23_1000 parse23
+  -- htmlTableWrap "StringParser many CodePoints.anyDigit 1000" $ benchWith 20
+  --   $ \_ -> StringParser.runParser parse23Points string23_1000
+  -- htmlTableWrap "StringParser many CodeUnits.anyDigit 1000" $ benchWith 200
+  --   $ \_ -> StringParser.runParser parse23Units string23_1000
+  -- htmlTableWrap "runParser manyRec digit 1000" $ benchWith 200
+  --   $ \_ -> runParser string23_1000 parse23Rec
+  -- htmlTableWrap "StringParser manyRec CodePoints.anyDigit 1000" $ benchWith 20
+  --   $ \_ -> StringParser.runParser parse23PointsRec string23_1000
+  -- htmlTableWrap "StringParser manyRec CodeUnits.anyDigit 1000" $ benchWith 200
+  --   $ \_ -> StringParser.runParser parse23UnitsRec string23_1000
+  -- htmlTableWrap "Regex.match \\d* 1000" $ benchWith 200
+  --   $ \_ -> Regex.match pattern23 string23_1000
+
+  log "<th><h2>digit 10000</h2></th>"
+  htmlTableWrap "runParser many digit 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 parse23
+  htmlTableWrap "runParser manyRec digit 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 parse23Rec
+  htmlTableWrap "runParser Array.many digit 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 (Array.many digit)
+  htmlTableWrap "StringParser manyRec CodePoints.anyDigit 10000" $ benchWith 20
+    $ \_ -> StringParser.runParser parse23PointsRec string23_10000
+  htmlTableWrap "StringParser manyRec CodeUnits.anyDigit 10000" $ benchWith 200
+    $ \_ -> StringParser.runParser parse23UnitsRec string23_10000
+  htmlTableWrap "Regex.match \\d* 10000" $ benchWith 200
+    $ \_ -> Regex.match pattern23 string23_10000
+
+  log "<th><h2>string 100000</h2></th>"
+  htmlTableWrap "runParser many string" $ benchWith 200
+    $ \_ -> runParser stringSkidoo_100000 parseSkidoo
+  htmlTableWrap "runParser manyRec string" $ benchWith 200
+    $ \_ -> runParser stringSkidoo_100000 parseSkidooRec
+  htmlTableWrap "Regex.match literal*" $ benchWith 200
+    $ \_ -> Regex.match patternSkidoo stringSkidoo_100000
+
+  log "<th><h2>sepBy 1000</h2></th>"
+  htmlTableWrap "runParser sepBy 1000" $ benchWith 50
+    $ \_ -> runParser string23_1000 $ sepBy anyChar (char '3')
+  htmlTableWrap "runParser sepByRec 1000" $ benchWith 50
+    $ \_ -> runParser string23_1000 $ sepByRec anyChar (char '3')
+
+  log "<th><h2>sepBy 10000</h2></th>"
+  -- sepBy not stack-safe
+  -- htmlTableWrap "runParser sepBy 10000" $ benchWith 50
+  --   $ \_ -> runParser string23_10000 $ sepBy anyChar (char '3')
+  htmlTableWrap "runParser sepByRec 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 $ sepByRec anyChar (char '3')
+
+  log "<th><h2>chainl 10000</h2></th>"
+  htmlTableWrap "runParser chainl 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 $ chainl anyChar (pure const) 'x'
+  htmlTableWrap "runParser chainlRec 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 $ chainlRec anyChar (pure const) 'x'
+
+  log "<th><h2>chainr 1000</h2></th>"
+  htmlTableWrap "runParser chainr 1000" $ benchWith 5
+    $ \_ -> runParser string23_1000 $ chainr anyChar (pure const) 'x'
+  htmlTableWrap "runParser chainrRec 1000" $ benchWith 5
+    $ \_ -> runParser string23_1000 $ chainrRec anyChar (pure const) 'x'
+
+  log "<th><h2>chainr 10000</h2></th>"
+  -- chainr not stack-safe
+  -- htmlTableWrap "runParser chainr 10000" $ benchWith 5
+  --   $ \_ -> runParser string23_10000 $ chainr anyChar (pure const) 'x'
+  htmlTableWrap "runParser chainrRec 10000" $ benchWith 5
+    $ \_ -> runParser string23_10000 $ chainrRec anyChar (pure const) 'x'
+
+  log "<th><h2>manyTill 1000</h2></th>"
+  htmlTableWrap "runParser manyTill 1000" $ benchWith 50
+    $ \_ -> runParser string23_1000x $ manyTill anyChar (char 'x')
+  htmlTableWrap "runParser manyTillRec 1000" $ benchWith 50
+    $ \_ -> runParser string23_1000x $ manyTillRec anyChar (char 'x')
+  htmlTableWrap "runParser manyTill_ 1000" $ benchWith 50
+    $ \_ -> runParser string23_1000x $ manyTill_ anyChar (char 'x')
+  htmlTableWrap "runParser manyTillRec_ 1000" $ benchWith 50
+    $ \_ -> runParser string23_1000x $ manyTillRec_ anyChar (char 'x')
+
+  log "<th><h2>manyTill 10000</h2></th>"
+  -- manyTill not stack-safe
+  -- htmlTableWrap "runParser manyTill 10000" $ benchWith 50
+  --   $ \_ -> runParser string23_10000x $ manyTill anyChar (char 'x')
+  htmlTableWrap "runParser manyTillRec 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000x $ manyTillRec anyChar (char 'x')
+  -- manyTill_ not stack-safe
+  -- htmlTableWrap "runParser manyTill_ 10000" $ benchWith 50
+  --   $ \_ -> runParser string23_10000x $ manyTill_ anyChar (char 'x')
+  htmlTableWrap "runParser manyTillRec_ 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000x $ manyTillRec_ anyChar (char 'x')
+
+  log "<th><h2>mediumJson</h2></th>"
   htmlTableWrap "runParser json mediumJson" $ benchWith 500
     $ \_ -> runParser mediumJson BenchParsing.json
   htmlTableWrap "runTrampoline runParser json mediumJson" $ benchWith 500
     $ \_ -> runTrampoline $ runParserT mediumJson BenchParsing.json
   htmlTableWrap "StringParser.runParser json mediumJson" $ benchWith 1000
     $ \_ -> StringParser.runParser BenchStringParser.json mediumJson
+
+  log "<th><h2>largeJson</h2></th>"
   htmlTableWrap "runParser json largeJson" $ benchWith 100
     $ \_ -> runParser largeJson BenchParsing.json
   htmlTableWrap "runTrampoline runParser json largeJson" $ benchWith 100
