@@ -80,11 +80,8 @@ import StringParser.CodeUnits as StringParser.CodeUnits
 string23 :: String
 string23 = "23"
 
-string23_2 :: String
-string23_2 = fold $ replicate 2 string23
-
--- string23_10000 :: String
--- string23_10000 = fold $ replicate 10000 string23
+string23_5000 :: String
+string23_5000 = fold $ replicate 10000 string23
 
 string23_500 :: String
 string23_500 = fold $ replicate 500 string23
@@ -94,9 +91,6 @@ stringSkidoo = "skidoo"
 
 stringSkidoo_2 :: String
 stringSkidoo_2 = fold $ replicate 2 stringSkidoo
-
--- stringSkidoo_10000 :: String
--- stringSkidoo_10000 = fold $ replicate 10000 stringSkidoo
 
 stringSkidoo_1000 :: String
 stringSkidoo_1000 = fold $ replicate 1000 stringSkidoo
@@ -161,6 +155,8 @@ htmlTableWrap caption benchmark = do
 main :: Effect Unit
 main = do
   log "<tr>"
+  htmlTableWrap "runParser parse23 5000" $ benchWith 50
+    $ \_ -> runParser string23_5000 parse23
   htmlTableWrap "runParser parse23" $ benchWith 200
     $ \_ -> runParser string23_500 parse23
   htmlTableWrap "StringParser.runParser parse23Points" $ benchWith 20
