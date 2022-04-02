@@ -22,7 +22,7 @@ import Effect.Console (logShow)
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert')
 import Parsing (ParseError(..), Parser, ParserT, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (between, chainl, chainl1Rec, chainlRec, chainr1Rec, chainrRec, choice, endBy1, endBy1Rec, endByRec, many1Rec, many1TillRec, many1TillRec_, many1Till_, manyTillRec, manyTillRec_, manyTill_, notFollowedBy, optionMaybe, sepBy1, sepBy1Rec, sepByRec, sepEndBy1Rec, sepEndByRec, skipMany1Rec, skipManyRec, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (between, chainl, choice, endBy1, many1Till_, manyTill_, notFollowedBy, optionMaybe, sepBy1, try, (<?>), (<??>), (<~?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.Pos (Position(..), initialPos)
@@ -93,126 +93,6 @@ manySatisfyTest = do
   r <- some $ satisfy (\s -> s /= '?')
   _ <- char '?'
   pure (fromCharArray r)
-
--- This test doesn't test the actual stack safety of these combinators, mainly
--- because I don't know how to come up with an example guaranteed to be large
--- enough to overflow the stack. But thankfully, their stack safety is more or
--- less guaranteed by construction.
---
--- Instead, this test checks functional correctness of the combinators, since
--- that's the more tricky part to get right (or to break later) in the absence
--- of clear explicit recursion.
-stackSafeLoopsTest :: TestM
-stackSafeLoopsTest = do
-  parseTest "aaabaa" (toUnfoldable [ "a", "a", "a" ]) $
-    manyTillRec (string "a") (string "b")
-  parseTest "baa" Nil $
-    manyTillRec (string "a") (string "b")
-
-  parseTest "aaabaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
-    many1TillRec (string "a") (string "b")
-  parseErrorTestPosition
-    (many1TillRec (string "a") (string "b"))
-    "baa"
-    (Position { line: 1, column: 1 })
-
-  parseTest "a,a,a,b,a,a" (toUnfoldable [ "a", "a", "a" ]) $
-    sepEndByRec (string "a") (string ",")
-  parseTest "a,a,abaa" (toUnfoldable [ "a", "a", "a" ]) $
-    sepEndByRec (string "a") (string ",")
-  parseTest "b,a,a" Nil $
-    sepEndByRec (string "a") (string ",")
-
-  parseTest "a,a,a,b,a,a" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
-    sepEndBy1Rec (string "a") (string ",")
-  parseTest "a,a,abaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
-    sepEndBy1Rec (string "a") (string ",")
-  parseErrorTestPosition
-    (sepEndBy1Rec (string "a") (string ","))
-    "b,a,a"
-    (Position { line: 1, column: 1 })
-
-  -- 8 `div` (8 `div` 2) == 2
-  parseTest "8x8x2" 2 $
-    chainrRec digit (string "x" $> div) 42
-  parseTest "" 42 $
-    chainrRec digit (string "x" $> div) 42
-  parseTest "8x8x2" 2 $
-    chainr1Rec digit (string "x" $> div)
-  parseErrorTestPosition
-    (chainr1Rec digit (string "x" $> div))
-    ""
-    (Position { line: 1, column: 1 })
-
-  -- (8 `div` 2) `div` 2 == 2
-  parseTest "8x2x2" 2 $
-    chainlRec digit (string "x" $> div) 42
-  parseTest "" 42 $
-    chainlRec digit (string "x" $> div) 42
-  parseTest "8x2x2" 2 $
-    chainl1Rec digit (string "x" $> div)
-  parseErrorTestPosition
-    (chainl1Rec digit (string "x" $> div))
-    ""
-    (Position { line: 1, column: 1 })
-
-  parseTest "aaaabcd" "b"
-    $ skipMany1Rec (string "a")
-        *> string "b"
-  parseErrorTestPosition
-    (skipMany1Rec (string "a"))
-    "bcd"
-    (Position { line: 1, column: 1 })
-
-  parseTest "aaaabcd" "b"
-    $ skipManyRec (string "a")
-        *> string "b"
-  parseTest "bcd" "b"
-    $ skipManyRec (string "a")
-        *> string "b"
-
-  parseTest "aaa" (NE.cons' "a" $ toUnfoldable [ "a", "a" ]) $
-    many1Rec (string "a")
-  parseErrorTestPosition
-    (many1Rec (string "a"))
-    ""
-    (Position { line: 1, column: 1 })
-
-  parseTest "a,a,ab" (toUnfoldable [ "a", "a", "a" ])
-    $ sepByRec (string "a") (string ",")
-        <* string "b"
-  parseTest "b" Nil
-    $ sepByRec (string "a") (string ",")
-        <* string "b"
-  parseTest "a,a,ab" (NE.cons' "a" $ toUnfoldable [ "a", "a" ])
-    $ sepBy1Rec (string "a") (string ",")
-        <* string "b"
-  parseErrorTestPosition
-    (sepBy1Rec (string "a") (string ","))
-    ""
-    (Position { line: 1, column: 1 })
-  parseErrorTestPosition
-    (sepBy1Rec (string "a") (string ","))
-    "a,"
-    (Position { line: 1, column: 3 })
-
-  parseTest "a,a,a,b" (toUnfoldable [ "a", "a", "a" ])
-    $ endByRec (string "a") (string ",")
-        <* string "b"
-  parseTest "b" Nil
-    $ endByRec (string "a") (string ",")
-        <* string "b"
-  parseTest "a,a,a,b" (NE.cons' "a" $ toUnfoldable [ "a", "a" ])
-    $ endBy1Rec (string "a") (string ",")
-        <* string "b"
-  parseErrorTestPosition
-    (endBy1Rec (string "a") (string ","))
-    ""
-    (Position { line: 1, column: 1 })
-  parseErrorTestPosition
-    (endBy1Rec (string "a") (string ","))
-    "a,a"
-    (Position { line: 1, column: 4 })
 
 data TestToken = A | B
 
@@ -651,8 +531,6 @@ main = do
 
   parseTest "aabb" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') (manyTill_ (char 'a') (char 'b'))
   parseTest "aabb" (Tuple (unsafePartial $ fromJust (NE.fromFoldable [ 'a', 'a' ])) 'b') (many1Till_ (char 'a') (char 'b'))
-  parseTest "aabb" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') (manyTillRec_ (char 'a') (char 'b'))
-  parseTest "aabb" (Tuple (unsafePartial $ fromJust (NE.fromFoldable [ 'a', 'a' ])) 'b') (many1TillRec_ (char 'a') (char 'b'))
 
   parseTest "aab" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') do
     Tuple a b <- manyTill_ letter do
@@ -764,8 +642,6 @@ main = do
   -- newline character will not be consumed.
   -- Also why does this test fail? I think it should succeed.
   -- parseTest "regex\nregex\n" "regex\nregex\n" (regex {dotAll: false, multiline: true} "(^regex$)+")
-
-  stackSafeLoopsTest
 
   tokenParserIdentifierTest
   tokenParserReservedTest

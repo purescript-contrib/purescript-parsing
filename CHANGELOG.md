@@ -26,6 +26,7 @@ Breaking changes:
   prevents a compiler error (i.e. `MixedAssociativityError`)
   without causing issues with `<$>`.
 - Rename module prefix from `Text.Parsing.Parser` to `Parsing` (#169 by @jamesdbrock)
+- Remove all `*Rec` combinators (#173 by jamesdbrock)
 
 New features:
 
