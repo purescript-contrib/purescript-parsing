@@ -688,7 +688,7 @@ makeTokenParser (LanguageDef languageDef) =
   zeroNumber =
     char '0'
       *> (hexadecimal <|> octal <|> decimal <|> pure 0)
-        <?> ""
+      <?> ""
 
   decimal :: ParserT String m Int
   decimal = number 10 Basic.digit
