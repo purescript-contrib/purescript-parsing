@@ -186,6 +186,19 @@ Data.Semiring.(+) 6
 Data.Tuple.Nested.(/\) type 6
 Data.Tuple.Nested.(/\) 6
 Math.(%) 7
+Parsing.Indent.(<*/>) 11
+Parsing.Indent.(<+/>) 9
+Parsing.Indent.(<-/>) 10
+Parsing.Indent.(<?/>) 12
+Parsing.Combinators.($>) 4
+Parsing.Combinators.(<#>) 1
+Parsing.Combinators.(<$) 4
+Parsing.Combinators.(<$>) 4
+Parsing.Combinators.(<?>) 4
+Parsing.Combinators.(<??>) 3
+Parsing.Combinators.(<@>) 4
+Parsing.Combinators.(<|>) 3
+Parsing.Combinators.(<~?>) 4
 Prelude.(~>) type 4
 Prelude.(#) 1
 Prelude.($) 0
@@ -216,16 +229,3 @@ Prelude.(>=>) 1
 Prelude.(>>=) 1
 Prelude.(>>>) 9
 Prelude.(||) 2
-Text.Parsing.Indent.(<*/>) 11
-Text.Parsing.Indent.(<+/>) 9
-Text.Parsing.Indent.(<-/>) 10
-Text.Parsing.Indent.(<?/>) 12
-Text.Parsing.Parser.Combinators.($>) 4
-Text.Parsing.Parser.Combinators.(<#>) 1
-Text.Parsing.Parser.Combinators.(<$) 4
-Text.Parsing.Parser.Combinators.(<$>) 4
-Text.Parsing.Parser.Combinators.(<?>) 4
-Text.Parsing.Parser.Combinators.(<??>) 3
-Text.Parsing.Parser.Combinators.(<@>) 4
-Text.Parsing.Parser.Combinators.(<|>) 3
-Text.Parsing.Parser.Combinators.(<~?>) 4
