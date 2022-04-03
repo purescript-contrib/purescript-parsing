@@ -207,9 +207,8 @@ main = do
     $ \_ -> runParser string23_1000 $ sepByRec anyChar (char '3')
 
   log "<th><h2>sepBy 10000</h2></th>"
-  -- sepBy not stack-safe
-  -- htmlTableWrap "runParser sepBy 10000" $ benchWith 50
-  --   $ \_ -> runParser string23_10000 $ sepBy anyChar (char '3')
+  htmlTableWrap "runParser sepBy 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000 $ sepBy anyChar (char '3')
   htmlTableWrap "runParser sepByRec 10000" $ benchWith 50
     $ \_ -> runParser string23_10000 $ sepByRec anyChar (char '3')
 
@@ -226,9 +225,8 @@ main = do
     $ \_ -> runParser string23_1000 $ chainrRec anyChar (pure const) 'x'
 
   log "<th><h2>chainr 10000</h2></th>"
-  -- chainr not stack-safe
-  -- htmlTableWrap "runParser chainr 10000" $ benchWith 5
-  --   $ \_ -> runParser string23_10000 $ chainr anyChar (pure const) 'x'
+  htmlTableWrap "runParser chainr 10000" $ benchWith 5
+    $ \_ -> runParser string23_10000 $ chainr anyChar (pure const) 'x'
   htmlTableWrap "runParser chainrRec 10000" $ benchWith 5
     $ \_ -> runParser string23_10000 $ chainrRec anyChar (pure const) 'x'
 
@@ -243,14 +241,12 @@ main = do
     $ \_ -> runParser string23_1000x $ manyTillRec_ anyChar (char 'x')
 
   log "<th><h2>manyTill 10000</h2></th>"
-  -- manyTill not stack-safe
-  -- htmlTableWrap "runParser manyTill 10000" $ benchWith 50
-  --   $ \_ -> runParser string23_10000x $ manyTill anyChar (char 'x')
+  htmlTableWrap "runParser manyTill 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000x $ manyTill anyChar (char 'x')
   htmlTableWrap "runParser manyTillRec 10000" $ benchWith 50
     $ \_ -> runParser string23_10000x $ manyTillRec anyChar (char 'x')
-  -- manyTill_ not stack-safe
-  -- htmlTableWrap "runParser manyTill_ 10000" $ benchWith 50
-  --   $ \_ -> runParser string23_10000x $ manyTill_ anyChar (char 'x')
+  htmlTableWrap "runParser manyTill_ 10000" $ benchWith 50
+    $ \_ -> runParser string23_10000x $ manyTill_ anyChar (char 'x')
   htmlTableWrap "runParser manyTillRec_ 10000" $ benchWith 50
     $ \_ -> runParser string23_10000x $ manyTillRec_ anyChar (char 'x')
 
