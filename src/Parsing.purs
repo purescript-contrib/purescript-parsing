@@ -220,9 +220,10 @@ instance Bind (ParserT s m) where
     ( mkFn5 \state1 more lift throw done ->
         more \_ ->
           runFn5 k1 state1 more lift throw
-            ( mkFn2 \state2 a -> do
-                let (ParserT k2) = next a
-                runFn5 k2 state2 more lift throw done
+            ( mkFn2 \state2 a ->
+                more \_ -> do
+                  let (ParserT k2) = next a
+                  runFn5 k2 state2 more lift throw done
             )
     )
 
@@ -317,10 +318,11 @@ instance Alt (ParserT s m) where
         more \_ ->
           runFn5 k1 (ParseState input pos false) more lift
             ( mkFn2 \state2@(ParseState _ _ consumed) err ->
-                if consumed then
-                  runFn2 throw state2 err
-                else
-                  runFn5 k2 state1 more lift throw done
+                more \_ ->
+                  if consumed then
+                    runFn2 throw state2 err
+                  else
+                    runFn5 k2 state1 more lift throw done
             )
             done
     )
