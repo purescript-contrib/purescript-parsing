@@ -56,8 +56,6 @@ import Prelude
 import Bench.Json.Parsing as BenchParsing
 import Bench.Json.StringParser as BenchStringParser
 import Bench.Json.TestData (largeJson, mediumJson)
-import Control.Monad.Free (liftF)
-import Control.Monad.Trampoline (runTrampoline)
 import Data.Array (fold, replicate)
 import Data.Array as Array
 import Data.Either (Either(..), either)
@@ -71,7 +69,7 @@ import Effect (Effect)
 import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
-import Parsing (Parser, runParser, runParserT)
+import Parsing (Parser, runParser)
 import Parsing.Combinators (chainl, chainlRec, chainr, chainrRec, manyTill, manyTillRec, manyTillRec_, manyTill_, sepBy, sepByRec)
 import Parsing.String (anyChar, char, string)
 import Parsing.String.Basic (digit)
