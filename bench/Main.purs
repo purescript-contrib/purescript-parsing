@@ -60,9 +60,10 @@ import Control.Monad.Free (liftF)
 import Control.Monad.Trampoline (runTrampoline)
 import Data.Array (fold, replicate)
 import Data.Array as Array
-import Data.Either (either)
+import Data.Either (Either(..), either)
 import Data.List (many, manyRec)
 import Data.List.Types (List)
+import Data.Maybe (Maybe(..))
 import Data.String.Regex (Regex, regex)
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags(..))
@@ -157,6 +158,14 @@ htmlTableWrap caption benchmark = do
   benchmark
   log "</pre></td>"
 
+throwLeft :: forall a b. Show a => Either a b -> b
+throwLeft (Left err) = unsafePerformEffect $ throw $ show err
+throwLeft (Right x) = x
+
+throwNothing :: forall a. String -> Maybe a -> a
+throwNothing err Nothing = unsafePerformEffect $ throw err
+throwNothing _ (Just x) = x
+
 main :: Effect Unit
 main = do
   log "<tr>"
@@ -180,90 +189,90 @@ main = do
 
   log "<th><h2>digit 10000</h2></th>"
   htmlTableWrap "runParser many digit 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 parse23
+    $ \_ -> throwLeft $ runParser string23_10000 parse23
   htmlTableWrap "runParser manyRec digit 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 parse23Rec
+    $ \_ -> throwLeft $ runParser string23_10000 parse23Rec
   htmlTableWrap "runParser Array.many digit 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 (Array.many digit)
+    $ \_ -> throwLeft $ runParser string23_10000 (Array.many digit)
   htmlTableWrap "StringParser manyRec CodePoints.anyDigit 10000" $ benchWith 20
-    $ \_ -> StringParser.runParser parse23PointsRec string23_10000
+    $ \_ -> throwLeft $ StringParser.runParser parse23PointsRec string23_10000
   htmlTableWrap "StringParser manyRec CodeUnits.anyDigit 10000" $ benchWith 200
-    $ \_ -> StringParser.runParser parse23UnitsRec string23_10000
+    $ \_ -> throwLeft $ StringParser.runParser parse23UnitsRec string23_10000
   htmlTableWrap "Regex.match \\d* 10000" $ benchWith 200
-    $ \_ -> Regex.match pattern23 string23_10000
+    $ \_ -> throwNothing "Regex.match failed" $ Regex.match pattern23 string23_10000
 
   log "<th><h2>string 100000</h2></th>"
   htmlTableWrap "runParser many string" $ benchWith 200
-    $ \_ -> runParser stringSkidoo_100000 parseSkidoo
+    $ \_ -> throwLeft $ runParser stringSkidoo_100000 parseSkidoo
   htmlTableWrap "runParser manyRec string" $ benchWith 200
-    $ \_ -> runParser stringSkidoo_100000 parseSkidooRec
+    $ \_ -> throwLeft $ runParser stringSkidoo_100000 parseSkidooRec
   htmlTableWrap "Regex.match literal*" $ benchWith 200
-    $ \_ -> Regex.match patternSkidoo stringSkidoo_100000
+    $ \_ -> throwNothing "Regex.match failed" $ Regex.match patternSkidoo stringSkidoo_100000
 
   log "<th><h2>sepBy 1000</h2></th>"
   htmlTableWrap "runParser sepBy 1000" $ benchWith 50
-    $ \_ -> runParser string23_1000 $ sepBy anyChar (char '3')
+    $ \_ -> throwLeft $ runParser string23_1000 $ sepBy anyChar (char '3')
   htmlTableWrap "runParser sepByRec 1000" $ benchWith 50
-    $ \_ -> runParser string23_1000 $ sepByRec anyChar (char '3')
+    $ \_ -> throwLeft $ runParser string23_1000 $ sepByRec anyChar (char '3')
 
   log "<th><h2>sepBy 10000</h2></th>"
   htmlTableWrap "runParser sepBy 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 $ sepBy anyChar (char '3')
+    $ \_ -> throwLeft $ runParser string23_10000 $ sepBy anyChar (char '3')
   htmlTableWrap "runParser sepByRec 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 $ sepByRec anyChar (char '3')
+    $ \_ -> throwLeft $ runParser string23_10000 $ sepByRec anyChar (char '3')
 
   log "<th><h2>chainl 10000</h2></th>"
   htmlTableWrap "runParser chainl 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 $ chainl anyChar (pure const) 'x'
+    $ \_ -> throwLeft $ runParser string23_10000 $ chainl anyChar (pure const) 'x'
   htmlTableWrap "runParser chainlRec 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000 $ chainlRec anyChar (pure const) 'x'
+    $ \_ -> throwLeft $ runParser string23_10000 $ chainlRec anyChar (pure const) 'x'
 
   log "<th><h2>chainr 1000</h2></th>"
   htmlTableWrap "runParser chainr 1000" $ benchWith 5
-    $ \_ -> runParser string23_1000 $ chainr anyChar (pure const) 'x'
+    $ \_ -> throwLeft $ runParser string23_1000 $ chainr anyChar (pure const) 'x'
   htmlTableWrap "runParser chainrRec 1000" $ benchWith 5
-    $ \_ -> runParser string23_1000 $ chainrRec anyChar (pure const) 'x'
+    $ \_ -> throwLeft $ runParser string23_1000 $ chainrRec anyChar (pure const) 'x'
 
   log "<th><h2>chainr 10000</h2></th>"
   htmlTableWrap "runParser chainr 10000" $ benchWith 5
-    $ \_ -> runParser string23_10000 $ chainr anyChar (pure const) 'x'
+    $ \_ -> throwLeft $ runParser string23_10000 $ chainr anyChar (pure const) 'x'
   htmlTableWrap "runParser chainrRec 10000" $ benchWith 5
-    $ \_ -> runParser string23_10000 $ chainrRec anyChar (pure const) 'x'
+    $ \_ -> throwLeft $ runParser string23_10000 $ chainrRec anyChar (pure const) 'x'
 
   log "<th><h2>manyTill 1000</h2></th>"
   htmlTableWrap "runParser manyTill 1000" $ benchWith 50
-    $ \_ -> runParser string23_1000x $ manyTill anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000x $ manyTill anyChar (char 'x')
   htmlTableWrap "runParser manyTillRec 1000" $ benchWith 50
-    $ \_ -> runParser string23_1000x $ manyTillRec anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000x $ manyTillRec anyChar (char 'x')
   htmlTableWrap "runParser manyTill_ 1000" $ benchWith 50
-    $ \_ -> runParser string23_1000x $ manyTill_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000x $ manyTill_ anyChar (char 'x')
   htmlTableWrap "runParser manyTillRec_ 1000" $ benchWith 50
-    $ \_ -> runParser string23_1000x $ manyTillRec_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000x $ manyTillRec_ anyChar (char 'x')
 
   log "<th><h2>manyTill 10000</h2></th>"
   htmlTableWrap "runParser manyTill 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000x $ manyTill anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000x $ manyTill anyChar (char 'x')
   htmlTableWrap "runParser manyTillRec 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000x $ manyTillRec anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000x $ manyTillRec anyChar (char 'x')
   htmlTableWrap "runParser manyTill_ 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000x $ manyTill_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000x $ manyTill_ anyChar (char 'x')
   htmlTableWrap "runParser manyTillRec_ 10000" $ benchWith 50
-    $ \_ -> runParser string23_10000x $ manyTillRec_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000x $ manyTillRec_ anyChar (char 'x')
 
   log "<th><h2>mediumJson</h2></th>"
   htmlTableWrap "runParser json mediumJson" $ benchWith 500
-    $ \_ -> runParser mediumJson BenchParsing.json
+    $ \_ -> throwLeft $ runParser mediumJson BenchParsing.json
   htmlTableWrap "runTrampoline runParser json mediumJson" $ benchWith 500
-    $ \_ -> runTrampoline $ runParserT mediumJson BenchParsing.json
+    $ \_ -> throwLeft $ runTrampoline $ runParserT mediumJson BenchParsing.json
   htmlTableWrap "StringParser.runParser json mediumJson" $ benchWith 1000
-    $ \_ -> StringParser.runParser BenchStringParser.json mediumJson
+    $ \_ -> throwLeft $ StringParser.runParser BenchStringParser.json mediumJson
 
   log "<th><h2>largeJson</h2></th>"
   htmlTableWrap "runParser json largeJson" $ benchWith 100
-    $ \_ -> runParser largeJson BenchParsing.json
+    $ \_ -> throwLeft $ runParser largeJson BenchParsing.json
   htmlTableWrap "runTrampoline runParser json largeJson" $ benchWith 100
-    $ \_ -> runTrampoline $ runParserT largeJson BenchParsing.json
+    $ \_ -> throwLeft $ runTrampoline $ runParserT largeJson BenchParsing.json
   htmlTableWrap "StringParser.runParser json largeJson" $ benchWith 100
-    $ \_ -> StringParser.runParser BenchStringParser.json largeJson
+    $ \_ -> throwLeft $ StringParser.runParser BenchStringParser.json largeJson
   log "</tr>"
 
