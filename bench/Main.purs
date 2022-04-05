@@ -71,7 +71,7 @@ import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 import Parsing (Parser, runParser)
 import Parsing.Combinators (chainl, chainlRec, chainr, chainrRec, manyTill, manyTillRec, manyTillRec_, manyTill_, sepBy, sepByRec)
-import Parsing.String (anyChar, char, string)
+import Parsing.String (anyChar, char, eof, string)
 import Parsing.String.Basic (digit)
 import Performance.Minibench (benchWith)
 import StringParser as StringParser
@@ -84,14 +84,8 @@ string23 = "23"
 string23_10000 :: String
 string23_10000 = fold $ replicate 5000 string23
 
-string23_10000x :: String
-string23_10000x = string23_10000 <> "x"
-
 string23_1000 :: String
 string23_1000 = fold $ replicate 500 string23
-
-string23_1000x :: String
-string23_1000x = string23_1000 <> "x"
 
 stringSkidoo :: String
 stringSkidoo = "skidoooooo"
@@ -192,15 +186,15 @@ main = do
 
   log "<th><h2>sepBy 1000</h2></th>"
   htmlTableWrap "runParser sepBy 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ sepBy anyChar (char '2')
+    $ \_ -> throwLeft $ runParser string23_1000 $ sepBy anyChar (pure unit)
   htmlTableWrap "runParser sepByRec 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ sepByRec anyChar (char '2')
+    $ \_ -> throwLeft $ runParser string23_1000 $ sepByRec anyChar (pure unit)
 
   log "<th><h2>sepBy 10000</h2></th>"
   htmlTableWrap "runParser sepBy 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ sepBy anyChar (char '2')
+    $ \_ -> throwLeft $ runParser string23_10000 $ sepBy anyChar (pure unit)
   htmlTableWrap "runParser sepByRec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ sepByRec anyChar (char '2')
+    $ \_ -> throwLeft $ runParser string23_10000 $ sepByRec anyChar (pure unit)
 
   log "<th><h2>chainl 10000</h2></th>"
   htmlTableWrap "runParser chainl 10000" $ benchWith 50
@@ -222,23 +216,23 @@ main = do
 
   log "<th><h2>manyTill 1000</h2></th>"
   htmlTableWrap "runParser manyTill 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000x $ manyTill anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000 $ manyTill anyChar eof
   htmlTableWrap "runParser manyTillRec 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000x $ manyTillRec anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000 $ manyTillRec anyChar eof
   htmlTableWrap "runParser manyTill_ 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000x $ manyTill_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000 $ manyTill_ anyChar eof
   htmlTableWrap "runParser manyTillRec_ 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000x $ manyTillRec_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_1000 $ manyTillRec_ anyChar eof
 
   log "<th><h2>manyTill 10000</h2></th>"
   htmlTableWrap "runParser manyTill 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000x $ manyTill anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000 $ manyTill anyChar eof
   htmlTableWrap "runParser manyTillRec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000x $ manyTillRec anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000 $ manyTillRec anyChar eof
   htmlTableWrap "runParser manyTill_ 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000x $ manyTill_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000 $ manyTill_ anyChar eof
   htmlTableWrap "runParser manyTillRec_ 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000x $ manyTillRec_ anyChar (char 'x')
+    $ \_ -> throwLeft $ runParser string23_10000 $ manyTillRec_ anyChar eof
 
   log "<th><h2>mediumJson</h2></th>"
   htmlTableWrap "runParser json mediumJson" $ benchWith 200
