@@ -4,13 +4,18 @@ import Prelude hiding (between)
 
 import Bench.Json.Common (Json(..))
 import Control.Lazy (defer)
+import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.Number as Number
+import Data.String.Regex.Flags (noFlags)
 import Data.Tuple (Tuple(..))
+import Effect.Exception (throw)
+import Effect.Unsafe (unsafePerformEffect)
 import Parsing (ParserT, fail)
 import Parsing.Combinators (between, choice, sepBy, try)
 import Parsing.String (regex, skipSpaces, string)
+import Partial.Unsafe (unsafeCrashWith)
 
 json :: forall m. Monad m => ParserT String m Json
 json = defer \_ ->
@@ -38,15 +43,18 @@ jsonArray = defer \_ ->
     json `sepBy` (try (skipSpaces *> string ","))
 
 jsonString :: forall m. Monad m => ParserT String m String
-jsonString = between (string "\"") (string "\"") do
-  regex {} """\\"|[^"]*"""
+jsonString = case regex """\\"|[^"]*""" noFlags of
+  Left err -> unsafeCrashWith err
+  Right p -> between (string "\"") (string "\"") p
 
 jsonNumber :: forall m. Monad m => ParserT String m Number
-jsonNumber = do
-  n <- regex {} """(\+|-)?(\d+(\.\d*)?|\d*\.\d+)([eE](\+|-)?\d+)?"""
-  case Number.fromString n of
-    Just n' -> pure n'
-    Nothing -> fail "Expected number"
+jsonNumber = case regex """(\+|-)?(\d+(\.\d*)?|\d*\.\d+)([eE](\+|-)?\d+)?""" noFlags of
+  Left err -> unsafeCrashWith err
+  Right p -> do
+    n <- p
+    case Number.fromString n of
+      Just n' -> pure n'
+      Nothing -> fail "Expected number"
 
 jsonBoolean :: forall m. Monad m => ParserT String m Boolean
 jsonBoolean = choice

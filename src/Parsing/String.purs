@@ -37,7 +37,6 @@ module Parsing.String
   , noneOfCodePoints
   , match
   , regex
-  , RegexFlagsRow
   , consumeWith
   ) where
 
@@ -55,12 +54,10 @@ import Data.String (CodePoint, Pattern(..), codePointAt, length, null, singleton
 import Data.String as String
 import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
-import Data.String.Regex.Flags (RegexFlags(..), RegexFlagsRec)
+import Data.String.Regex.Flags (RegexFlags)
 import Data.Tuple (Tuple(..), fst)
 import Partial.Unsafe (unsafePartial)
-import Prim.Row (class Nub, class Union)
-import Record (merge)
-import Parsing (ParseError(..), ParseState(..), ParserT(..), fail)
+import Parsing (ParseError(..), ParseState(..), ParserT(..))
 import Parsing.Combinators ((<?>), (<~?>))
 import Parsing.Pos (Position(..))
 
@@ -229,101 +226,71 @@ match p = do
   -- boundary.
   pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) x
 
--- | Parser which uses the `Data.String.Regex` module to match the regular
--- | expression pattern passed as the `String`
--- | argument to the parser.
+-- | Compile a regular expression string into a regular expression parser.
+-- |
+-- | This function will use the `Data.String.Regex.regex` function to compile and return a parser which can be used
+-- | in a `ParserT String m` monad.
 -- |
 -- | This parser will try to match the regular expression pattern starting
 -- | at the current parser position. On success, it will return the matched
 -- | substring.
 -- |
--- | If the `Regex` pattern string fails to compile then this parser will fail.
--- | (Note: It’s not possible to use a precompiled `Regex` because this parser
--- | must set flags and make adjustments to the `Regex` pattern string.)
--- |
--- | This parser may be useful for quickly consuming a large section of the
--- | input `String`, because in a JavaScript runtime environment the `RegExp`
--- | runtime is a lot faster than primitive parsers.
--- |
 -- | [*MDN Regular Expressions Cheatsheet*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
 -- |
--- | #### Flags
+-- | This function should be called outside the context of a `ParserT String m` monad, because this function might
+-- | fail with a `Left` RegExp compilation error message.
+-- | If you call this function inside of the `ParserT String m` monad and then `fail` the parse when the compilation fails,
+-- | then that could be confusing because a parser failure is supposed to indicate an invalid input string.
+-- | If the compilation failure occurs in an `alt` then the compilation failure might not be reported at all and instead
+-- | the input string would be parsed incorrectly.
 -- |
--- | The `Record flags` argument to the parser is for `Regex` flags. Here are
--- | the default flags.
--- |
--- | ```purescript
--- | { dotAll: true
--- |   ignoreCase: false
--- |   unicode: true
--- | }
--- | ```
--- |
--- | To use the defaults, pass
--- | `{}` as the flags argument. For case-insensitive pattern matching, pass
--- | `{ignoreCase: true}` as the flags argument.
--- |
--- | The other `Data.String.Regex.Flags.RegexFlagsRec` fields are mostly
--- | nonsense in the context of parsing
--- | and use of the other flags may cause strange behavior in the parser.
--- |
--- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
+-- | This parser may be useful for quickly consuming a large section of the
+-- | input `String`, because in a JavaScript runtime environment the RegExp
+-- | runtime is a lot faster than primitive parsers.
 -- |
 -- | #### Example
 -- |
+-- | This example shows how to compile and run the `xMany` parser which will
+-- | capture the regular expression pattern `x*`.
+-- |
+-- | ```purescript
+-- | case regex "x*" noFlags of
+-- |   Left compileError -> unsafeCrashWith $ "xMany failed to compile: " <> compileError
+-- |   Right xMany -> runParser "xxxZ" do
+-- |     xMany
 -- | ```
--- | runParser "ababXX" (regex {} "(ab)+")
+-- |
+-- | #### Flags
+-- |
+-- | Set `RegexFlags` with the `Semigroup` instance like this.
+-- |
+-- | ```purescript
+-- | regex "x*" (dotAll <> ignoreCase)
 -- | ```
--- | ```
--- | (Right "abab")
--- | ```
-regex
-  :: forall m flags f_
-   . Monad m
-  => Union flags RegexFlagsRow f_
-  => Nub f_ RegexFlagsRow
-  => Record flags
-  -> String
-  -> ParserT String m String
-regex flags pattern =
-  -- Prefix a ^ to ensure the pattern only matches the current position in the parse
-  case Regex.regex ("^(" <> pattern <> ")") flags' of
-    Left paterr ->
-      fail $ "Regex pattern error " <> paterr
-    Right regexobj ->
-      consumeWith \input -> do
-        case NonEmptyArray.head <$> Regex.match regexobj input of
-          Just (Just consumed) -> do
-            let remainder = SCU.drop (SCU.length consumed) input
-            Right { value: consumed, consumed, remainder }
-          _ ->
-            Left "No Regex pattern match"
-  where
-  flags' = RegexFlags
-    ( merge flags
-        { dotAll: true
-        , global: false
-        , ignoreCase: false
-        , multiline: false
-        , sticky: false
-        , unicode: true
-        } :: RegexFlagsRec
-    )
+-- |
+-- | The `dotAll`, `unicode`, and `ignoreCase` flags might make sense for a `regex` parser. The other flags will
+-- | probably cause surprising behavior and you should avoid them.
+-- |
+-- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
+regex :: forall m. String -> RegexFlags -> Either String (ParserT String m String)
+regex pattern flags =
+  Regex.regex ("^(" <> pattern <> ")") flags <#> \regexobj ->
+    consumeWith \input -> do
+      case NonEmptyArray.head <$> Regex.match regexobj input of
+        Just (Just consumed) -> do
+          let remainder = SCU.drop (SCU.length consumed) input
+          Right { value: consumed, consumed, remainder }
+        _ ->
+          Left "No Regex pattern match"
 
--- | The fields from `Data.String.Regex.Flags.RegexFlagsRec`.
-type RegexFlagsRow =
-  ( dotAll :: Boolean
-  , global :: Boolean
-  , ignoreCase :: Boolean
-  , multiline :: Boolean
-  , sticky :: Boolean
-  , unicode :: Boolean
-  )
-
--- | Consumes a portion of the input string while yielding a value.
+-- | Consume a portion of the input string while yielding a value.
+-- |
+-- | Takes a consumption function which takes the remaining input `String`
+-- | as its argument and returns three fields:
+-- |
 -- | * `value` is the value to return.
--- | * `consumed` is the input that was consumed and is used to update the parser position.
--- | * `remainder` is the new input state.
+-- | * `consumed` is the input `String` that was consumed. It is used to update the parser position.
+-- | * `remainder` is the new remaining input `String`.
 consumeWith
   :: forall m a
    . (String -> Either String { value :: a, consumed :: String, remainder :: String })

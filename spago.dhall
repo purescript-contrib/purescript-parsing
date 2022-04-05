@@ -17,7 +17,6 @@
   , "numbers"
   , "partial"
   , "prelude"
-  , "record"
   , "strings"
   , "tailrec"
   , "transformers"
