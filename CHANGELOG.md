@@ -26,7 +26,7 @@ Breaking changes:
   prevents a compiler error (i.e. `MixedAssociativityError`)
   without causing issues with `<$>`.
 - Rename module prefix from `Text.Parsing.Parser` to `Parsing` (#169 by @jamesdbrock)
-- Delete the `regex` parser and replace it with `mkRegex`. (#170 by @jamesdbrock)
+- Replace the `regex` parser. (#170 by @jamesdbrock)
 
 New features:
 
