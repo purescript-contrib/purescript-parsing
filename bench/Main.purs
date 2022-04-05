@@ -245,16 +245,12 @@ main = do
   log "<th><h2>mediumJson</h2></th>"
   htmlTableWrap "runParser json mediumJson" $ benchWith 200
     $ \_ -> throwLeft $ runParser mediumJson BenchParsing.json
-  htmlTableWrap "runTrampoline runParser json mediumJson" $ benchWith 200
-    $ \_ -> throwLeft $ runTrampoline $ runParserT mediumJson BenchParsing.json
   htmlTableWrap "StringParser.runParser json mediumJson" $ benchWith 200
     $ \_ -> throwLeft $ StringParser.runParser BenchStringParser.json mediumJson
 
   log "<th><h2>largeJson</h2></th>"
   htmlTableWrap "runParser json largeJson" $ benchWith 100
     $ \_ -> throwLeft $ runParser largeJson BenchParsing.json
-  htmlTableWrap "runTrampoline runParser json largeJson" $ benchWith 100
-    $ \_ -> throwLeft $ runTrampoline $ runParserT largeJson BenchParsing.json
   htmlTableWrap "StringParser.runParser json largeJson" $ benchWith 100
     $ \_ -> throwLeft $ StringParser.runParser BenchStringParser.json largeJson
   log "</tr>"
