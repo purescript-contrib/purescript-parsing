@@ -10,8 +10,6 @@ import Data.Maybe (Maybe(..))
 import Data.Number as Number
 import Data.String.Regex.Flags (noFlags)
 import Data.Tuple (Tuple(..))
-import Effect.Exception (throw)
-import Effect.Unsafe (unsafePerformEffect)
 import Parsing (ParserT, fail)
 import Parsing.Combinators (between, choice, sepBy, try)
 import Parsing.String (regex, skipSpaces, string)
