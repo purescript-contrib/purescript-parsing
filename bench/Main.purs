@@ -70,7 +70,7 @@ import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 import Parsing (Parser, runParser)
-import Parsing.Combinators (chainl, chainlRec, chainr, chainrRec, manyTill, manyTillRec, manyTillRec_, manyTill_, sepBy, sepByRec)
+import Parsing.Combinators (chainl, chainlRec, chainr, chainrRec, manyTill, manyTillRec, manyTillRec_, manyTill_, sepBy, sepByRec, sepEndBy1, sepEndBy1Rec)
 import Parsing.String (anyChar, char, eof, string)
 import Parsing.String.Basic (digit)
 import Performance.Minibench (benchWith)
@@ -195,6 +195,12 @@ main = do
     $ \_ -> throwLeft $ runParser string23_10000 $ sepBy anyChar (pure unit)
   htmlTableWrap "runParser sepByRec 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ sepByRec anyChar (pure unit)
+
+  log "<th><h2>sepEndBy1 10000</h2></th>"
+  htmlTableWrap "runParser sepEndBy1 10000" $ benchWith 50
+    $ \_ -> throwLeft $ runParser string23_10000 $ sepEndBy1 anyChar (pure unit)
+  htmlTableWrap "runParser sepEndBy1Rec 10000" $ benchWith 50
+    $ \_ -> throwLeft $ runParser string23_10000 $ sepEndBy1Rec anyChar (pure unit)
 
   log "<th><h2>chainl 10000</h2></th>"
   htmlTableWrap "runParser chainl 10000" $ benchWith 50
