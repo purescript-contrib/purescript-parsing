@@ -126,7 +126,7 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (many1Till (string "a") (string "b"))
     "baa"
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
 
   parseTest "a,a,a,b,a,a" (toUnfoldable [ "a", "a", "a" ]) $
     sepEndBy (string "a") (string ",")
@@ -142,7 +142,7 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (sepEndBy1 (string "a") (string ","))
     "b,a,a"
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
 
   -- 8 `div` (8 `div` 2) == 2
   parseTest "8x8x2" 2 $
@@ -154,7 +154,7 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (chainr1 digit (string "x" $> div))
     ""
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
 
   -- (8 `div` 2) `div` 2 == 2
   parseTest "8x2x2" 2 $
@@ -166,7 +166,7 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (chainl1 digit (string "x" $> div))
     ""
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
 
   parseTest "aaaabcd" "b"
     $ skipMany1 (string "a")
@@ -174,7 +174,7 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (skipMany1 (string "a"))
     "bcd"
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
 
   parseTest "aaaabcd" "b"
     $ skipMany (string "a")
@@ -188,7 +188,7 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (many1 (string "a"))
     ""
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
 
   parseTest "a,a,ab" (toUnfoldable [ "a", "a", "a" ])
     $ sepBy (string "a") (string ",")
@@ -202,11 +202,11 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (sepBy1 (string "a") (string ","))
     ""
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
   parseErrorTestPosition
     (sepBy1 (string "a") (string ","))
     "a,"
-    (Position { line: 1, column: 3 })
+    (Position { index: 2, line: 1, column: 3 })
 
   parseTest "a,a,a,b" (toUnfoldable [ "a", "a", "a" ])
     $ endBy (string "a") (string ",")
@@ -220,11 +220,11 @@ stackSafeLoopsTest = do
   parseErrorTestPosition
     (endBy1 (string "a") (string ","))
     ""
-    (Position { line: 1, column: 1 })
+    (Position { index: 0, line: 1, column: 1 })
   parseErrorTestPosition
     (endBy1 (string "a") (string ","))
     "a,a"
-    (Position { line: 1, column: 4 })
+    (Position { index: 3, line: 1, column: 4 })
 
 data TestToken = A | B
 
@@ -245,10 +245,7 @@ testTokenParser :: TokenParser
 testTokenParser = makeTokenParser haskellDef
 
 mkPos :: Int -> Position
-mkPos n = mkPos' n 1
-
-mkPos' :: Int -> Int -> Position
-mkPos' column line = Position { column: column, line: line }
+mkPos n = Position { index: n - 1, line: 1, column: n }
 
 type TestM = Effect Unit
 
@@ -575,12 +572,12 @@ main = do
   parseErrorTestPosition
     (many $ char 'f' *> char '?')
     "foo"
-    (Position { column: 2, line: 1 })
+    (Position { index: 1, column: 2, line: 1 })
 
   parseErrorTestPosition
     (satisfy (_ == '?'))
     "foo"
-    (Position { column: 1, line: 1 })
+    (Position { index: 0, column: 1, line: 1 })
 
   parseTest
     "foo"
@@ -605,17 +602,17 @@ main = do
 
   parseTest "rest" "rest" rest
   parseTest "rest" unit (rest *> eof)
-  parseTest "rest\nrest" (Position { line: 2, column: 5 }) (rest *> position)
+  parseTest "rest\nrest" (Position { index: 9, line: 2, column: 5 }) (rest *> position)
 
   parseErrorTestPosition
     (rest *> notFollowedBy eof)
     "aa\naa"
-    (Position { column: 3, line: 2 })
+    (Position { index: 5, column: 3, line: 2 })
 
   parseErrorTestPosition
-    anyChar
-    "𝅘𝅥𝅯"
-    (Position { column: 1, line: 1 })
+    (string "𝅘𝅥𝅘𝅥𝅮" *> string "𝅘𝅥𝅘𝅥𝅮")
+    "𝅘𝅥𝅘𝅥𝅮x𝅘𝅥𝅯"
+    (Position { index: 2, column: 3, line: 1 })
 
   parseTest "𝅘𝅥𝅘𝅥𝅮x𝅘𝅥𝅯" [ "𝅘𝅥", "𝅘𝅥𝅮", "x", "𝅘𝅥𝅯" ] do
     quarter <- anyCodePoint
@@ -631,8 +628,8 @@ main = do
 
   parseTest "abcd" "ab" $ takeN 2
   parseTest "abcd" "" $ takeN 0
-  parseErrorTestPosition (takeN 10) "abcd" (Position { column: 1, line: 1 })
-  parseErrorTestPosition (takeN (-1)) "abcd" (Position { column: 1, line: 1 })
+  parseErrorTestPosition (takeN 10) "abcd" (Position { index: 0, column: 1, line: 1 })
+  parseErrorTestPosition (takeN (-1)) "abcd" (Position { index: 0, column: 1, line: 1 })
 
   parseErrorTestMessage
     (noneOfCodePoints $ SCP.toCodePointArray "❓✅")
@@ -673,10 +670,10 @@ main = do
   parseTest "ababab" [ 'b', 'b', 'b' ] $ Array.many (char 'a' *> char 'b')
   parseTest "abaXab" [ 'b' ] $ Array.many (try (char 'a' *> char 'b'))
 
-  parseErrorTestPosition (string "abc") "bcd" (Position { column: 1, line: 1 })
-  parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { column: 4, line: 1 })
-  parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { column: 1, line: 4 })
-  parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { column: 10, line: 1 })
+  parseErrorTestPosition (string "abc") "bcd" (Position { index: 0, column: 1, line: 1 })
+  parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { index: 3, column: 4, line: 1 })
+  parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { index: 6, column: 1, line: 4 })
+  parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { index: 2, column: 10, line: 1 })
 
   log "\nTESTS number\n"
 
