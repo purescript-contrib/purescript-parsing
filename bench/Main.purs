@@ -59,8 +59,7 @@ import Bench.Json.TestData (largeJson, mediumJson)
 import Data.Array (fold, replicate)
 import Data.Array as Array
 import Data.Either (Either(..), either)
-import Data.List (many, manyRec)
-import Data.List.Types (List)
+import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.String.Regex (Regex, regex)
 import Data.String.Regex as Regex
@@ -69,9 +68,9 @@ import Effect (Effect)
 import Effect.Console (log)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
-import Parsing (Parser, runParser)
-import Parsing.Combinators (chainl, chainlRec, chainr, chainrRec, manyTill, manyTillRec, manyTillRec_, manyTill_, sepBy, sepByRec, sepEndBy1, sepEndBy1Rec)
-import Parsing.String (anyChar, char, eof, string)
+import Parsing (runParser)
+import Parsing.Combinators (chainl, chainr, many, manyTill, manyTill_, sepBy, sepEndBy1, skipMany)
+import Parsing.String (anyChar, eof, string)
 import Parsing.String.Basic (digit)
 import Performance.Minibench (benchWith)
 import StringParser as StringParser
@@ -81,35 +80,17 @@ import StringParser.CodeUnits as StringParser.CodeUnits
 string23 :: String
 string23 = "23"
 
-string23_10000 :: String
-string23_10000 = fold $ replicate 5000 string23
-
 string23_1000 :: String
 string23_1000 = fold $ replicate 500 string23
+
+string23_10000 :: String
+string23_10000 = fold $ replicate 5000 string23
 
 stringSkidoo :: String
 stringSkidoo = "skidoooooo"
 
 stringSkidoo_100000 :: String
 stringSkidoo_100000 = fold $ replicate 10000 stringSkidoo
-
-parse23 :: Parser String (List Char)
-parse23 = many digit
-
-parse23Points :: StringParser.Parser (List Char)
-parse23Points = many StringParser.CodePoints.anyDigit
-
-parse23Units :: StringParser.Parser (List Char)
-parse23Units = many StringParser.CodeUnits.anyDigit
-
-parse23Rec :: Parser String (List Char)
-parse23Rec = manyRec digit
-
-parse23PointsRec :: StringParser.Parser (List Char)
-parse23PointsRec = manyRec StringParser.CodePoints.anyDigit
-
-parse23UnitsRec :: StringParser.Parser (List Char)
-parse23UnitsRec = manyRec StringParser.CodeUnits.anyDigit
 
 pattern23 :: Regex
 pattern23 = either (unsafePerformEffect <<< throw) identity
@@ -122,12 +103,6 @@ pattern23 = either (unsafePerformEffect <<< throw) identity
       , sticky: false
       , unicode: true
       }
-
-parseSkidoo :: Parser String (List String)
-parseSkidoo = many $ string "skidoooooo"
-
-parseSkidooRec :: Parser String (List String)
-parseSkidooRec = manyRec $ string "skidoooooo"
 
 patternSkidoo :: Regex
 patternSkidoo = either (unsafePerformEffect <<< throw) identity
@@ -164,81 +139,63 @@ main = do
 
   log "<th><h2>digit 10000</h2></th>"
   htmlTableWrap "runParser many digit 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 parse23
-  htmlTableWrap "runParser manyRec digit 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 parse23Rec
+    $ \_ -> throwLeft $ runParser string23_10000 (many digit)
   htmlTableWrap "runParser Array.many digit 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 (Array.many digit)
   htmlTableWrap "StringParser manyRec CodePoints.anyDigit 10000" $ benchWith 20
-    $ \_ -> throwLeft $ StringParser.runParser parse23PointsRec string23_10000
+    $ \_ -> throwLeft $ StringParser.runParser (List.manyRec StringParser.CodePoints.anyDigit) string23_10000
   htmlTableWrap "StringParser manyRec CodeUnits.anyDigit 10000" $ benchWith 200
-    $ \_ -> throwLeft $ StringParser.runParser parse23UnitsRec string23_10000
+    $ \_ -> throwLeft $ StringParser.runParser (List.manyRec StringParser.CodeUnits.anyDigit) string23_10000
   htmlTableWrap "Regex.match \\d* 10000" $ benchWith 200
     $ \_ -> throwNothing "Regex.match failed" $ Regex.match pattern23 string23_10000
 
   log "<th><h2>string 100000</h2></th>"
   htmlTableWrap "runParser many string" $ benchWith 200
-    $ \_ -> throwLeft $ runParser stringSkidoo_100000 parseSkidoo
-  htmlTableWrap "runParser manyRec string" $ benchWith 200
-    $ \_ -> throwLeft $ runParser stringSkidoo_100000 parseSkidooRec
+    $ \_ -> throwLeft $ runParser stringSkidoo_100000 (many $ string "skidoooooo")
   htmlTableWrap "Regex.match literal*" $ benchWith 200
     $ \_ -> throwNothing "Regex.match failed" $ Regex.match patternSkidoo stringSkidoo_100000
 
-  log "<th><h2>sepBy 1000</h2></th>"
-  htmlTableWrap "runParser sepBy 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ sepBy anyChar (pure unit)
-  htmlTableWrap "runParser sepByRec 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ sepByRec anyChar (pure unit)
+  log "<th><h2>many anyChar 10000</h2></th>"
+  htmlTableWrap "runParser many anyChar 10000" $ benchWith 50
+    $ \_ -> throwLeft $ runParser string23_10000 (many anyChar)
+  htmlTableWrap "runParser Array.many anyChar 10000" $ benchWith 50
+    $ \_ -> throwLeft $ runParser string23_10000 (Array.many anyChar)
+
+  log "<th><h2>skipMany anyChar 10000</h2></th>"
+  htmlTableWrap "runParser skipMany anyChar 10000" $ benchWith 50
+    $ \_ -> throwLeft $ runParser string23_10000 (skipMany anyChar)
 
   log "<th><h2>sepBy 10000</h2></th>"
   htmlTableWrap "runParser sepBy 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ sepBy anyChar (pure unit)
-  htmlTableWrap "runParser sepByRec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ sepByRec anyChar (pure unit)
 
   log "<th><h2>sepEndBy1 10000</h2></th>"
   htmlTableWrap "runParser sepEndBy1 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ sepEndBy1 anyChar (pure unit)
-  htmlTableWrap "runParser sepEndBy1Rec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ sepEndBy1Rec anyChar (pure unit)
 
   log "<th><h2>chainl 10000</h2></th>"
   htmlTableWrap "runParser chainl 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ chainl anyChar (pure const) 'x'
-  htmlTableWrap "runParser chainlRec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ chainlRec anyChar (pure const) 'x'
 
   log "<th><h2>chainr 1000</h2></th>"
   htmlTableWrap "runParser chainr 1000" $ benchWith 200
     $ \_ -> throwLeft $ runParser string23_1000 $ chainr anyChar (pure const) 'x'
-  htmlTableWrap "runParser chainrRec 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ chainrRec anyChar (pure const) 'x'
 
   log "<th><h2>chainr 10000</h2></th>"
   htmlTableWrap "runParser chainr 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ chainr anyChar (pure const) 'x'
-  htmlTableWrap "runParser chainrRec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ chainrRec anyChar (pure const) 'x'
 
   log "<th><h2>manyTill 1000</h2></th>"
   htmlTableWrap "runParser manyTill 1000" $ benchWith 200
     $ \_ -> throwLeft $ runParser string23_1000 $ manyTill anyChar eof
-  htmlTableWrap "runParser manyTillRec 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ manyTillRec anyChar eof
   htmlTableWrap "runParser manyTill_ 1000" $ benchWith 200
     $ \_ -> throwLeft $ runParser string23_1000 $ manyTill_ anyChar eof
-  htmlTableWrap "runParser manyTillRec_ 1000" $ benchWith 200
-    $ \_ -> throwLeft $ runParser string23_1000 $ manyTillRec_ anyChar eof
 
   log "<th><h2>manyTill 10000</h2></th>"
   htmlTableWrap "runParser manyTill 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ manyTill anyChar eof
-  htmlTableWrap "runParser manyTillRec 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ manyTillRec anyChar eof
   htmlTableWrap "runParser manyTill_ 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 $ manyTill_ anyChar eof
-  htmlTableWrap "runParser manyTillRec_ 10000" $ benchWith 50
-    $ \_ -> throwLeft $ runParser string23_10000 $ manyTillRec_ anyChar eof
 
   log "<th><h2>mediumJson</h2></th>"
   htmlTableWrap "runParser json mediumJson" $ benchWith 200
