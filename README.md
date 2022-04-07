@@ -13,8 +13,8 @@ A monadic parser combinator library based on Haskell’s
 
 Install `parsing` with [Spago](https://github.com/purescript/spago):
 
-```sh
-spago install parsing
+```console
+$ spago install parsing
 ```
 
 ## Quick start
@@ -23,7 +23,7 @@ Here is a basic tutorial introduction to monadic parsing with this package.
 
 ### Parsers
 
-A parser turns a string into a data structure. Parsers in this library have the type `Parser s a`, where `s` is the type of the input string, and `a` is the type of the data which the parser will produce on success. `Parser s` is a monad. It’s defined in the module `Text.Parsing.Parser`.
+A parser turns a string into a data structure. Parsers in this library have the type `Parser s a`, where `s` is the type of the input string, and `a` is the type of the data which the parser will produce on success. `Parser s` is a monad. It’s defined in the module `Parsing.Parser`.
 
 Monads can be used to provide context for a computation, and that’s how we use them in monadic parsing.
 The context provided by the `Parser s` monad is __the parser’s current location in the input string__.
@@ -42,14 +42,14 @@ function, which calls the `throwError` function of the `MonadThrow` typeclass in
 the `Parser s` monad.
 
 To run a parser, call the function `runParser :: s -> Parser s a -> Either ParseError a` in
-the `Text.Parsing.Parser` module, and supply it with an input string and a parser.
+the `Parsing.Parser` module, and supply it with an input string and a parser.
 If the parse succeeds then the result is `Right a` and if the parse fails then the
 result is `Left ParseError`.
 
 ### Primitive parsers
 
 Each type of input string needs primitive parsers.
-Primitive parsers for input string type `String` are in the `Text.Parsing.Parser.String` module.
+Primitive parsers for input string type `String` are in the `Parsing.Parser.String` module.
 For example, the primitive `char :: Char -> Parser String Char` parser will exactly match
 one literal character and then advance by one position in the input string.
 
@@ -83,11 +83,11 @@ and then the parser will succeed and return `Right true`.
 
 ### More parsers
 
-There are other `String` parsers in the module `Text.Parsing.Parser.String.Basic`, for example the parser `letter :: Parser String Char` which will accept any single alphabetic letter.
+There are other `String` parsers in the module `Parsing.Parser.String.Basic`, for example the parser `letter :: Parser String Char` which will accept any single alphabetic letter.
 
 ### Parser combinators
 
-Parser combinators are in this package in the module `Text.Parsing.Parser.Combinators`.
+Parser combinators are in this package in the module `Parsing.Parser.Combinators`.
 
 A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`.
 
