@@ -13,8 +13,8 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Parsing (ParserT)
-import Parsing.String (char, oneOf)
-import Parsing.String.Basic (alphaNum, letter)
+import Parsing.String (char)
+import Parsing.String.Basic (alphaNum, letter, oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, makeTokenParser, unGenLanguageDef)
 
 -----------------------------------------------------------

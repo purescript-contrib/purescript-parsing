@@ -34,21 +34,15 @@
 -- | - carriage-return (`0x0D`)
 -- | - carriage-return-newline (`0x0D 0x0A`)
 module Parsing.String
-  ( string
-  , eof
-  , rest
+  ( char
+  , string
   , anyChar
   , anyCodePoint
   , satisfy
   , satisfyCodePoint
-  , char
   , takeN
-  , whiteSpace
-  , skipSpaces
-  , oneOf
-  , oneOfCodePoints
-  , noneOf
-  , noneOfCodePoints
+  , rest
+  , eof
   , match
   , regex
   , consumeWith
@@ -57,22 +51,20 @@ module Parsing.String
 import Prelude hiding (between)
 
 import Control.Monad.State (get)
-import Data.Array (elem, notElem)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either(..))
 import Data.Enum (fromEnum, toEnum)
 import Data.Function.Uncurried (mkFn5, runFn2)
 import Data.Maybe (Maybe(..), fromJust)
-import Data.String (CodePoint, Pattern(..), codePointAt, length, null, singleton, splitAt, stripPrefix, takeWhile, uncons)
+import Data.String (CodePoint, Pattern(..), codePointAt, length, null, splitAt, stripPrefix, uncons)
 import Data.String as String
 import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..))
 import Partial.Unsafe (unsafePartial)
 import Parsing (ParseError(..), ParseState(..), ParserT(..))
-import Parsing.Combinators ((<?>), (<~?>))
+import Parsing.Combinators ((<?>))
 import Parsing.Pos (Position(..))
 
 -- | Match “end-of-file,” the end of the input stream.
@@ -158,34 +150,6 @@ takeN n = consumeWith \input -> do
     Right { value: before, consumed: before, remainder: after }
   else
     Left $ "Could not take " <> show n <> " characters"
-
--- | Match zero or more whitespace characters satisfying
--- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
-whiteSpace :: forall m. ParserT String m String
-whiteSpace = fst <$> match skipSpaces
-
--- | Skip whitespace characters and throw them away. Always succeeds.
-skipSpaces :: forall m. ParserT String m Unit
-skipSpaces = consumeWith \input -> do
-  let consumed = takeWhile isSpace input
-  let remainder = SCU.drop (SCU.length consumed) input
-  Right { value: unit, consumed, remainder }
-
--- | Match one of the BMP `Char`s in the array.
-oneOf :: forall m. Array Char -> ParserT String m Char
-oneOf ss = satisfy (flip elem ss) <~?> \_ -> "one of " <> show ss
-
--- | Match any BMP `Char` not in the array.
-noneOf :: forall m. Array Char -> ParserT String m Char
-noneOf ss = satisfy (flip notElem ss) <~?> \_ -> "none of " <> show ss
-
--- | Match one of the Unicode characters in the array.
-oneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
-oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <~?> \_ -> "one of " <> show (singleton <$> ss)
-
--- | Match any Unicode character not in the array.
-noneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
-noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <> show (singleton <$> ss)
 
 -- | Updates a `Position` by adding the columns and lines in `String`.
 updatePosString :: Position -> String -> String -> Position

@@ -15,22 +15,30 @@ module Parsing.String.Basic
   , alphaNum
   , intDecimal
   , number
-  , module Parsing.String
+  , whiteSpace
+  , skipSpaces
+  , oneOf
+  , oneOfCodePoints
+  , noneOf
+  , noneOfCodePoints
   ) where
 
 import Prelude
 
+import Data.Array (elem, notElem)
 import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isLower, isOctDigit, isSpace, isUpper)
+import Data.Either (Either(..))
 import Data.Int as Data.Int
 import Data.Maybe (Maybe(..))
 import Data.Number (infinity, nan)
 import Data.Number as Data.Number
-import Data.String (CodePoint)
+import Data.String (CodePoint, singleton, takeWhile)
 import Data.String.CodePoints (codePointFromChar)
-import Data.Tuple (Tuple(..))
+import Data.String.CodeUnits as SCU
+import Data.Tuple (Tuple(..), fst)
 import Parsing (ParserT, fail)
-import Parsing.Combinators (choice, skipMany, (<?>))
-import Parsing.String (noneOf, noneOfCodePoints, oneOf, oneOfCodePoints, skipSpaces, whiteSpace)
+import Parsing.Combinators (choice, skipMany, (<?>), (<~?>))
+import Parsing.String (consumeWith, match, satisfy, satisfyCodePoint)
 import Parsing.String as Parser.String
 
 -- | Parse a digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isDecDigit`.
@@ -94,8 +102,8 @@ number =
     , Parser.String.string "NaN" *> pure nan
     , do
         Tuple section _ <- Parser.String.match do
-          _ <- Parser.String.oneOf [ '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
-          skipMany $ Parser.String.oneOf [ 'e', 'E', '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
+          _ <- oneOf [ '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
+          skipMany $ oneOf [ 'e', 'E', '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
         -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseFloat
         case Data.Number.fromString section of
           Nothing -> fail $ "Could not parse Number " <> section
@@ -113,8 +121,8 @@ number =
 intDecimal :: forall m. ParserT String m Int
 intDecimal = do
   Tuple section _ <- Parser.String.match do
-    _ <- Parser.String.oneOf [ '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
-    skipMany $ Parser.String.oneOf [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
+    _ <- oneOf [ '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
+    skipMany $ oneOf [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
   case Data.Int.fromString section of
     Nothing -> fail $ "Could not parse Int " <> section
     Just x -> pure x
@@ -122,3 +130,31 @@ intDecimal = do
 -- | Helper function
 satisfyCP :: forall m. (CodePoint -> Boolean) -> ParserT String m Char
 satisfyCP p = Parser.String.satisfy (p <<< codePointFromChar)
+
+-- | Match zero or more whitespace characters satisfying
+-- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
+whiteSpace :: forall m. ParserT String m String
+whiteSpace = fst <$> match skipSpaces
+
+-- | Skip whitespace characters and throw them away. Always succeeds.
+skipSpaces :: forall m. ParserT String m Unit
+skipSpaces = consumeWith \input -> do
+  let consumed = takeWhile isSpace input
+  let remainder = SCU.drop (SCU.length consumed) input
+  Right { value: unit, consumed, remainder }
+
+-- | Match one of the BMP `Char`s in the array.
+oneOf :: forall m. Array Char -> ParserT String m Char
+oneOf ss = satisfy (flip elem ss) <~?> \_ -> "one of " <> show ss
+
+-- | Match any BMP `Char` not in the array.
+noneOf :: forall m. Array Char -> ParserT String m Char
+noneOf ss = satisfy (flip notElem ss) <~?> \_ -> "none of " <> show ss
+
+-- | Match one of the Unicode characters in the array.
+oneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
+oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <~?> \_ -> "one of " <> show (singleton <$> ss)
+
+-- | Match any Unicode character not in the array.
+noneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
+noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <> show (singleton <$> ss)

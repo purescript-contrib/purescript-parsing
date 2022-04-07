@@ -29,6 +29,14 @@ Breaking changes:
 - Replace the `regex` parser. (#170 by @jamesdbrock)
 - Reorganize Combinators for #154 (#182 by @jamesdbrock)
 - Add the `index` field to `Position`. (#171 by @jamesdbrock)
+- Move the parsers
+  * `whiteSpace`
+  * `skipSpaces`
+  * `oneOf`
+  * `oneOfCodePoints`
+  * `noneOf`
+  * `noneOfCodePoints`
+  from `Parsing.String` to `Parsing.String.Basic`. (#183 by @jamesdbrock)
 
 New features:
 
