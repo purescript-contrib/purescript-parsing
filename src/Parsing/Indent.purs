@@ -69,7 +69,8 @@ import Data.Maybe (Maybe(..))
 import Parsing (ParserT, fail, position)
 import Parsing.Combinators (option, optionMaybe)
 import Parsing.Pos (Position(..), initialPos)
-import Parsing.String (oneOf, string)
+import Parsing.String (string)
+import Parsing.String.Basic (oneOf)
 
 -- | Indentation sensitive parser type. Usually @ m @ will
 -- | be @ Identity @ as with any @ ParserT @

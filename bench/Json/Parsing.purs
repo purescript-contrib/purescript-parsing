@@ -12,7 +12,8 @@ import Data.String.Regex.Flags (noFlags)
 import Data.Tuple (Tuple(..))
 import Parsing (ParserT, fail)
 import Parsing.Combinators (between, choice, sepBy, try)
-import Parsing.String (regex, skipSpaces, string)
+import Parsing.String (regex, string)
+import Parsing.String.Basic (skipSpaces)
 import Partial.Unsafe (unsafeCrashWith)
 
 json :: forall m. Monad m => ParserT String m Json
