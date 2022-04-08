@@ -89,7 +89,7 @@ There are other `String` parsers in the module `Parsing.String.Basic`, for examp
 
 Parser combinators are in this package in the module `Parsing.Combinators`.
 
-A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`.
+A parser combinator is a function which takes a parser as an argument and returns a new parser. The `Data.Array.many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`.
 
 Running the parser
 
