@@ -30,7 +30,7 @@ import Parsing.Combinators (between, chainl, chainl1, chainr, chainr1, choice, e
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.Pos (Position(..), initialPos)
-import Parsing.String (anyChar, anyCodePoint, char, eof, regex, rest, satisfy, string, takeN)
+import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, regex, rest, satisfy, string, takeN)
 import Parsing.String.Basic (intDecimal, number, letter, noneOfCodePoints, oneOfCodePoints, whiteSpace)
 import Parsing.Token (TokenParser, makeTokenParser, match, token, when)
 import Parsing.Token as Parser.Token
@@ -827,3 +827,10 @@ main = do
       let messageExpected = "context1 context2 Expected \"b\""
       assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
       logShow messageExpected
+
+  log "\nTESTS anyTill\n"
+  parseTest "𝅘𝅥𝅮𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" (Tuple "" "𝅘𝅥𝅮") $ anyTill (string "𝅘𝅥𝅮")
+  parseTest "𝅘𝅥𝅘𝅥𝅘𝅥𝅮𝅘𝅥𝅘𝅥" (Tuple "𝅘𝅥𝅘𝅥" "𝅘𝅥𝅮") $ anyTill (string "𝅘𝅥𝅮")
+  parseTest "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥𝅮" (Tuple "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" "𝅘𝅥𝅮") $ anyTill (string "𝅘𝅥𝅮") <* eof
+  parseErrorTestPosition (anyTill (string "𝅘𝅥𝅮")) "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" (Position { index: 4, line: 1, column: 5 })
+

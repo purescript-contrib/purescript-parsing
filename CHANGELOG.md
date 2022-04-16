@@ -40,6 +40,8 @@ Breaking changes:
 
 New features:
 
+- Add the `anyTill` primitive `String` combinator. (#186 by @jamesdbrock)
+
 Bugfixes:
 
 Other improvements:
