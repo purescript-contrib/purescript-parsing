@@ -45,11 +45,13 @@ module Parsing.String
   , eof
   , match
   , regex
+  , anyTill
   , consumeWith
   ) where
 
 import Prelude hiding (between)
 
+import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.State (get)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
@@ -62,9 +64,9 @@ import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags)
 import Data.Tuple (Tuple(..))
-import Partial.Unsafe (unsafePartial)
 import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..))
-import Parsing.Combinators ((<?>))
+import Parsing.Combinators (alt, try, (<?>))
+import Partial.Unsafe (unsafePartial)
 
 -- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. ParserT String m Unit
@@ -263,11 +265,13 @@ regex pattern flags =
 -- | Consume a portion of the input string while yielding a value.
 -- |
 -- | Takes a consumption function which takes the remaining input `String`
--- | as its argument and returns three fields:
+-- | as its argument and returns either an error message, or three fields:
 -- |
 -- | * `value` is the value to return.
 -- | * `consumed` is the input `String` that was consumed. It is used to update the parser position.
 -- | * `remainder` is the new remaining input `String`.
+-- |
+-- | This function is used internally to construct primitive `String` parsers.
 consumeWith
   :: forall m a
    . (String -> Either String { value :: a, consumed :: String, remainder :: String })
@@ -280,3 +284,33 @@ consumeWith f = ParserT
         Right { value, consumed, remainder } ->
           runFn2 done (ParseState remainder (updatePosString pos consumed remainder) true) value
   )
+
+-- | Combinator which finds the first position in the input `String` where the
+-- | phrase can parse. Returns both the
+-- | parsed result and the unparsable input section searched before the parse.
+-- | Will fail if no section of the input is parseable. To backtrack the input
+-- | stream on failure, combine with `tryRethrow`.
+-- |
+-- | This combinator is equivalent to `manyTill_ anyCodePoint`, but it will be
+-- | faster because it returns a slice of the input `String` for the
+-- | section preceding the parse instead of a `List CodePoint`.
+anyTill
+  :: forall m a
+   . Monad m
+  => ParserT String m a
+  -> ParserT String m (Tuple String a)
+anyTill p = do
+  ParseState input1 _ _ <- get
+  Tuple input2 t <- tailRecM go unit
+  pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) t
+  where
+  go unit = alt
+    ( do
+        ParseState input2 _ _ <- get
+        t <- try p
+        pure $ Done $ Tuple input2 t
+    )
+    ( do
+        _ <- anyCodePoint
+        pure $ Loop unit
+    )

@@ -173,16 +173,16 @@ try (ParserT k1) = ParserT
 
 -- | If the parser fails then backtrack the input stream to the unconsumed state.
 -- |
--- | Like `try`, but will relocate the error to the `try` point.
+-- | Like `try`, but will reposition the error to the `try` point.
 -- |
 -- | ```
 -- | >>> runParser "ac" (try (char 'a' *> char 'b'))
--- | Left (ParseError "Expected 'b'" (Position { line: 1, column: 2 }))
+-- | Left (ParseError "Expected 'b'" (Position { index: 1, line: 1, column: 2 }))
 -- | ```
 -- |
 -- | ```
 -- | >>> runParser "ac" (tryRethrow (char 'a' *> char 'b'))
--- | Left (ParseError "Expected 'b'" (Position { line: 1, column: 1 }))
+-- | Left (ParseError "Expected 'b'" (Position { index: 0, line: 1, column: 1 }))
 -- | ```
 tryRethrow :: forall m s a. ParserT s m a -> ParserT s m a
 tryRethrow (ParserT k1) = ParserT
