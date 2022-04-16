@@ -99,7 +99,12 @@ runParser "aBabaB" (many ayebee)
 
 will return `Right [true, false, true]`.
 
-## Video tutorial
+### Stack-safety
+
+Starting with v9.0.0, all parsers and combinators in this package are always
+stack-safe.
+
+## Video introduction to monadic parser combinators
 
 [*Monadic Parsers at the Input Boundary*](https://www.youtube.com/watch?v=LLkbzt4ms6M) by James Brock
 

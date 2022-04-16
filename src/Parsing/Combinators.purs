@@ -32,7 +32,9 @@
 -- | * [Data.List.Lazy.many](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List.Lazy#v:many)
 -- | * [Data.List.Lazy.some](https://pursuit.purescript.org/packages/purescript-lists/docs/Data.List.Lazy#v:some)
 -- |
--- | ### Data.Unfoldable.replicateA Data.List.Lazy.replicateM
+-- | ## Combinators in this package
+-- |
+-- | ### replicateA replicateM
 -- |
 -- | The __replicateA__ and __replicateM__ combinators are re-exported from
 -- | this module. `replicateA n p` or `replicateM n p`
@@ -66,16 +68,16 @@ module Parsing.Combinators
   , chainl1
   , chainr
   , chainr1
-  , module Control.Plus
-  , module Data.Unfoldable
-  , module Data.Unfoldable1
-  , module Data.List.Lazy
   , withErrorMessage
   , (<?>)
   , withLazyErrorMessage
   , (<~?>)
   , asErrorMessage
   , (<??>)
+  , module Control.Plus
+  , module Data.Unfoldable
+  , module Data.Unfoldable1
+  , module Data.List.Lazy
   ) where
 
 import Prelude

@@ -63,9 +63,8 @@ import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags)
 import Data.Tuple (Tuple(..))
 import Partial.Unsafe (unsafePartial)
-import Parsing (ParseError(..), ParseState(..), ParserT(..))
+import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..))
 import Parsing.Combinators ((<?>))
-import Parsing.Pos (Position(..))
 
 -- | Match “end-of-file,” the end of the input stream.
 eof :: forall m. ParserT String m Unit

@@ -1,9 +1,4 @@
 -- | Basic `String` parsers derived from primitive `String` parsers.
--- |
--- | Note: In the future, the
--- | __noneOf__, __noneOfCodePoints__, __oneOf__, __oneOfCodePoints__, __skipSpaces__, __whiteSpace__
--- | should be moved into this module and removed from the
--- | __Parsing.String__ module, because they are not primitive parsers.
 module Parsing.String.Basic
   ( digit
   , hexDigit

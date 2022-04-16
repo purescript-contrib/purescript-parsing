@@ -1,20 +1,28 @@
+-- | Types and operations for monadic parsing.
+-- |
+-- | Combinators are in the `Parsing.Combinators` module.
+-- |
+-- | Primitive parsers for `String` input streams are in the `Parsing.String`
+-- | module.
 module Parsing
-  ( ParseError(..)
-  , parseErrorMessage
-  , parseErrorPosition
-  , ParseState(..)
-  , ParserT(..)
-  , Parser
+  ( Parser
   , runParser
+  , ParserT(..)
   , runParserT
   , runParserT'
-  , hoistParserT
-  , mapParserT
+  , ParseError(..)
+  , parseErrorMessage
+  , parseErrorPosition
+  , Position(..)
+  , initialPos
   , consume
   , position
   , fail
   , failWithPosition
   , region
+  , ParseState(..)
+  , hoistParserT
+  , mapParserT
   ) where
 
 import Prelude
@@ -29,13 +37,15 @@ import Control.Monad.Trans.Class (class MonadTrans)
 import Control.MonadPlus (class Alternative, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn2, Fn5, mkFn2, mkFn3, mkFn5, runFn2, runFn3, runFn5)
+import Data.Generic.Rep (class Generic)
 import Data.Identity (Identity)
 import Data.Lazy as Lazy
 import Data.Newtype (unwrap)
+import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst)
-import Parsing.Pos (Position, initialPos)
 
--- | A parsing error, consisting of a message and position information.
+-- | A parsing error, consisting of an error message and
+-- | the position in the input stream at which the error occurred.
 data ParseError = ParseError String Position
 
 parseErrorMessage :: ParseError -> String
@@ -51,7 +61,13 @@ instance showParseError :: Show ParseError where
 derive instance eqParseError :: Eq ParseError
 derive instance ordParseError :: Ord ParseError
 
--- | Contains the remaining input and current position.
+-- | The internal state of the `ParserT s m` monad.
+-- |
+-- | Contains the remaining input and current position and the consumed flag.
+-- |
+-- | The consumed flag is used to implement the rule for `alt` that
+-- | - If the left parser fails *without consuming any input*, then backtrack and try the right parser.
+-- | - If the left parser fails and consumes input, then fail immediately.
 data ParseState s = ParseState s Position Boolean
 -- ParseState constructor has three parameters,
 -- s: the remaining input
@@ -66,10 +82,7 @@ data ParseState s = ParseState s Position Boolean
 --
 -- http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/
 
--- | The Parser monad transformer.
--- |
--- | The first type argument is the stream type. Typically, this is either `String`,
--- | or some sort of token stream.
+-- | The `Parser s` monad with a monad transformer parameter `m`.
 newtype ParserT s m a = ParserT
   -- The parser is implemented using continuation-passing-style with uncurried
   -- functions. In addition to the usual error and success continuations, there
@@ -102,13 +115,15 @@ data RunParser s m a
   | Lift (m (Unit -> RunParser s m a))
   | Stop (ParseState s) (Either ParseError a)
 
--- | Apply a parser, keeping only the parsed result.
+-- | `runParser` with a monad transfomer parameter `m`.
 runParserT :: forall m s a. MonadRec m => s -> ParserT s m a -> m (Either ParseError a)
 runParserT s p = fst <$> runParserT' initialState p
   where
   initialState :: ParseState s
   initialState = ParseState s initialPos false
 
+-- | Run a parser and produce either an error or the result of the parser
+-- | along with the internal state of the parser when it finishes.
 runParserT'
   :: forall m s a
    . MonadRec m
@@ -132,10 +147,14 @@ runParserT' state1 (ParserT k1) =
     Stop s res ->
       pure $ Done (Tuple res s)
 
--- | The `Parser` monad is a synonym for the parser monad transformer applied to the `Identity` monad.
+-- | The `Parser s` monad, where `s` is the type of the input stream.
+-- |
+-- | A synonym for the `ParserT` monad transformer applied
+-- | to the `Identity` monad.
 type Parser s = ParserT s Identity
 
--- | Apply a parser, keeping only the parsed result.
+-- | Run a parser on an input stream `s` and produce either an error or the
+-- | result `a` of the parser.
 runParser :: forall s a. s -> Parser s a -> Either ParseError a
 runParser s = unwrap <<< runParserT s
 
@@ -145,7 +164,8 @@ hoistParserT f (ParserT k) = ParserT
       runFn5 k state1 more (lift <<< f) throw done
   )
 
--- | Change the underlying monad action and data type in a ParserT monad action.
+-- | Change the underlying monad action `m` and result data type `a` in
+-- | a `ParserT s m` monad action.
 mapParserT
   :: forall b n s a m
    . MonadRec m
@@ -366,3 +386,31 @@ failWithPosition message pos = throwError (ParseError message pos)
 -- | `region` as the parser backs out the call stack.
 region :: forall m s a. (ParseError -> ParseError) -> ParserT s m a -> ParserT s m a
 region context p = catchError p $ \err -> throwError $ context err
+
+-- | `Position` represents the position of the parser in the input stream.
+-- |
+-- | - `index` is the position since the start of the input. Starts at 0.
+-- | - `line` is the current line in the input. Starts at 1.
+-- | - `column` is the column of the next character in the current line that
+-- |   will be parsed. Starts at 1.
+newtype Position = Position
+  { index :: Int
+  , line :: Int
+  , column :: Int
+  }
+
+derive instance Generic Position _
+instance Show Position where
+  show x = genericShow x
+
+instance Eq Position where
+  eq (Position l) (Position r) = l.index == r.index
+
+instance Ord Position where
+  compare (Position l) (Position r) = compare l.index r.index
+
+-- | The `Position` before any input has been parsed.
+-- |
+-- | `{ index: 0, line: 1, column: 1 }`
+initialPos :: Position
+initialPos = Position { index: 0, line: 1, column: 1 }
