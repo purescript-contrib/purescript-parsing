@@ -98,7 +98,7 @@ anyChar :: forall m. ParserT String m Char
 anyChar = satisfy (const true)
 
 -- | Match any Unicode character.
--- | Always succeeds.
+-- | Always succeeds when any input remains.
 anyCodePoint :: forall m. ParserT String m CodePoint
 anyCodePoint = satisfyCodePoint (const true)
 
@@ -290,9 +290,19 @@ consumeWith f = ParserT
 -- | Will fail if no section of the input is parseable. To backtrack the input
 -- | stream on failure, combine with `tryRethrow`.
 -- |
+-- | This combinator works like
+-- | [Data.String.takeWhile](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String#v:takeWhile)
+-- | or
+-- | [Data.String.Regex.search](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String.Regex#v:search)
+-- | and it allows using a parser for the pattern search.
+-- |
 -- | This combinator is equivalent to `manyTill_ anyCodePoint`, but it will be
 -- | faster because it returns a slice of the input `String` for the
 -- | section preceding the parse instead of a `List CodePoint`.
+-- |
+-- | Be careful not to look too far
+-- | ahead; if the phrase parser looks to the end of the input then `anyTill`
+-- | could be *O(n²)*.
 anyTill
   :: forall m a
    . Monad m
