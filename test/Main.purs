@@ -12,15 +12,16 @@ import Control.Lazy (fix)
 import Control.Monad.State (State, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
-import Data.Bifunctor (rmap)
-import Data.Either (Either(..), hush)
+import Data.Bifunctor (lmap, rmap)
+import Data.Either (Either(..), either, hush)
 import Data.Foldable (oneOf)
 import Data.List (List(..), fromFoldable, (:))
 import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
 import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..), fromJust)
 import Data.NonEmpty ((:|))
-import Data.Number (infinity, isNaN)
+import Data.Number (infinity, nan)
+import Data.Number as Data.Number
 import Data.String (toUpper)
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
@@ -684,19 +685,52 @@ main = do
 
   log "\nTESTS number\n"
 
-  parseTest "Infinity" infinity number
-  parseTest "+Infinity" infinity number
-  parseTest "-Infinity" (negate infinity) number
-  parseErrorTestPosition number "+xxx" (mkPos 2)
+  -- assert' "Number.fromString" $ Just infinity == Data.Number.fromString "Infinity"
+  assertEqual' "number Infinity"
+    { actual: runParser "Infinity" number
+    , expected: Right infinity
+    }
+  assertEqual' "number +Infinity"
+    { actual: runParser "+Infinity" number
+    , expected: Right infinity
+    }
+  assertEqual' "number -Infinity"
+    { actual: runParser "-Infinity" number
+    , expected: Right (negate infinity)
+    }
+  assertEqual' "number +xxx"
+    { actual: lmap parseErrorPosition $ runParser "+xxx" number
+    , expected: Left $ Position { index: 0, line: 1, column: 1 }
+    }
 
-  parseTest "-3.0E-1.0" (-0.3) number
+  assertEqual' "number 1"
+    { actual: runParser "-3.0E-1.0" number
+    , expected: Right (-0.3)
+    }
 
   -- test from issue #73
-  parseTest "0.7531531167929774" 0.7531531167929774 number
+  assertEqual' "number 2"
+    { actual: runParser "0.7531531167929774" number
+    , expected: Right 0.7531531167929774
+    }
 
   -- test from issue #115
-  parseTest "-6.0" (-6.0) number
-  parseTest "+6.0" (6.0) number
+  assertEqual' "number 3"
+    { actual: runParser "-6.0" number
+    , expected: Right (-6.0)
+    }
+  assertEqual' "number 4"
+    { actual: runParser "+6.0" number
+    , expected: Right (6.0)
+    }
+
+  assert' "number NaN 1" $ either (\_ -> false) Data.Number.isNaN (runParser (show nan) number)
+  assert' "number NaN 2" $ either (\_ -> false) Data.Number.isNaN (runParser "NaN" number)
+
+  assertEqual' "number 5"
+    { actual: runParser "1..3" number
+    , expected: Right (1.0)
+    }
 
   log "\nTESTS Operator\n"
   -- test from issue #161
@@ -756,16 +790,6 @@ main = do
     )
     "c"
     "Expected \"b\""
-
-  -- we can't test "NaN" with `parseTest` because nan doesn't compare equal
-  case runParser "NaN" number of
-    Right actual -> do
-      assert' ("expected: NaN, actual: " <> show actual) (isNaN actual)
-      logShow actual
-    Left err -> assert' ("error: " <> show err) false
-
-  -- TODO This shows the current limitations of the number parser. Ideally this parse should fail.
-  parseTest "1..3" 1.0 $ number <* eof
 
   log "\nTESTS intDecimal\n"
   parseTest "-300" (-300) intDecimal
