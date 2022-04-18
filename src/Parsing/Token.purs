@@ -23,7 +23,6 @@ module Parsing.Token
 import Prelude hiding (between, when)
 
 import Control.Lazy (fix)
-import Control.Monad.State (get, gets, modify_)
 import Control.MonadPlus (guard, (<|>))
 import Data.Array as Array
 import Data.Char (fromCharCode, toCharCode)
@@ -43,7 +42,7 @@ import Data.String.CodeUnits (singleton, toChar) as CodeUnits
 import Data.String.CodeUnits as SCU
 import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
-import Parsing (ParseState(..), ParserT, consume, fail)
+import Parsing (ParseState(..), ParserT, consume, fail, getParserT, stateParserT)
 import Parsing.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
 import Parsing.Pos (Position)
 import Parsing.String (char, satisfy, satisfyCodePoint, string)
@@ -53,12 +52,11 @@ import Parsing.String.Basic as Basic
 -- | A parser which returns the first token in the stream.
 token :: forall m a. (a -> Position) -> ParserT (List a) m a
 token tokpos = do
-  input <- gets \(ParseState input _ _) -> input
+  ParseState input _ _ <- getParserT
   case List.uncons input of
     Nothing -> fail "Unexpected EOF"
     Just { head, tail } -> do
-      modify_ \(ParseState _ _ _) ->
-        ParseState tail (tokpos head) true
+      stateParserT \(ParseState _ _ _) -> Tuple unit (ParseState tail (tokpos head) true)
       pure head
 
 -- | A parser which matches any token satisfying the predicate.
@@ -75,7 +73,7 @@ match tokpos tok = when tokpos (_ == tok)
 -- | Match the “end-of-file,” the end of the input stream.
 eof :: forall a m. ParserT (List a) m Unit
 eof = do
-  ParseState input _ _ <- get
+  ParseState input _ _ <- getParserT
   if (List.null input)
   -- We must consume so this combines correctly with notFollowedBy
   then consume

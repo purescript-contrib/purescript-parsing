@@ -52,7 +52,6 @@ module Parsing.String
 import Prelude hiding (between)
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
-import Control.Monad.State (get)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Enum (fromEnum, toEnum)
@@ -64,7 +63,7 @@ import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags (RegexFlags)
 import Data.Tuple (Tuple(..))
-import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..))
+import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..), getParserT)
 import Parsing.Combinators (alt, try, (<?>))
 import Partial.Unsafe (unsafePartial)
 
@@ -195,9 +194,9 @@ updatePosSingle (Position { index, line, column }) cp after = case fromEnum cp o
 -- | ```
 match :: forall m a. ParserT String m a -> ParserT String m (Tuple String a)
 match p = do
-  ParseState input1 _ _ <- get
+  ParseState input1 _ _ <- getParserT
   x <- p
-  ParseState input2 _ _ <- get
+  ParseState input2 _ _ <- getParserT
   -- We use the `SCU.length`, which is in units of “code units”
   -- instead of `Data.String.length`. which is in units of “code points”.
   -- This is more efficient, and it will be correct as long as we can assume
@@ -300,13 +299,13 @@ anyTill
   => ParserT String m a
   -> ParserT String m (Tuple String a)
 anyTill p = do
-  ParseState input1 _ _ <- get
+  ParseState input1 _ _ <- getParserT
   Tuple input2 t <- tailRecM go unit
   pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) t
   where
   go unit = alt
     ( do
-        ParseState input2 _ _ <- get
+        ParseState input2 _ _ <- getParserT
         t <- try p
         pure $ Done $ Tuple input2 t
     )

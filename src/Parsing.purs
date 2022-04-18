@@ -21,6 +21,8 @@ module Parsing
   , failWithPosition
   , region
   , ParseState(..)
+  , stateParserT
+  , getParserT
   , hoistParserT
   , mapParserT
   ) where
@@ -32,8 +34,8 @@ import Control.Apply (lift2)
 import Control.Lazy (class Lazy)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
-import Control.Monad.State.Class (class MonadState, gets, modify_)
-import Control.Monad.Trans.Class (class MonadTrans)
+import Control.Monad.State.Class (class MonadState, state)
+import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.MonadPlus (class Alternative, class MonadPlus, class Plus)
 import Data.Either (Either(..))
 import Data.Function.Uncurried (Fn2, Fn5, mkFn2, mkFn3, mkFn5, runFn2, runFn3, runFn5)
@@ -273,12 +275,8 @@ instance MonadRec (ParserT s m) where
         runFn3 loop state1 initArg 30
     )
 
-instance MonadState (ParseState s) (ParserT s m) where
-  state k = ParserT
-    ( mkFn5 \state1 _ _ _ done -> do
-        let (Tuple a state2) = k state1
-        runFn2 done state2 a
-    )
+instance (MonadState t m) => MonadState t (ParserT s m) where
+  state k = lift (state k)
 
 instance MonadThrow ParseError (ParserT s m) where
   throwError err = ParserT
@@ -360,18 +358,35 @@ instance MonadTrans (ParserT s) where
         lift' $ map (\a _ -> runFn2 done state1 a) m
     )
 
+-- | Query and modify the `ParserT` internal state.
+-- |
+-- | Like the `state` member of `MonadState`.
+stateParserT :: forall s m a. (ParseState s -> Tuple a (ParseState s)) -> ParserT s m a
+stateParserT k = ParserT
+  ( mkFn5 \state1 _ _ _ done -> do
+      let (Tuple a state2) = k state1
+      runFn2 done state2 a
+  )
+
+-- | Query the `ParserT` internal state.
+-- |
+-- | Like the `get` member of `MonadState`.
+getParserT :: forall s m. ParserT s m (ParseState s)
+getParserT = ParserT
+  ( mkFn5 \state1 _ _ _ done -> runFn2 done state1 state1
+  )
+
 -- | Set the consumed flag.
 -- |
 -- | Setting the consumed flag means that we're committed to this parsing branch
 -- | of an alternative (`<|>`), so that if this branch fails then we want to
 -- | fail the entire parse instead of trying the other alternative.
 consume :: forall s m. ParserT s m Unit
-consume = modify_ \(ParseState input pos _) ->
-  ParseState input pos true
+consume = stateParserT \(ParseState input pos _) -> Tuple unit (ParseState input pos true)
 
 -- | Returns the current position in the stream.
 position :: forall s m. ParserT s m Position
-position = gets \(ParseState _ pos _) -> pos
+position = stateParserT \state1@(ParseState _ pos _) -> Tuple pos state1
 
 -- | Fail with a message.
 fail :: forall m s a. String -> ParserT s m a

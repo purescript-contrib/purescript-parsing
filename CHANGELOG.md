@@ -37,6 +37,11 @@ Breaking changes:
   * `noneOf`
   * `noneOfCodePoints`
   from `Parsing.String` to `Parsing.String.Basic`. (#183 by @jamesdbrock)
+- Change MonadState instance (#187 by jamesdbrock)
+
+  Users who stack a `ParserT` on a `StateT` base monad will call the `MonadState` members directly like `get` instead of needing to do `lift <<< get`.
+
+  To get the `ParserT` internal state, call `getParserT` instead of `get`.
 
 New features:
 
