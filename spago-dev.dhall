@@ -14,7 +14,6 @@ in conf //
   , "console"
   , "enums"
   , "effect"
-  , "psci-support"
   , "minibench"
   , "exceptions"
   , "string-parsers"
