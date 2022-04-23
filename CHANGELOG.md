@@ -51,7 +51,10 @@ New features:
 
 Bugfixes:
 
+- Improve correctness and speed of `number` and `intDecimal`. (#189 by @jamesdbrock)
+
 Other improvements:
+
 - Drop `math` dependency; update imports (#167 by @JordanMartinez)
 
 ## [v8.4.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v8.4.0) - 2022-03-15

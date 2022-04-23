@@ -22,7 +22,7 @@ import Prelude
 
 import Data.Array (elem, notElem)
 import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isLower, isOctDigit, isSpace, isUpper)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Int as Data.Int
 import Data.Maybe (Maybe(..))
 import Data.Number (infinity, nan)
@@ -30,11 +30,11 @@ import Data.Number as Data.Number
 import Data.String (CodePoint, singleton, takeWhile)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits as SCU
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (fst)
 import Parsing (ParserT, fail)
-import Parsing.Combinators (choice, skipMany, (<?>), (<~?>))
-import Parsing.String (consumeWith, match, satisfy, satisfyCodePoint)
-import Parsing.String as Parser.String
+import Parsing.Combinators (choice, tryRethrow, (<?>), (<|>), (<~?>))
+import Parsing.String (consumeWith, match, regex, satisfy, satisfyCodePoint, string)
+import Partial.Unsafe (unsafeCrashWith)
 
 -- | Parse a digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isDecDigit`.
 digit :: forall m. ParserT String m Char
@@ -84,26 +84,27 @@ alphaNum = satisfyCP isAlphaNum <?> "letter or digit"
 -- | * `"NaN"`
 -- | * `"-Infinity"`
 number :: forall m. ParserT String m Number
--- TODO because the JavaScript parseFloat function will successfully parse
--- a Number up until it doesn't understand something and then return
--- the partially parsed Number, this parser will sometimes consume more
--- String that it actually parses. Example "1..3" will parse as 1.0.
--- So this needs improvement.
 number =
   choice
-    [ Parser.String.string "Infinity" *> pure infinity
-    , Parser.String.string "+Infinity" *> pure infinity
-    , Parser.String.string "-Infinity" *> pure (negate infinity)
-    , Parser.String.string "NaN" *> pure nan
-    , do
-        Tuple section _ <- Parser.String.match do
-          _ <- oneOf [ '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
-          skipMany $ oneOf [ 'e', 'E', '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
+    [ string "Infinity" *> pure infinity
+    , string "+Infinity" *> pure infinity
+    , string "-Infinity" *> pure (negate infinity)
+    , string "NaN" *> pure nan
+    , tryRethrow $ do
+        section <- numberRegex
         -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseFloat
         case Data.Number.fromString section of
-          Nothing -> fail $ "Could not parse Number " <> section
+          Nothing -> fail $ "Number.fromString failed"
+          -- Maybe this parser should set consumed flag if regex matches but fromString fails?
+          -- But currently regex allows some illegal inputs, like "."
+          -- Anyway this primitiv-ish parser should always backtrack on fail.
           Just x -> pure x
-    ]
+    ] <|> fail "Expected Number"
+
+numberRegex :: forall m. ParserT String m String
+numberRegex = either unsafeCrashWith identity $ regex pattern mempty
+  where
+  pattern = "[+-]?[0-9]*(\\.[0-9]*)?([eE][+-]?[0-9]*(\\.[0-9]*))?"
 
 -- | Parser based on the __Data.Int.fromString__ function.
 -- |
@@ -114,17 +115,20 @@ number =
 -- | * `"-3"`
 -- | * `"+300"`
 intDecimal :: forall m. ParserT String m Int
-intDecimal = do
-  Tuple section _ <- Parser.String.match do
-    _ <- oneOf [ '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
-    skipMany $ oneOf [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ]
+intDecimal = tryRethrow do
+  section <- intDecimalRegex <|> fail "Expected Int"
   case Data.Int.fromString section of
-    Nothing -> fail $ "Could not parse Int " <> section
+    Nothing -> fail $ "Int.fromString failed"
     Just x -> pure x
+
+intDecimalRegex :: forall m. ParserT String m String
+intDecimalRegex = either unsafeCrashWith identity $ regex pattern mempty
+  where
+  pattern = "[+-]?[0-9]*"
 
 -- | Helper function
 satisfyCP :: forall m. (CodePoint -> Boolean) -> ParserT String m Char
-satisfyCP p = Parser.String.satisfy (p <<< codePointFromChar)
+satisfyCP p = satisfy (p <<< codePointFromChar)
 
 -- | Match zero or more whitespace characters satisfying
 -- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
