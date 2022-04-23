@@ -25,7 +25,6 @@
     "purescript-newtype": "master",
     "purescript-numbers": "master",
     "purescript-prelude": "master",
-    "purescript-record": "master",
     "purescript-strings": "master",
     "purescript-tailrec": "master",
     "purescript-transformers": "master",
