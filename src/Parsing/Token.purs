@@ -42,9 +42,8 @@ import Data.String.CodeUnits (singleton, toChar) as CodeUnits
 import Data.String.CodeUnits as SCU
 import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
-import Parsing (ParseState(..), ParserT, consume, fail, getParserT, stateParserT)
+import Parsing (ParseState(..), ParserT, Position, consume, fail, getParserT, stateParserT)
 import Parsing.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
-import Parsing.Pos (Position)
 import Parsing.String (char, satisfy, satisfyCodePoint, string)
 import Parsing.String.Basic (alphaNum, digit, hexDigit, letter, noneOf, octDigit, oneOf, space, upper)
 import Parsing.String.Basic as Basic
