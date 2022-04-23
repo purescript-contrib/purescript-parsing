@@ -24,6 +24,7 @@
     "purescript-maybe": "master",
     "purescript-newtype": "master",
     "purescript-numbers": "master",
+    "purescript-nullable": "main",
     "purescript-prelude": "master",
     "purescript-strings": "master",
     "purescript-tailrec": "master",
@@ -34,6 +35,8 @@
     "purescript-unsafe-coerce": "master"
   },
   "devDependencies": {
-    "purescript-assert": "master"
+    "purescript-assert": "master",
+    "purescript-effect": "master",
+    "purescript-node-process": "master"
   }
 }

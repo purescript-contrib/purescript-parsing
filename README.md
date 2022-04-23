@@ -130,7 +130,6 @@ There are lots of other great monadic parsing tutorials on the internet.
 ## Related Packages
 
 - [__`parsing-dataview`__](https://pursuit.purescript.org/packages/purescript-parsing-dataview) primitive parsers for binary parsing of `ArrayBuffer`.
-- [__`parsing-replace`__](https://pursuit.purescript.org/packages/purescript-parsing-replace) for finding text patterns, and also replacing or splitting on the found patterns.
 - [__`datetime-parsing`__](https://pursuit.purescript.org/packages/purescript-datetime-parsing) for parsing dates and times.
 
 ## Documentation

@@ -11,10 +11,13 @@ in conf //
 { sources = [ "src/**/*.purs", "test/**/*.purs", "bench/**/*.purs" ]
 , dependencies = conf.dependencies #
   [ "assert"
+  , "bifunctors"
   , "console"
   , "enums"
   , "effect"
   , "minibench"
+  , "node-process"
+  , "nonempty"
   , "exceptions"
   , "string-parsers"
   , "partial"

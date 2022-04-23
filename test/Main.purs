@@ -9,32 +9,40 @@ import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
+import Control.Monad.State (State, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
-import Data.Either (Either(..))
+import Data.Bifunctor (rmap)
+import Data.Either (Either(..), hush)
 import Data.Foldable (oneOf)
-import Data.List (List(..), fromFoldable, many)
-import Data.List.NonEmpty (cons, cons')
+import Data.List (List(..), fromFoldable, (:))
+import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
 import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..), fromJust)
+import Data.NonEmpty ((:|))
 import Data.Number (infinity, isNaN)
+import Data.String (toUpper)
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.String.CodeUnits as SCU
 import Data.String.Regex.Flags (RegexFlags, ignoreCase, noFlags)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst)
+import Data.Tuple.Nested (get2, (/\))
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Parsing (ParseError(..), Parser, ParserT, Position(..), initialPos, fail, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (between, chainl, chainl1, chainr, chainr1, choice, endBy, endBy1, many1, many1Till, many1Till_, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Effect.Unsafe (unsafePerformEffect)
+import Node.Process (lookupEnv)
+import Parsing (ParseError(..), Parser, ParserT, Position(..), consume, fail, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Parsing.Combinators (between, chainl, chainl1, chainr, chainr1, choice, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
-import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, regex, rest, satisfy, string, takeN)
+import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, regex, rest, satisfy, string, takeN)
 import Parsing.String.Basic (intDecimal, number, letter, noneOfCodePoints, oneOfCodePoints, whiteSpace)
-import Parsing.Token (TokenParser, makeTokenParser, match, token, when)
-import Parsing.Token as Parser.Token
+import Parsing.String.Replace (breakCap, splitCap, splitCapT, streamEdit, streamEditT)
+import Parsing.Token (TokenParser, makeTokenParser, token, when)
+import Parsing.Token as Token
 import Partial.Unsafe (unsafePartial)
-import Test.Assert (assert')
+import Test.Assert (assert', assertEqual')
 
 parens :: forall m a. ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -652,11 +660,11 @@ main = do
 
   parseTest (fromFoldable [ A, B ]) A (when tokpos isA)
 
-  parseTest (fromFoldable [ A ]) A (match tokpos A)
-  parseTest (fromFoldable [ B ]) B (match tokpos B)
-  parseTest (fromFoldable [ A, B ]) A (match tokpos A)
+  parseTest (fromFoldable [ A ]) A (Token.match tokpos A)
+  parseTest (fromFoldable [ B ]) B (Token.match tokpos B)
+  parseTest (fromFoldable [ A, B ]) A (Token.match tokpos A)
 
-  parseTest (fromFoldable []) unit Parser.Token.eof
+  parseTest (fromFoldable []) unit Token.eof
 
   parseTest "aabb" (Tuple (fromFoldable [ 'a', 'a' ]) 'b') (manyTill_ (char 'a') (char 'b'))
   parseTest "aabb" (Tuple (unsafePartial $ fromJust (NE.fromFoldable [ 'a', 'a' ])) 'b') (many1Till_ (char 'a') (char 'b'))
@@ -833,3 +841,144 @@ main = do
   parseTest "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥𝅮" (Tuple "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" "𝅘𝅥𝅮") $ anyTill (string "𝅘𝅥𝅮") <* eof
   parseErrorTestPosition (anyTill (string "𝅘𝅥𝅮")) "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" (Position { index: 4, line: 1, column: 5 })
 
+  log "\nTESTS Replace\n"
+
+  assertEqual' "anyTill1"
+    { actual: runParser "Baaaa" $ anyTill $ string "B"
+    , expected: Right $ Tuple "" "B"
+    }
+  assertEqual' "anyTill2"
+    { actual: runParser "aaBaa" $ anyTill $ string "B"
+    , expected: Right $ Tuple "aa" "B"
+    }
+  assertEqual' "anyTill3"
+    { actual: runParser "aaaaB" $ anyTill $ string "B"
+    , expected: Right $ Tuple "aaaa" "B"
+    }
+  assertEqual' "breakCap1"
+    { actual: breakCap "Baaaa" (string "B")
+    , expected: Just $ "" /\ "B" /\ "aaaa"
+    }
+  assertEqual' "breakCap2"
+    { actual: breakCap "aaBaa" (string "B")
+    , expected: Just $ "aa" /\ "B" /\ "aa"
+    }
+  assertEqual' "breakCap3"
+    { actual: breakCap "aaaaB" (string "B")
+    , expected: Just $ "aaaa" /\ "B" /\ ""
+    }
+  assertEqual' "breakCap3"
+    { actual: breakCap "" (string "B")
+    , expected: Nothing
+    }
+  assertEqual' "breakCap4"
+    { actual: breakCap "aaBaa" (lookAhead $ string "B")
+    , expected: Just $ "aa" /\ "B" /\ "Baa"
+    }
+  assertEqual' "breakCap5"
+    { actual: breakCap "aaBaa" (match $ string "B")
+    , expected: Just $ "aa" /\ ("B" /\ "B") /\ "aa"
+    }
+  assertEqual' "breakCap6"
+    { actual: breakCap "aaBaa" (match $ lookAhead $ string "B")
+    , expected: Just $ "aa" /\ ("" /\ "B") /\ "Baa"
+    }
+  assertEqual' "splitCap1"
+    { actual: splitCap "BaB" (string "B")
+    , expected: NonEmptyList $ Right "B" :| Left "a" : Right "B" : Nil
+    }
+  assertEqual' "splitCap2"
+    { actual: splitCap "aBaB" (string "B")
+    , expected: NonEmptyList $ Left "a" :| Right "B" : Left "a" : Right "B" : Nil
+    }
+  assertEqual' "splitCap3"
+    { actual: splitCap "aBaBa" (string "B")
+    , expected: NonEmptyList $ Left "a" :| Right "B" : Left "a" : Right "B" : Left "a" : Nil
+    }
+  assertEqual' "splitCap4"
+    { actual: splitCap "a" (string "B")
+    , expected: NonEmptyList $ Left "a" :| Nil
+    }
+  assertEqual' "splitCap5"
+    { actual: splitCap "" (string "B")
+    , expected: NonEmptyList $ Left "" :| Nil
+    }
+  assertEqual' "splitCap6"
+    { actual: splitCap "𝄞𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" (string "𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅯")
+    , expected: NonEmptyList $ Left "𝄞𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" :| Right "𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅯𝅘𝅥𝅯" : Left "𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" : Nil
+    }
+  assertEqual' "splitCap7"
+    { actual: splitCap "aa" (lookAhead $ string "a" *> pure unit)
+    , expected: NonEmptyList $ Right unit :| Left "a" : Right unit : Left "a" : Nil
+    }
+  assertEqual' "splitCap8B"
+    { actual: splitCap "BaBa" (lookAhead $ string "B" *> pure unit)
+    , expected: NonEmptyList $ Right unit :| Left "Ba" : Right unit : Left "Ba" : Nil
+    }
+  assertEqual' "splitCap9" $
+    { actual: splitCap "aBaBa" (match $ lookAhead $ string "B" *> pure unit)
+    , expected: NonEmptyList $ Left "a" :| Right (Tuple "" unit) : Left "Ba" : Right (Tuple "" unit) : Left "Ba" : Nil
+    }
+  assertEqual' "splitCap10"
+    { actual: splitCap "abc" (pure unit)
+    , expected: NonEmptyList $ Right unit :| Left "a" : Right unit : Left "b" : Right unit : Left "c" : Right unit : Nil
+    }
+  assertEqual' "splitCap11"
+    { actual: splitCap "abc" consume
+    , expected: NonEmptyList $ Right unit :| Left "a" : Right unit : Left "b" : Right unit : Left "c" : Right unit : Nil
+    }
+  assertEqual' "streamEdit1"
+    { actual: streamEdit "aBc" (match $ string "B") fst
+    , expected: "aBc"
+    }
+  assertEqual' "streamEdit2"
+    { actual: streamEdit "aBd" (string "B") (const "C")
+    , expected: "aCd"
+    }
+  assertEqual' "streamEdit3"
+    { actual: streamEdit "abcd" (takeN 1) toUpper
+    , expected: "ABCD"
+    }
+  assertEqual' "streamEdit4"
+    { actual: streamEdit "abc" (pure unit) (\_ -> "X")
+    , expected: "XaXbXcX"
+    }
+  assertEqual' "String.Replace example0"
+    { actual: breakCap "abc 123 def" (match intDecimal)
+    , expected: Just $ "abc " /\ ("123" /\ 123) /\ " def"
+    }
+  assertEqual' "String.Replace example1"
+    { actual: map get2 $ breakCap "..A.." (position <* string "A")
+    , expected: Just (Position { index: 2, line: 1, column: 3 })
+    }
+  assertEqual' "String.Replace example2"
+    { actual: catMaybes $ hush <$> splitCap ".A...\n...A." (position <* string "A")
+    , expected: (Position { index: 1, line: 1, column: 2 }) : (Position { index: 9, line: 2, column: 4 } : Nil)
+    }
+  assertEqual' "String.Replace example3"
+    { actual: unsafePerformEffect $ streamEditT "◀ {HOME} ▶" (string "{" *> anyTill (string "}")) (fst >>> lookupEnv >=> unsafePartial fromJust >>> pure)
+    , expected: "◀ " <> unsafePartial (fromJust (unsafePerformEffect (lookupEnv "HOME"))) <> " ▶"
+    }
+  assertEqual' "String.Replace example4"
+    { actual:
+        let
+          letterCount :: ParserT String (State Int) (Tuple Char Int)
+          letterCount = do
+            l <- letter
+            i <- modify (_ + 1)
+            pure $ l /\ i
+        in
+          flip runState 0 $ splitCapT "A B" letterCount
+    , expected: (NonEmptyList $ Right ('A' /\ 1) :| Left " " : Right ('B' /\ 2) : Nil) /\ 2
+    }
+  assertEqual' "String.Replace example5"
+    { actual:
+        let
+          balancedParens :: Parser String Unit
+          balancedParens = do
+            void $ char '('
+            void $ manyTill (balancedParens <|> void anyCodePoint) (char ')')
+        in
+          rmap fst <$> splitCap "((🌼)) (()())" (match balancedParens)
+    , expected: NonEmptyList $ Right "((🌼))" :| Left " " : Right "(()())" : Nil
+    }
