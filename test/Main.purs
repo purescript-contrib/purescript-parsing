@@ -34,7 +34,7 @@ import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), Parser, ParserT, Position(..), consume, fail, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (between, chainl, chainl1, chainr, chainr1, choice, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, regex, rest, satisfy, string, takeN)
@@ -1005,4 +1005,38 @@ main = do
         in
           rmap fst <$> splitCap "((🌼)) (()())" (match balancedParens)
     , expected: NonEmptyList $ Right "((🌼))" :| Left " " : Right "(()())" : Nil
+    }
+
+  log "\nTESTS manyIndex\n"
+
+  assertEqual' "manyIndex 1"
+    { actual: runParser "aaab" $ manyIndex 0 3 (\_ -> char 'a')
+    , expected: Right (Tuple 3 ('a' : 'a' : 'a' : Nil))
+    }
+  assertEqual' "manyIndex 2"
+    { actual: runParser "aaaa" $ manyIndex 0 3 (\_ -> char 'a')
+    , expected: Right (Tuple 3 ('a' : 'a' : 'a' : Nil))
+    }
+  assertEqual' "manyIndex 3"
+    { actual: runParser "b" $ manyIndex 0 3 (\_ -> char 'a')
+    , expected: Right (Tuple 0 (Nil))
+    }
+  assertEqual' "manyIndex 4"
+    { actual: lmap parseErrorPosition $ runParser "ab" $ manyIndex 3 3 (\_ -> char 'a')
+    , expected: Left (Position { index: 1, line: 1, column: 2 })
+    }
+  assertEqual' "manyIndex 5"
+    { actual: runParser "aaa" $ manyIndex (-2) (1) (\_ -> char 'a')
+    , expected: Right (Tuple 0 (Nil))
+    }
+
+  log "\nTESTS advance\n"
+
+  assertEqual' "advance 1"
+    { actual: runParser "aa" $ advance $ char 'a'
+    , expected: Right 'a'
+    }
+  assertEqual' "advance 2"
+    { actual: lmap parseErrorPosition $ runParser "aa" $ advance consume
+    , expected: Left (Position { index: 0, line: 1, column: 1 })
     }
