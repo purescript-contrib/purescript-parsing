@@ -1,6 +1,4 @@
--- | ## Combinators
--- |
--- | A parser combinator is a function which takes some
+-- | A “parser combinator” is a function which takes some
 -- | parsers as arguments and returns a new parser.
 -- |
 -- | ## Combinators in other packages
@@ -10,8 +8,10 @@
 -- |
 -- | If you use a combinator from some other package for parsing, keep in mind
 -- | this surprising truth about the __parsing__ package:
--- | All combinators used with this package will be stack-safe,
--- | but usually the `MonadRec` combinators will run faster.
+-- | All other combinators used with this package will be stack-safe,
+-- | but usually the combinators with a `MonadRec` constraint will run faster.
+-- | So you should prefer `MonadRec` versions of combinators, but for reasons
+-- | of speed, not stack-safety.
 -- |
 -- | ### Data.Array
 -- |
@@ -24,8 +24,9 @@
 -- |
 -- | ### Data.List
 -- |
--- | For good parsing speed we recommend using the `many` and `many1` combinators in this package
--- | to parse a `List`.
+-- | The `many` and `many1` combinators in this package
+-- | are redeclarations of
+-- | the `manyRec` and `someRec` combinators in __Data.List__.
 -- |
 -- | ### Data.List.Lazy
 -- |
@@ -34,9 +35,7 @@
 -- |
 -- | ## Combinators in this package
 -- |
--- | ### replicateA replicateM
--- |
--- | The __replicateA__ and __replicateM__ combinators are re-exported from
+-- | the __replicateA__ and __replicateM__ combinators are re-exported from
 -- | this module. `replicateA n p` or `replicateM n p`
 -- | will repeat parser `p` exactly `n` times. The `replicateA` combinator can
 -- | produce either an `Array` or a `List`.
@@ -52,10 +51,10 @@ module Parsing.Combinators
   , optional
   , many
   , many1
-  , many1Till
-  , many1Till_
   , manyTill
   , manyTill_
+  , many1Till
+  , many1Till_
   , skipMany
   , skipMany1
   , sepBy
@@ -397,7 +396,7 @@ many1Till_ p end = do
 -- | Parse many phrases until the terminator phrase matches.
 -- | Returns the list of phrases and the terminator phrase.
 -- |
--- | ## Non-greedy repetition
+-- | #### Non-greedy repetition
 -- |
 -- | Use the __manyTill_ __ combinator
 -- | to do non-greedy repetition of a pattern `p`, like we would in Regex
