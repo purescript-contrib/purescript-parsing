@@ -404,10 +404,11 @@ region context p = catchError p $ \err -> throwError $ context err
 
 -- | `Position` represents the position of the parser in the input stream.
 -- |
--- | - `index` is the position since the start of the input. Starts at 0.
--- | - `line` is the current line in the input. Starts at 1.
+-- | - `index` is the position offset since the start of the input. Starts
+-- |   at *0*.
+-- | - `line` is the current line in the input. Starts at *1*.
 -- | - `column` is the column of the next character in the current line that
--- |   will be parsed. Starts at 1.
+-- |   will be parsed. Starts at *1*.
 newtype Position = Position
   { index :: Int
   , line :: Int

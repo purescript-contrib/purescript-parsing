@@ -48,6 +48,7 @@ New features:
 - Add the `anyTill` primitive `String` combinator. (#186 by @jamesdbrock)
 - Add the `Parsing.String.Replace` module, copied from
   https://github.com/jamesdbrock/purescript-parsing-replace (#188 by @jamesdbrock)
+- Add the `advance` and `manyIndex` combinators. (#193 by @jamesdbrock)
 
 Bugfixes:
 

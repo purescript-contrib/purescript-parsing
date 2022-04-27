@@ -55,6 +55,7 @@ module Parsing.Combinators
   , manyTill_
   , many1Till
   , many1Till_
+  , manyIndex
   , skipMany
   , skipMany1
   , sepBy
@@ -67,6 +68,7 @@ module Parsing.Combinators
   , chainl1
   , chainr
   , chainr1
+  , advance
   , withErrorMessage
   , (<?>)
   , withLazyErrorMessage
@@ -96,7 +98,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Unfoldable (replicateA)
 import Data.Unfoldable1 (replicate1A)
-import Parsing (ParseError(..), ParseState(..), ParserT(..), fail)
+import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..), fail, position)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. ParserT s m a -> String -> ParserT s m a
@@ -440,3 +442,51 @@ manyTill_ p end = tailRecM go Nil
         do
           x <- p
           pure (Loop (x : xs))
+
+-- | Parse the phrase as many times as possible, at least *N* times, but no
+-- | more than *M* times.
+-- | If the phrase can’t parse as least *N* times then the whole
+-- | parser fails. If the phrase parses successfully *M* times then stop.
+-- | The current phrase index, starting at *0*, is passed to the phrase.
+-- |
+-- | Returns the list of parse results and the number of results.
+-- |
+-- | `manyIndex n n (\_ -> p)` is equivalent to `replicateA n p`.
+manyIndex :: forall s m a. Int -> Int -> (Int -> ParserT s m a) -> ParserT s m (Tuple Int (List a))
+manyIndex from to p =
+  if from > to || from < 0 then
+    pure (Tuple 0 Nil)
+  else
+    tailRecM go (Tuple 0 Nil)
+  where
+  go (Tuple i xs) =
+    if i >= to then
+      pure (Done (Tuple i (reverse xs)))
+    else
+      ( do
+          x <- p i
+          pure (Loop (Tuple (i + 1) (x : xs)))
+      )
+        <|>
+          ( if i >= from then
+              pure (Done (Tuple i (reverse xs)))
+            else
+              fail "Expected more phrases"
+          )
+
+-- | If the parser succeeds without advancing the input stream position,
+-- | then force the parser to fail.
+-- |
+-- | This combinator can be used to prevent infinite parser repetition.
+-- |
+-- | Does not depend on or effect the `consumed` flag which indicates whether
+-- | we are committed to this parsing branch.
+advance :: forall s m a. ParserT s m a -> ParserT s m a
+advance p = do
+  Position { index: index1 } <- position
+  x <- p
+  Position { index: index2 } <- position
+  if index2 > index1 then
+    pure x
+  else
+    fail "Expected progress"
