@@ -9,7 +9,7 @@ import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Control.Monad.State (State, modify, runState)
+import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
 import Data.Bifunctor (lmap, rmap)
@@ -18,7 +18,7 @@ import Data.Foldable (oneOf)
 import Data.List (List(..), fromFoldable, (:))
 import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
 import Data.List.NonEmpty as NE
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..), fromJust, maybe)
 import Data.NonEmpty ((:|))
 import Data.Number (infinity, nan)
 import Data.Number as Data.Number
@@ -34,12 +34,12 @@ import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), Parser, ParserT, Position(..), consume, fail, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, regex, rest, satisfy, string, takeN)
-import Parsing.String.Basic (intDecimal, number, letter, noneOfCodePoints, oneOfCodePoints, whiteSpace)
-import Parsing.String.Replace (breakCap, splitCap, splitCapT, streamEdit, streamEditT)
+import Parsing.String.Basic (intDecimal, letter, noneOfCodePoints, number, oneOfCodePoints, whiteSpace)
+import Parsing.String.Replace (breakCap, replace, replaceT, splitCap, splitCapT)
 import Parsing.Token (TokenParser, makeTokenParser, token, when)
 import Parsing.Token as Token
 import Partial.Unsafe (unsafePartial)
@@ -951,20 +951,16 @@ main = do
     { actual: splitCap "abc" consume
     , expected: NonEmptyList $ Right unit :| Left "a" : Right unit : Left "b" : Right unit : Left "c" : Right unit : Nil
     }
-  assertEqual' "streamEdit1"
-    { actual: streamEdit "aBc" (match $ string "B") fst
-    , expected: "aBc"
-    }
-  assertEqual' "streamEdit2"
-    { actual: streamEdit "aBd" (string "B") (const "C")
+  assertEqual' "replace2"
+    { actual: replace "aBd" (string "B" *> pure "C")
     , expected: "aCd"
     }
-  assertEqual' "streamEdit3"
-    { actual: streamEdit "abcd" (takeN 1) toUpper
+  assertEqual' "replace3"
+    { actual: replace "abcd" (toUpper <$> takeN 1)
     , expected: "ABCD"
     }
-  assertEqual' "streamEdit4"
-    { actual: streamEdit "abc" (pure unit) (\_ -> "X")
+  assertEqual' "replace4"
+    { actual: replace "abc" (pure "X")
     , expected: "XaXbXcX"
     }
   assertEqual' "String.Replace example0"
@@ -979,9 +975,16 @@ main = do
     { actual: catMaybes $ hush <$> splitCap ".A...\n...A." (position <* string "A")
     , expected: (Position { index: 1, line: 1, column: 2 }) : (Position { index: 9, line: 2, column: 4 } : Nil)
     }
-  assertEqual' "String.Replace example3"
-    { actual: unsafePerformEffect $ streamEditT "◀ {HOME} ▶" (string "{" *> anyTill (string "}")) (fst >>> lookupEnv >=> unsafePartial fromJust >>> pure)
+  assertEqual' "String.Replace example3'"
+    { actual: unsafePerformEffect $ replaceT "◀ {HOME} ▶" do
+        _ <- string "{"
+        Tuple home _ <- anyTill (string "}")
+        lift (lookupEnv home) >>= maybe empty pure
     , expected: "◀ " <> unsafePartial (fromJust (unsafePerformEffect (lookupEnv "HOME"))) <> " ▶"
+    }
+  assertEqual' "String.Replace example4'"
+    { actual: replace "1 6 21 107" (show <$> (_ * 2) <$> intDecimal)
+    , expected: "2 12 42 214"
     }
   assertEqual' "String.Replace example4"
     { actual:
@@ -1005,6 +1008,10 @@ main = do
         in
           rmap fst <$> splitCap "((🌼)) (()())" (match balancedParens)
     , expected: NonEmptyList $ Right "((🌼))" :| Left " " : Right "(()())" : Nil
+    }
+  assertEqual' "String.Replace example6"
+    { actual: replace "hay needle hay" (toUpper <$> string "needle")
+    , expected: "hay NEEDLE hay"
     }
 
   log "\nTESTS manyIndex\n"
