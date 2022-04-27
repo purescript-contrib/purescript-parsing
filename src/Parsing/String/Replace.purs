@@ -63,8 +63,8 @@ module Parsing.String.Replace
   , breakCapT
   , splitCap
   , splitCapT
-  , streamEdit
-  , streamEditT
+  , replace
+  , replaceT
   ) where
 
 import Prelude
@@ -81,7 +81,7 @@ import Data.List (List(..), foldl, uncons, (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList, fromList, singleton)
 import Data.Maybe (Maybe(..), fromJust, isJust, maybe)
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, notNull, null)
 import Data.String (CodePoint, joinWith)
 import Data.String as CodePoint
@@ -410,20 +410,20 @@ splitCap
   -> NonEmptyList (Either String a)
 splitCap input sep = unwrap $ splitCapT input sep
 
--- | Monad transformer version of `streamEdit`. The `sep` parser and the
--- | `editor` function will both run in the monad context.
+-- | Monad transformer version of `replace`.
 -- |
 -- | #### Example
 -- |
 -- | Find an environment variable in curly braces and replace it with its value
 -- | from the environment.
--- | We can read from the environment because `streamEditT` is running the
--- | `editor` function in `Effect`.
+-- | We can read from the environment with `lookupEnv` because `replaceT` is
+-- | running the `sep` parser in `Effect`.
 -- |
 -- | ```purescript
--- | pattern = string "{" *> anyTill (string "}")
--- | editor  = fst >>> lookupEnv >=> fromMaybe "" >>> pure
--- | streamEditT "◀ {HOME} ▶" pattern editor
+-- | replaceT "◀ {HOME} ▶" do
+-- |   _ <- string "{"
+-- |   Tuple home _ <- anyTill (string "}")
+-- |   lift (lookupEnv home) >>= maybe empty pure
 -- | ```
 -- |
 -- | Result:
@@ -433,15 +433,14 @@ splitCap input sep = unwrap $ splitCapT input sep
 -- | ```
 -- |
 -- | [![Perl Problems](https://imgs.xkcd.com/comics/perl_problems.png)](https://xkcd.com/1171/)
-streamEditT
-  :: forall m a
+replaceT
+  :: forall m
    . (Monad m)
   => (MonadRec m)
   => String
-  -> ParserT String m a
-  -> (a -> m String)
+  -> ParserT String m String
   -> m String
-streamEditT input sep editor = do
+replaceT input sep = do
   runParserT input (Tuple <$> (splitCapCombinator sep) <*> rest) >>= case _ of
     Left _ -> pure input
     Right (Tuple { carry, rlist, arraySize } remain) -> do
@@ -459,13 +458,12 @@ streamEditT input sep editor = do
 
       let
         accum
-          :: { index :: Int, rlist' :: List (Tuple String a) }
-          -> m (Step { index :: Int, rlist' :: List (Tuple String a) } Unit)
+          :: { index :: Int, rlist' :: List (Tuple String String) }
+          -> m (Step { index :: Int, rlist' :: List (Tuple String String) } Unit)
         accum { index, rlist' } = case uncons rlist' of
           Nothing -> pure $ Done unit
           Just { head: Tuple unmatched matched, tail } -> do
-            edited <- editor matched
-            doST $ unsafePartial $ Array.ST.Partial.poke index (notNull edited) arr
+            doST $ unsafePartial $ Array.ST.Partial.poke index (notNull matched) arr
             if String.null unmatched then
               do
                 pure $ Loop { index: index - 1, rlist': tail }
@@ -487,12 +485,13 @@ streamEditT input sep editor = do
   doST = pure <<< unsafePerformEffect <<< toEffect
 
 -- |
--- | #### Stream editor
+-- | #### Find-and-replace
 -- |
--- | Also known as “find-and-replace”, or “match-and-substitute”. Find all
+-- | Also called “match-and-substitute”. Find all
 -- | of the leftmost non-overlapping sections of the input string which match
 -- | the pattern parser `sep`, and
--- | replace them with the result of the `editor` function.
+-- | replace them with the result of the parser.
+-- | The `sep` parser must return a result of type `String`.
 -- |
 -- | This function can be used instead of
 -- | [Data.String.replaceAll](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String#v:replaceAll)
@@ -501,20 +500,16 @@ streamEditT input sep editor = do
 -- |
 -- | #### Access the matched section of text in the `editor`
 -- |
--- | If you want access to the matched string in the `editor` function,
--- | then combine the pattern parser `sep`
--- | with `match`. This will effectively change
--- | the type of the `editor` function to `(String /\ a) -> String`.
--- |
--- | This allows us to write an `editor` function which can choose to not
--- | edit the match and just leave it as it is. If the `editor` function
--- | returns the first item in the tuple, then `streamEdit` will not change
--- | the matched string.
+-- | To get access to the matched string for the replacement
+-- | combine the pattern parser `sep`
+-- | with `match`.
+-- | This allows us to write a `sep` parser which can choose to not
+-- | edit the match and just leave it as it is.
 -- |
 -- | So, for all `sep`:
 -- |
 -- | ```purescript
--- | streamEdit input (match sep) fst == input
+-- | replace input (fst <$> match sep) == input
 -- | ```
 -- |
 -- | #### Example
@@ -522,7 +517,7 @@ streamEditT input sep editor = do
 -- | Find and uppercase the `"needle"` pattern.
 -- |
 -- | ```purescript
--- | streamEdit "hay needle hay" (string "needle") toUpper
+-- | replace "hay needle hay" (toUpper <$> string "needle")
 -- | ```
 -- |
 -- | Result:
@@ -530,10 +525,22 @@ streamEditT input sep editor = do
 -- | ```purescript
 -- | "hay NEEDLE hay"
 -- | ```
-streamEdit
-  :: forall a
-   . String
-  -> Parser String a
-  -> (a -> String)
+-- |
+-- | #### Example
+-- |
+-- | Find integers and double them.
+-- |
+-- | ```purescript
+-- | replace "1 6 21 107" (show <$> (_*2) <$> intDecimal)
+-- | ```
+-- |
+-- | Result:
+-- |
+-- | ```purescript
+-- | "2 12 42 214"
+-- | ```
+replace
+  :: String
+  -> Parser String String
   -> String
-streamEdit input sep editor = unwrap $ streamEditT input sep (wrap <<< editor)
+replace input sep = unwrap $ replaceT input sep
