@@ -71,12 +71,12 @@ alphaNum = satisfyCP isAlphaNum <?> "letter or digit"
 
 -- | Parser based on the __Data.Number.fromString__ function.
 -- |
--- | This should be the inverse of `show :: String -> Number`.
+-- | This should be the inverse of `show :: Number -> String`.
 -- |
 -- | Examples of strings which can be parsed by this parser:
 -- | * `"3"`
 -- | * `"3.0"`
--- | * `"0.3"`
+-- | * `".3"`
 -- | * `"-0.3"`
 -- | * `"+0.3"`
 -- | * `"-3e-1"`
@@ -91,16 +91,18 @@ number =
     , string "-Infinity" *> pure (negate infinity)
     , string "NaN" *> pure nan
     , tryRethrow $ do
+        -- This primitiv-ish parser should always backtrack on fail.
+        -- Currently regex allows some illegal inputs, like "."
+        -- The important thing is that the regex will find the correct
+        -- boundary of a candidate string to pass to fromString.
         section <- numberRegex
         -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseFloat
         case Data.Number.fromString section of
           Nothing -> fail $ "Number.fromString failed"
-          -- Maybe this parser should set consumed flag if regex matches but fromString fails?
-          -- But currently regex allows some illegal inputs, like "."
-          -- Anyway this primitiv-ish parser should always backtrack on fail.
           Just x -> pure x
     ] <|> fail "Expected Number"
 
+-- Non-exported regex is compiled at startup time.
 numberRegex :: forall m. ParserT String m String
 numberRegex = either unsafeCrashWith identity $ regex pattern mempty
   where
@@ -108,7 +110,7 @@ numberRegex = either unsafeCrashWith identity $ regex pattern mempty
 
 -- | Parser based on the __Data.Int.fromString__ function.
 -- |
--- | This should be the inverse of `show :: String -> Int`.
+-- | This should be the inverse of `show :: Int -> String`.
 -- |
 -- | Examples of strings which can be parsed by this parser:
 -- | * `"3"`
@@ -121,10 +123,11 @@ intDecimal = tryRethrow do
     Nothing -> fail $ "Int.fromString failed"
     Just x -> pure x
 
+-- Non-exported regex is compiled at startup time.
 intDecimalRegex :: forall m. ParserT String m String
 intDecimalRegex = either unsafeCrashWith identity $ regex pattern mempty
   where
-  pattern = "[+-]?[0-9]*"
+  pattern = "[+-]?[0-9]+"
 
 -- | Helper function
 satisfyCP :: forall m. (CodePoint -> Boolean) -> ParserT String m Char

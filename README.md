@@ -89,7 +89,7 @@ There are other `String` parsers in the module `Parsing.String.Basic`, for examp
 
 Parser combinators are in this package in the module `Parsing.Combinators`.
 
-A parser combinator is a function which takes a parser as an argument and returns a new parser. The `Data.Array.many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (Array Char)`.
+A parser combinator is a function which takes a parser as an argument and returns a new parser. The `many` combinator, for example, will repeat a parser as many times as it can. So the parser `many letter` will have type `Parser String (List Char)`.
 
 Running the parser
 
@@ -97,7 +97,7 @@ Running the parser
 runParser "aBabaB" (many ayebee)
 ```
 
-will return `Right [true, false, true]`.
+will return `Right (true : false : true : Nil)`.
 
 ### Stack-safety
 
@@ -114,14 +114,14 @@ stack-safe.
 
 The original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer 1998.
 
-[*Revisiting Monadic Parsing in Haskell*](https://vaibhavsagar.com/blog/2018/02/04/revisiting-monadic-parsing-haskell/) by Vaibhav Sagar is a reflection on the Hutton, Meijer FUNCTIONAL PEARL.
+[*Parsec: Direct Style Monadic Parser Combinators For The Real World*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf) by Daan Leijen and Erik Meijer 2001.
 
 [*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) by Alexis King is about what it means to “parse” something, without any mention of monads.
 
+[*Revisiting Monadic Parsing in Haskell*](https://vaibhavsagar.com/blog/2018/02/04/revisiting-monadic-parsing-haskell/) by Vaibhav Sagar is a reflection on the Hutton, Meijer FUNCTIONAL PEARL.
+
 [*Parsec: “try a <|> b” considered harmful*](http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/) by Edward Z. Yang is about how to decide when to backtrack
 from a failed alternative.
-
-[*Parsec: Direct Style Monadic Parser Combinators For The Real World*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf) by Daan Leijen and Erik Meijer 2001.
 
 [*Parser Combinators in Haskell*](https://serokell.io/blog/parser-combinators-in-haskell) by Heitor Toledo Lassarote de Paula.
 

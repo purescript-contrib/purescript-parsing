@@ -113,8 +113,8 @@ breakCapT input sep = hush <$> runParserT input go
 
 -- | #### Break on and capture one pattern
 -- |
--- | Find the first occurence of a pattern in a text stream, capture the found
--- | pattern, and break the input text stream on the found pattern.
+-- | Find the first occurence of a pattern in the input `String`, capture the found
+-- | pattern, and break the input `String` on the found pattern.
 -- |
 -- | This function can be used instead of
 -- | [Data.String.indexOf](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String#v:indexOf)
@@ -139,8 +139,8 @@ breakCapT input sep = hush <$> runParserT input go
 -- |
 -- | #### Access the matched section of text
 -- |
--- | If you want to capture the matched string, then combine the pattern
--- | parser `sep` with `match`.
+-- | To capture the matched string combine the pattern
+-- | parser `sep` with the `match` combinator.
 -- |
 -- | With the matched string, we can reconstruct the input string.
 -- | For all `input`, `sep`, if
@@ -317,8 +317,8 @@ splitCapCombinator sep = tailRecM accum { carry: Nothing, rlist: Nil, arraySize:
 
 -- | #### Split on and capture all patterns
 -- |
--- | Find all occurences of the pattern parser `sep`, split the input string,
--- | capture all the patterns and the splits.
+-- | Find all occurences of the pattern parser `sep`, split the
+-- | input `String`, capture all the matched patterns and the splits.
 -- |
 -- | This function can be used instead of
 -- | [Data.String.Common.split](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String.Common#v:split)
@@ -332,11 +332,11 @@ splitCapCombinator sep = tailRecM accum { carry: Nothing, rlist: Nil, arraySize:
 -- | The input string will be split on every leftmost non-overlapping occurence
 -- | of the pattern `sep`. The output list will contain
 -- | the parsed result of input string sections which match the `sep` pattern
--- | in `Right`, and non-matching sections in `Left`.
+-- | in `Right a`, and non-matching sections in `Left String`.
 -- |
 -- | #### Access the matched section of text
 -- |
--- | If you want to capture the matched strings, then combine the pattern
+-- | To capture the matched strings combine the pattern
 -- | parser `sep` with the `match` combinator.
 -- |
 -- | With the matched strings, we can reconstruct the input string.
@@ -491,7 +491,7 @@ replaceT input sep = do
 -- | of the leftmost non-overlapping sections of the input string which match
 -- | the pattern parser `sep`, and
 -- | replace them with the result of the parser.
--- | The `sep` parser must return a result of type `String`.
+-- | The `sep` parser must return a result of type `String` for the replacement.
 -- |
 -- | This function can be used instead of
 -- | [Data.String.replaceAll](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String#v:replaceAll)
@@ -500,11 +500,11 @@ replaceT input sep = do
 -- |
 -- | #### Access the matched section of text in the `editor`
 -- |
--- | To get access to the matched string for the replacement
+-- | To get access to the matched string for calculating the replacement,
 -- | combine the pattern parser `sep`
--- | with `match`.
+-- | with the `match` combinator.
 -- | This allows us to write a `sep` parser which can choose to not
--- | edit the match and just leave it as it is.
+-- | replace the match and just leave it as it is.
 -- |
 -- | So, for all `sep`:
 -- |
