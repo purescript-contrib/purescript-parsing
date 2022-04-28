@@ -5,6 +5,16 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+
+New features:
+
+Bugfixes:
+
+Other improvements:
+
+## [v9.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.0.0) - 2022-04-27
+
+Breaking changes:
 - Update project and deps to PureScript v0.15.0 (#160 by @JordanMartinez)
 - Drop deprecated `MonadZero` instance (#160 by @JordanMartinez)
 - New optimized internals. `ParserT` now has a more efficient representation,
