@@ -99,7 +99,7 @@ runParser "aBabaB" (many ayebee)
 
 will return `Right (true : false : true : Nil)`.
 
-### Stack-safety
+## Stack-safety
 
 Starting with v9.0.0, all parsers and combinators in this package are always
 stack-safe.
