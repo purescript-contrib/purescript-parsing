@@ -422,8 +422,8 @@ splitCap input sep = unwrap $ splitCapT input sep
 -- | ```purescript
 -- | replaceT "◀ {HOME} ▶" do
 -- |   _ <- string "{"
--- |   Tuple home _ <- anyTill (string "}")
--- |   lift (lookupEnv home) >>= maybe empty pure
+-- |   Tuple variable _ <- anyTill (string "}")
+-- |   lift (lookupEnv variable) >>= maybe empty pure
 -- | ```
 -- |
 -- | Result:

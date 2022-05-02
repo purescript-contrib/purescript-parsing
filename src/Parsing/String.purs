@@ -1,8 +1,8 @@
 -- | Primitive parsers for working with an input stream of type `String`.
 -- |
--- | All of these primitive parsers will consume their input when they succeed.
+-- | All of these primitive parsers will consume when they succeed.
 -- |
--- | All of these primitive parsers will consume no input when they
+-- | All of these primitive parsers will not consume when they
 -- | fail.
 -- |
 -- | The behavior of these primitive parsers is based on the behavior of the
@@ -204,27 +204,41 @@ match p = do
   -- boundary.
   pure $ Tuple (SCU.take (SCU.length input1 - SCU.length input2) input1) x
 
--- | Compile a regular expression string into a regular expression parser.
+-- | Compile a regular expression `String` into a regular expression parser.
 -- |
--- | This function will use the `Data.String.Regex.regex` function to compile and return a parser which can be used
+-- | This function will use the `Data.String.Regex.regex` function to compile
+-- | and return a parser which can be used
 -- | in a `ParserT String m` monad.
+-- | If compilation fails then this function will return `Left` a compilation
+-- | error message.
 -- |
--- | This parser will try to match the regular expression pattern starting
--- | at the current parser position. On success, it will return the matched
--- | substring.
+-- | The returned parser will try to match the regular expression pattern once,
+-- | starting at the current parser position. On success, it will return
+-- | the matched substring.
 -- |
--- | [*MDN Regular Expressions Cheatsheet*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
+-- | If the RegExp `String` is constant then we can assume that compilation will
+-- | always succeed and `unsafeCrashWith` if it doesn’t. If we dynamically
+-- | generate the RegExp `String` at runtime then we should handle the
+-- | case where compilation of the RegExp fails.
 -- |
--- | This function should be called outside the context of a `ParserT String m` monad, because this function might
--- | fail with a `Left` RegExp compilation error message.
--- | If you call this function inside of the `ParserT String m` monad and then `fail` the parse when the compilation fails,
--- | then that could be confusing because a parser failure is supposed to indicate an invalid input string.
--- | If the compilation failure occurs in an `alt` then the compilation failure might not be reported at all and instead
--- | the input string would be parsed incorrectly.
+-- | This function should be called outside the context of a `ParserT String m`
+-- | monad for two reasons:
+-- | 1. If we call this function inside of the `ParserT String m` monad and
+-- |    then `fail` the parse when the compilation fails,
+-- |    then that could be confusing because a parser failure is supposed to
+-- |    indicate an invalid input string.
+-- |    If the compilation failure occurs in an `alt` then the compilation
+-- |    failure might not be reported at all and instead
+-- |    the input string would be parsed incorrectly.
+-- | 2. Compiling a RegExp is expensive and it’s better to do it
+-- |    once in advance and then use the compiled RegExp many times than
+-- |    to compile the RegExp many times during the parse.
 -- |
 -- | This parser may be useful for quickly consuming a large section of the
--- | input `String`, because in a JavaScript runtime environment the RegExp
--- | runtime is a lot faster than primitive parsers.
+-- | input `String`, because in a JavaScript runtime environment a compiled
+-- | RegExp is a lot faster than a monadic parser built from parsing primitives.
+-- |
+-- | [*MDN Regular Expressions Cheatsheet*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
 -- |
 -- | #### Example
 -- |
@@ -246,7 +260,8 @@ match p = do
 -- | regex "x*" (dotAll <> ignoreCase)
 -- | ```
 -- |
--- | The `dotAll`, `unicode`, and `ignoreCase` flags might make sense for a `regex` parser. The other flags will
+-- | The `dotAll`, `unicode`, and `ignoreCase` flags might make sense for
+-- | a `regex` parser. The other flags will
 -- | probably cause surprising behavior and you should avoid them.
 -- |
 -- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
