@@ -5,6 +5,7 @@
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-parsing/badge)](https://pursuit.purescript.org/packages/purescript-parsing)
 [![Maintainer: jamesdbrock](https://img.shields.io/badge/maintainer-jamesdbrock-teal.svg)](https://github.com/jamesdbrock)
 [![Maintainer: robertdp](https://img.shields.io/badge/maintainer-robertdp-teal.svg)](https://github.com/robertdp)
+[![Maintainer: chtenb](https://img.shields.io/badge/maintainer-chtenb-teal.svg)](http://github.com/chtenb)
 
 A monadic parser combinator library based on Haskell’s
 [Parsec](https://hackage.haskell.org/package/parsec).
