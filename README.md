@@ -105,11 +105,9 @@ will return `Right (true : false : true : Nil)`.
 Starting with v9.0.0, all parsers and combinators in this package are always
 stack-safe.
 
-## Video introduction to monadic parser combinators
+## Resources
 
-[*Monadic Parsers at the Input Boundary*](https://www.youtube.com/watch?v=LLkbzt4ms6M) by James Brock
-
-## Further reading
+- [*Monadic Parsers at the Input Boundary* (YouTube)](https://www.youtube.com/watch?v=LLkbzt4ms6M) by James Brock is a an introductory tutorial to monadic parser combinators with this package.
 
 - [*Monadic Parser Combinators*](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) by Graham Hutton and Erik Meijer 1996.
 
