@@ -111,20 +111,22 @@ stack-safe.
 
 ## Further reading
 
-[*Monadic Parser Combinators*](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) by Graham Hutton and Erik Meijer 1996.
+- [*Monadic Parser Combinators*](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) by Graham Hutton and Erik Meijer 1996.
 
-The original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer 1998.
+- The original short classic [FUNCTIONAL PEARLS *Monadic Parsing in Haskell*](https://www.cs.nott.ac.uk/~pszgmh/pearl.pdf) by Graham Hutton and Erik Meijer 1998.
 
-[*Parsec: Direct Style Monadic Parser Combinators For The Real World*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf) by Daan Leijen and Erik Meijer 2001.
+- [*Parsec: Direct Style Monadic Parser Combinators For The Real World*](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf) by Daan Leijen and Erik Meijer 2001.
 
-[*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) by Alexis King is about what it means to “parse” something, without any mention of monads.
+- [*Parse, don't validate*](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) by Alexis King is about what it means to “parse” something, without any mention of monads.
 
-[*Revisiting Monadic Parsing in Haskell*](https://vaibhavsagar.com/blog/2018/02/04/revisiting-monadic-parsing-haskell/) by Vaibhav Sagar is a reflection on the Hutton, Meijer FUNCTIONAL PEARL.
+- [*Revisiting Monadic Parsing in Haskell*](https://vaibhavsagar.com/blog/2018/02/04/revisiting-monadic-parsing-haskell/) by Vaibhav Sagar is a reflection on the Hutton, Meijer FUNCTIONAL PEARL.
 
-[*Parsec: “try a <|> b” considered harmful*](http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/) by Edward Z. Yang is about how to decide when to backtrack
+- [*Parsec: “try a <|> b” considered harmful*](http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/) by Edward Z. Yang is about how to decide when to backtrack
 from a failed alternative.
 
-[*Parser Combinators in Haskell*](https://serokell.io/blog/parser-combinators-in-haskell) by Heitor Toledo Lassarote de Paula.
+- [*Parser Combinators in Haskell*](https://serokell.io/blog/parser-combinators-in-haskell) by Heitor Toledo Lassarote de Paula.
+
+- [*Parsing recursively*](https://github.com/Thimoteus/SandScript/wiki/2.-Parsing-recursively) “Because PureScript is not evaluated lazily like Haskell is, this will bite us if we naïvely try to port recursive Haskell parsing to PureScript.”
 
 There are lots of other great monadic parsing tutorials on the internet.
 
