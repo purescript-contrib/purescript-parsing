@@ -15,8 +15,8 @@
 -- |
 -- | ### Data.Array
 -- |
--- | Expect better parsing speed from the `List`-based combinators in this
--- | module than from `Array`-based combinators.
+-- | The `many` and `many1` combinators in the __Parsing.Combinators.Array__
+-- | module are faster.
 -- |
 -- | * [Data.Array.many](https://pursuit.purescript.org/packages/purescript-arrays/docs/Data.Array#v:many)
 -- | * [Data.Array.some](https://pursuit.purescript.org/packages/purescript-arrays/docs/Data.Array#v:some)
@@ -204,7 +204,7 @@ lookAhead (ParserT k1) = ParserT
         (mkFn2 \_ res -> runFn2 done state1 res)
   )
 
--- | Match the parser `p` as many times as possible.
+-- | Match the phrase `p` as many times as possible.
 -- |
 -- | If `p` never consumes input when it
 -- | fails then `many p` will always succeed,
@@ -212,7 +212,7 @@ lookAhead (ParserT k1) = ParserT
 many :: forall s m a. ParserT s m a -> ParserT s m (List a)
 many = List.manyRec
 
--- | Match one or more times.
+-- | Match the phrase `p` as many times as possible, at least once.
 many1 :: forall m s a. ParserT s m a -> ParserT s m (NonEmptyList a)
 many1 p = NEL.cons' <$> p <*> List.manyRec p
 
@@ -434,14 +434,13 @@ manyTill_ :: forall s a m e. ParserT s m a -> ParserT s m e -> ParserT s m (Tupl
 manyTill_ p end = tailRecM go Nil
   where
   go :: List a -> ParserT s m (Step (List a) (Tuple (List a) e))
-  go xs =
+  go xs = alt
     do
       t <- end
       pure (Done (Tuple (reverse xs) t))
-      <|>
-        do
-          x <- p
-          pure (Loop (x : xs))
+    do
+      x <- p
+      pure (Loop (x : xs))
 
 -- | Parse the phrase as many times as possible, at least *N* times, but no
 -- | more than *M* times.
@@ -462,17 +461,15 @@ manyIndex from to p =
   go (Tuple i xs) =
     if i >= to then
       pure (Done (Tuple i (reverse xs)))
-    else
-      ( do
-          x <- p i
-          pure (Loop (Tuple (i + 1) (x : xs)))
-      )
-        <|>
-          ( if i >= from then
-              pure (Done (Tuple i (reverse xs)))
-            else
-              fail "Expected more phrases"
-          )
+    else alt
+      do
+        x <- p i
+        pure (Loop (Tuple (i + 1) (x : xs)))
+      do
+        if i >= from then
+          pure (Done (Tuple i (reverse xs)))
+        else
+          fail "Expected more phrases"
 
 -- | If the parser succeeds without advancing the input stream position,
 -- | then force the parser to fail.

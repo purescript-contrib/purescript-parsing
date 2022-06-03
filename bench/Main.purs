@@ -70,6 +70,7 @@ import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 import Parsing (runParser)
 import Parsing.Combinators (chainl, chainr, many, manyTill, manyTill_, sepBy, sepEndBy1, skipMany)
+import Parsing.Combinators.Array as Combinators.Array
 import Parsing.String (anyChar, eof, string)
 import Parsing.String.Basic (digit)
 import Performance.Minibench (benchWith)
@@ -160,6 +161,8 @@ main = do
     $ \_ -> throwLeft $ runParser string23_10000 (many anyChar)
   htmlTableWrap "runParser Array.many anyChar 10000" $ benchWith 50
     $ \_ -> throwLeft $ runParser string23_10000 (Array.many anyChar)
+  htmlTableWrap "runParser Combinators.Array.many anyChar 10000" $ benchWith 50
+    $ \_ -> throwLeft $ runParser string23_10000 (Combinators.Array.many anyChar)
 
   log "<th><h2>skipMany anyChar 10000</h2></th>"
   htmlTableWrap "runParser skipMany anyChar 10000" $ benchWith 50

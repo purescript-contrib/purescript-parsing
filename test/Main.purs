@@ -35,6 +35,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), Parser, ParserT, Position(..), consume, fail, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, regex, rest, satisfy, string, takeN)
@@ -594,6 +595,7 @@ main = do
 
   parseTest "(((a)))" 3 nested
   parseTest "aaa" (Cons "a" (Cons "a" (Cons "a" Nil))) $ many (string "a")
+  parseTest "abc-" [ 'a', 'b', 'c' ] $ Combinators.Array.many letter
   parseTest "(ab)" (Just "b") $ parens do
     _ <- string "a"
     optionMaybe $ string "b"

@@ -8,6 +8,8 @@ Breaking changes:
 
 New features:
 
+- Add `Array` combinators in a new `Combinators.Array` module (#199 by @jamesdbrock)
+
 Bugfixes:
 
 Other improvements:
