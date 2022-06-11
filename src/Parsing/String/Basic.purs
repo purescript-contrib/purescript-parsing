@@ -1,4 +1,18 @@
 -- | Basic `String` parsers derived from primitive `String` parsers.
+-- |
+-- | #### unicode dependency
+-- |
+-- | Some of the parsers in this module depend on the __unicode__ package.
+-- | The __unicode__ package is large; about half a megabyte unminified.
+-- | If code which depends on __parsing__ is “tree-shaken”
+-- | “dead-code-eliminated,” then
+-- | all of the __unicode__ package will be eliminated.
+-- |
+-- | The __unicode__-dependent parsers in this module will call functions
+-- | which use large lookup tables from the __unicode__ package.
+-- | Using any of these __unicode__-dependent parsers
+-- | may result in a minified, dead-code-eliminated bundle size increase
+-- | of over 100 kilobytes.
 module Parsing.String.Basic
   ( digit
   , hexDigit

@@ -4,6 +4,8 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
+## [v9.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-06-12
+
 Breaking changes:
 
 New features:
@@ -11,6 +13,8 @@ New features:
 - Add `Array` combinators in a new `Combinators.Array` module (#199 by @jamesdbrock)
 
 Bugfixes:
+
+- Bugfix in `intDecimal`.
 
 Other improvements:
 
