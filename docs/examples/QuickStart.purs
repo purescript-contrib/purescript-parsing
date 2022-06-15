@@ -5,8 +5,8 @@ import Prelude
 import Data.Foldable (fold)
 import Effect (Effect)
 import TryPureScript (h1, h3, p, text, link, render, code)
-import Text.Parsing.Parser (Parser, runParser)
-import Text.Parsing.Parser.String (char)
+import Parsing (Parser, runParser)
+import Parsing.String (char)
 import Control.Alt ((<|>))
 import Data.Array (many)
 
