@@ -19,7 +19,7 @@ ayebee = do
 main :: Effect Unit
 main =
   render $ fold
-    [ h1 $ text "Examples for " <> link "https://github.com/purescript-contrib/purescript-parsing" (text "purescript-parsing") <> text " quick start"
+    [ h1 $ text "Examples for purescript-parsing Quick Start"
     
     , p $ text "Run the " <> (code $ text "ayebee") <> text " parser."
     , h3 $ code (text "runParser \"aB\" ayebee")
