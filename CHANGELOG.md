@@ -4,6 +4,20 @@ Notable changes to this project are documented in this file. The format is based
 
 ## [Unreleased]
 
+Bugfixes:
+
+- consumeWith doesn't consume if position does not advance (#201 by @jamesdbrock)
+
+  This will effect parsers:
+
+  * rest
+  * string
+  * takeN
+  * regex
+  * whiteSpace
+  * skipSpaces
+
+
 ## [v9.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-06-12
 
 Breaking changes:

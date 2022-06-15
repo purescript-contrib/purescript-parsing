@@ -148,11 +148,17 @@ satisfyCP :: forall m. (CodePoint -> Boolean) -> ParserT String m Char
 satisfyCP p = satisfy (p <<< codePointFromChar)
 
 -- | Match zero or more whitespace characters satisfying
--- | `Data.CodePoint.Unicode.isSpace`. Always succeeds.
+-- | `Data.CodePoint.Unicode.isSpace`.
+-- |
+-- | Always succeeds. Will consume only when matched whitespace string
+-- | is non-empty.
 whiteSpace :: forall m. ParserT String m String
 whiteSpace = fst <$> match skipSpaces
 
--- | Skip whitespace characters and throw them away. Always succeeds.
+-- | Skip whitespace characters satisfying `Data.CodePoint.Unicode.isSpace`
+-- | and throw them away.
+-- |
+-- | Always succeeds. Will only consume when some characters are skipped.
 skipSpaces :: forall m. ParserT String m Unit
 skipSpaces = consumeWith \input -> do
   let consumed = takeWhile isSpace input
