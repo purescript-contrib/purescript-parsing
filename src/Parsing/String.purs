@@ -283,6 +283,8 @@ regex pattern flags =
 -- |
 -- | * `value` is the value to return.
 -- | * `consumed` is the input `String` that was consumed. It is used to update the parser position.
+-- |   If the `consumed` `String` is non-empty then the `consumed` flag will
+-- |   be set to true. (Confusing terminology.)
 -- | * `remainder` is the new remaining input `String`.
 -- |
 -- | This function is used internally to construct primitive `String` parsers.
@@ -296,7 +298,7 @@ consumeWith f = ParserT
         Left err ->
           runFn2 throw state1 (ParseError err pos)
         Right { value, consumed, remainder } ->
-          runFn2 done (ParseState remainder (updatePosString pos consumed remainder) true) value
+          runFn2 done (ParseState remainder (updatePosString pos consumed remainder) (not (String.null consumed))) value
   )
 
 -- | Combinator which finds the first position in the input `String` where the

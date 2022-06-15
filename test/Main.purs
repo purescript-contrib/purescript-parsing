@@ -33,13 +33,13 @@ import Effect (Effect)
 import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
-import Parsing (ParseError(..), Parser, ParserT, Position(..), consume, fail, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, regex, rest, satisfy, string, takeN)
-import Parsing.String.Basic (intDecimal, letter, noneOfCodePoints, number, oneOfCodePoints, whiteSpace)
+import Parsing.String.Basic (intDecimal, letter, noneOfCodePoints, number, oneOfCodePoints, skipSpaces, whiteSpace)
 import Parsing.String.Replace (breakCap, replace, replaceT, splitCap, splitCapT)
 import Parsing.Token (TokenParser, makeTokenParser, token, when)
 import Parsing.Token as Token
@@ -684,6 +684,22 @@ main = do
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { index: 3, column: 4, line: 1 })
   parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { index: 6, column: 1, line: 4 })
   parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { index: 2, column: 10, line: 1 })
+
+  assertEqual' "skipSpaces consumes if position advancement issue #200"
+    { actual: runParser " " do
+        skipSpaces
+        ParseState _ _ c <- getParserT
+        pure c
+    , expected: Right true
+    }
+
+  assertEqual' "skipSpaces doesn't consume if no position advancement issue #200"
+    { actual: runParser "x" do
+        skipSpaces
+        ParseState _ _ c <- getParserT
+        pure c
+    , expected: Right false
+    }
 
   log "\nTESTS number\n"
 
