@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Foldable (fold)
 import Effect (Effect)
-import TryPureScript (h1, h3, p, text, link, render, code)
+import TryPureScript (h1, h3, p, text, render, code)
 import Parsing (Parser, runParser)
 import Parsing.String (char)
 import Control.Alt ((<|>))
