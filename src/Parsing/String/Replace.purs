@@ -43,8 +43,8 @@
 -- | * The replacement expression for a traditional regular expression-based
 -- |   substitution command is usually just a string template in which
 -- |   the *Nth* “capture group” can be inserted with the syntax `\N`. With
--- |   this library, instead of a template, we get
--- |   an `editor` function which can perform any computation, including `Effect`s.
+-- |   this library, instead of a template, we
+-- |   can perform any replacement computation, including `Effect`s.
 -- |
 -- | #### Implementation Notes
 -- |
@@ -498,7 +498,7 @@ replaceT input sep = do
 -- | or
 -- | [Data.String.Regex.replace'](https://pursuit.purescript.org/packages/purescript-strings/docs/Data.String.Regex#v:replace').
 -- |
--- | #### Access the matched section of text in the `editor`
+-- | #### Access the matched section of the input string
 -- |
 -- | To get access to the matched string for calculating the replacement,
 -- | combine the pattern parser `sep`
