@@ -17,6 +17,8 @@ Bugfixes:
   * whiteSpace
   * skipSpaces
 
+- `number` should parse scientific notation when exponent does not contain a decimal (#204 by @MaybeJustJames)
+
 
 ## [v9.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-06-12
 
