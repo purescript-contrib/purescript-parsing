@@ -120,7 +120,7 @@ number =
 numberRegex :: forall m. ParserT String m String
 numberRegex = either unsafeCrashWith identity $ regex pattern mempty
   where
-  pattern = "[+-]?[0-9]*(\\.[0-9]*)?([eE][+-]?[0-9]*(\\.[0-9]*))?"
+  pattern = "[+-]?[0-9]*(\\.[0-9]*)?([eE][+-]?[0-9]*(\\.[0-9]*)?)?"
 
 -- | Parser based on the __Data.Int.fromString__ function.
 -- |

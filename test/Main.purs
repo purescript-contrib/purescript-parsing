@@ -726,6 +726,11 @@ main = do
     , expected: Right (-0.3)
     }
 
+  assertEqual' "number xEy"
+    { actual: runParser "2e1" number
+    , expected: Right 20.0
+    }
+
   -- test from issue #73
   assertEqual' "number 2"
     { actual: runParser "0.7531531167929774" number
