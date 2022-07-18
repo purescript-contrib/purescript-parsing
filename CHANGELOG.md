@@ -6,6 +6,16 @@ Notable changes to this project are documented in this file. The format is based
 
 Bugfixes:
 
+Breaking changes:
+
+New features:
+
+Other improvements:
+
+## [v10.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-07-18
+
+Bugfixes:
+
 - consumeWith doesn't consume if position does not advance (#201 by @jamesdbrock)
 
   This will effect parsers:
