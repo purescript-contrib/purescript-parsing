@@ -33,6 +33,7 @@ import Control.Alt (class Alt)
 import Control.Apply (lift2)
 import Control.Lazy (class Lazy)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Reader (class MonadAsk, class MonadReader, ask, local)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
 import Control.Monad.State.Class (class MonadState, state)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
@@ -277,6 +278,15 @@ instance MonadRec (ParserT s m) where
 
 instance (MonadState t m) => MonadState t (ParserT s m) where
   state k = lift (state k)
+
+instance (MonadAsk r m) => MonadAsk r (ParserT s m) where
+  ask = lift ask
+
+instance (MonadRec m, MonadReader r m) => MonadReader r (ParserT s m) where
+  local f (ParserT k) = ParserT
+    ( mkFn5 \state1 more lift throw done ->
+        runFn5 k state1 more (lift <<< (local f)) throw done
+    )
 
 instance MonadThrow ParseError (ParserT s m) where
   throwError err = ParserT
