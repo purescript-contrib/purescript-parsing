@@ -10,6 +10,8 @@ Breaking changes:
 
 New features:
 
+- add `MonadAsk` and `MonadReader` instances (#208 by @bentongxyz)
+
 Other improvements:
 
 ## [v10.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-07-18
