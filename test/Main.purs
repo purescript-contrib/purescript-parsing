@@ -13,7 +13,7 @@ import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
 import Data.Bifunctor (lmap, rmap)
-import Data.Either (Either(..), either, hush)
+import Data.Either (Either(..), either, fromLeft, hush)
 import Data.Foldable (oneOf)
 import Data.List (List(..), fromFoldable, (:))
 import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
@@ -34,12 +34,13 @@ import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
-import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, regex, rest, satisfy, string, takeN)
+import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, parseErrorHuman, regex, rest, satisfy, string, takeN)
 import Parsing.String.Basic (intDecimal, letter, noneOfCodePoints, number, oneOfCodePoints, skipSpaces, whiteSpace)
+import Parsing.String.Basic as String.Basic
 import Parsing.String.Replace (breakCap, replace, replaceT, splitCap, splitCapT)
 import Parsing.Token (TokenParser, makeTokenParser, token, when)
 import Parsing.Token as Token
@@ -1070,3 +1071,38 @@ main = do
     { actual: lmap parseErrorPosition $ runParser "aa" $ advance consume
     , expected: Left (Position { index: 0, line: 1, column: 1 })
     }
+
+  log "\nTESTS error messages\n"
+  do
+    let input = "12345six789"
+    assertEqual' "parseErrorHuman 1"
+      { actual: Array.drop 1 $ parseErrorHuman input 20 $ fromLeft (ParseError "" initialPos)
+          $ runParser input (replicateA 9 String.Basic.digit :: Parser String (List Char))
+      , expected: [ "     ▼", "12345six789" ]
+      }
+
+  do
+    let input = "12345six789"
+    assertEqual' "parseErrorHuman 2"
+      { actual: Array.drop 1 $ parseErrorHuman input 5 $ fromLeft (ParseError "" initialPos)
+          $ runParser input (replicateA 9 String.Basic.digit :: Parser String (List Char))
+      , expected: [ "  ▼", "45six" ]
+      }
+
+  do
+    let input = "aaaa🍷\r\nbbbb"
+    assertEqual' "parseErrorHuman 3"
+      { actual: parseErrorHuman input 20 $ fromLeft (ParseError "" initialPos)
+          $ runParser input
+          $ string "aaaa" *> (replicateA 7 letter :: Parser String (List Char))
+      , expected: [ "Expected letter at position index:4 (line:1, column:5)", "    ▼", "aaaa🍷" ]
+      }
+
+  do
+    let input = "aaaa\r\n🍷bbbb"
+    assertEqual' "parseErrorHuman 4"
+      { actual: parseErrorHuman input 20 $ fromLeft (ParseError "" initialPos)
+          $ runParser input
+          $ string "aaaa\r\n" *> (replicateA 5 letter :: Parser String (List Char))
+      , expected: [ "Expected letter at position index:6 (line:2, column:1)", "▼", "🍷bbbb" ]
+      }

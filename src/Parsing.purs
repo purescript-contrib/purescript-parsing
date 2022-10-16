@@ -51,9 +51,11 @@ import Data.Tuple (Tuple(..), fst)
 -- | the position in the input stream at which the error occurred.
 data ParseError = ParseError String Position
 
+-- | Get the `Message` from a `ParseError`
 parseErrorMessage :: ParseError -> String
 parseErrorMessage (ParseError msg _) = msg
 
+-- | Get the `Position` from a `ParseError`.
 parseErrorPosition :: ParseError -> Position
 parseErrorPosition (ParseError _ pos) = pos
 
