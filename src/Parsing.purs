@@ -282,7 +282,7 @@ instance (MonadState t m) => MonadState t (ParserT s m) where
 instance (MonadAsk r m) => MonadAsk r (ParserT s m) where
   ask = lift ask
 
-instance (MonadRec m, MonadReader r m) => MonadReader r (ParserT s m) where
+instance (MonadReader r m) => MonadReader r (ParserT s m) where
   local f (ParserT k) = ParserT
     ( mkFn5 \state1 more lift throw done ->
         runFn5 k state1 more (lift <<< local f) throw done
