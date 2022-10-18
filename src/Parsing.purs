@@ -285,7 +285,7 @@ instance (MonadAsk r m) => MonadAsk r (ParserT s m) where
 instance (MonadRec m, MonadReader r m) => MonadReader r (ParserT s m) where
   local f (ParserT k) = ParserT
     ( mkFn5 \state1 more lift throw done ->
-        runFn5 k state1 more (lift <<< (local f)) throw done
+        runFn5 k state1 more (lift <<< local f) throw done
     )
 
 instance MonadThrow ParseError (ParserT s m) where
