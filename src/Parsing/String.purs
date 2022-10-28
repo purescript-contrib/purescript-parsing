@@ -1,4 +1,5 @@
--- | Primitive parsers for working with an input stream of type `String`.
+-- | Primitive parsers, combinators and functions for working with an input
+-- | stream of type `String`.
 -- |
 -- | All of these primitive parsers will consume when they succeed.
 -- |
@@ -47,17 +48,21 @@ module Parsing.String
   , regex
   , anyTill
   , consumeWith
+  , parseErrorHuman
   ) where
 
 import Prelude hiding (between)
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
+import Data.Array (replicate)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..))
 import Data.Enum (fromEnum, toEnum)
 import Data.Function.Uncurried (mkFn5, runFn2)
+import Data.Int (odd)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.String (CodePoint, Pattern(..), codePointAt, length, null, splitAt, stripPrefix, uncons)
+import Data.String as CodePoint
 import Data.String as String
 import Data.String.CodeUnits as SCU
 import Data.String.Regex as Regex
@@ -340,3 +345,97 @@ anyTill p = do
         _ <- anyCodePoint
         pure $ Loop unit
     )
+
+-- | Returns three `String`s which, when printed line-by-line, will show
+-- | a human-readable parsing error message with context.
+-- |
+-- | #### Input arguments
+-- |
+-- | * The first argument is the input `String` given to the parser which
+-- | errored.
+-- | * The second argument is a positive `Int` which indicates how many
+-- | characters of input `String` context are wanted around the parsing error.
+-- | * The third argument is the `ParseError` for the input `String`.
+-- |
+-- | #### Output `String`s
+-- |
+-- | 1. The parse error message and the parsing position.
+-- | 2. A string with an arrow that points to the error position in the
+-- |    input context (in a fixed-width font).
+-- | 3. The input context. A substring of the input which tries to center
+-- |    the error position and have the wanted length and not include
+-- |    any newlines or carriage returns.
+-- |
+-- |    If the parse error occurred on a carriage return or newline character,
+-- |    then that character will be included at the end of the input context.
+-- |
+-- | #### Example
+-- |
+-- | ```
+-- | let input = "12345six789"
+-- | case runParser input (replicateA 9 String.Basic.digit) of
+-- |   Left err ->
+-- |     log $ String.joinWith "\n" $ parseErrorHuman input 20 err
+-- | ```
+-- | ---
+-- | ```
+-- | Expected digit at position index:5 (line:1, column:6)
+-- |      ▼
+-- | 12345six789
+-- | ```
+parseErrorHuman :: String -> Int -> ParseError -> Array String
+parseErrorHuman input contextSize (ParseError msg (Position { line, column, index })) =
+  -- inspired by
+  -- https://github.com/elm/parser/blob/master/README.md#tracking-context
+  [ msg <> " at position index:" <> show index
+      <> " (line:"
+      <> show line
+      <> ", column:"
+      <> show column
+      <> ")"
+  , (String.joinWith "" (replicate (lineIndex - minPosBefore) " ")) <> "▼" -- best way to construct string of spaces?
+  , inputContext
+  ]
+  where
+  -- select the input line in which the error appears
+  -- sadly we can't use splitCap because of circular module dependency and we
+  -- don't feel like separating out an “Internal” module.
+  { posBegin, posEnd, lineBegin } = go 0 input 0 input
+    where
+    go posBegin lineBegin posEnd lineEnd =
+      case String.uncons lineEnd of
+        Just { head, tail } | head == CodePoint.codePointFromChar '\n' ->
+          if posEnd == index -- uh-oh, error at the newline
+          -- so include the newline at the end of the selected line.
+          then { posBegin, posEnd: posEnd + 1, lineBegin }
+          else if posEnd > index then { posBegin, posEnd, lineBegin }
+          else go (posEnd + 1) tail (posEnd + 1) tail
+        Just { head, tail } | head == CodePoint.codePointFromChar '\r' ->
+          if posEnd == index -- uh-oh, error at the carriage return
+          -- so include the carriage return at the end of the selected line.
+          -- we don't need to add the possible following newline because
+          -- we're not printing a line break here, we're just making sure
+          -- to include the character at the position which errored.
+          then { posBegin, posEnd: posEnd + 1, lineBegin }
+          else if posEnd > index then { posBegin, posEnd, lineBegin }
+          else go (posEnd + 1) tail (posEnd + 1) tail
+        Just { tail } -> go posBegin lineBegin (posEnd + 1) tail
+        _ -> { posBegin, posEnd, lineBegin }
+  lineSelect = String.take (posEnd - posBegin) lineBegin
+  lineIndex = index - posBegin
+  lineLength = String.length lineSelect
+
+  -- position minus half of context
+  bestPosBefore = lineIndex - (contextSize / 2)
+  -- position plus half of context
+  bestPosAfter = lineIndex + (contextSize / 2) + if odd contextSize then 1 else 0
+
+  -- constrain the context window to selected line
+  -- grow the context window to contextSize if the error is at beginning or end of selected line
+  Tuple minPosBefore maxPosAfter =
+    if bestPosBefore >= 0 then
+      if bestPosAfter <= lineLength then Tuple bestPosBefore bestPosAfter
+      else Tuple (max 0 (lineLength - contextSize)) lineLength
+    else Tuple 0 (min lineLength contextSize)
+
+  inputContext = String.take (maxPosAfter - minPosBefore) $ String.drop minPosBefore lineSelect
