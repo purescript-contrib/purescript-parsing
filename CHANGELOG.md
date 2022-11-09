@@ -15,7 +15,8 @@ New features:
 
 Other improvements:
 
-- Better error messages for `manyIndex` (#211 by @jamesbrock)
+- Better error messages for `manyIndex` (#211 by @jamesdbrock)
+- Docs for `region` (#213 by @jamesdbrock)
 
 ## [v10.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-07-18
 

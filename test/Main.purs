@@ -35,6 +35,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators as Combinators
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
@@ -701,6 +702,22 @@ main = do
         pure c
     , expected: Right false
     }
+
+  do
+    let
+      inContext :: forall s m a. (String -> String) -> ParserT s m a -> ParserT s m a
+      inContext context = region \(ParseError message pos) -> ParseError (context message) pos
+      input = "Tokyo thirty-nine million"
+    assertEqual' "region 1"
+      { actual: runParser input do
+          inContext ("Megacity list: " <> _) do
+            cityname <- inContext ("city name: " <> _) do
+              fst <$> match (Combinators.skipMany letter)
+            skipSpaces
+            population <- inContext ("population: " <> _) intDecimal
+            pure $ Tuple cityname population
+      , expected: (Left (ParseError "Megacity list: population: Expected Int" (Position { column: 7, index: 6, line: 1 })))
+      }
 
   log "\nTESTS number\n"
 
