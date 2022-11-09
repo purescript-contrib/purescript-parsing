@@ -411,6 +411,32 @@ failWithPosition message pos = throwError (ParseError message pos)
 -- | Contextualize parsing failures inside a region. If a parsing failure
 -- | occurs, then the `ParseError` will be transformed by each containing
 -- | `region` as the parser backs out the call stack.
+-- |
+-- | For example, here’s a helper function `inContext` which uses `region` to
+-- | add some string context to the error messages.
+-- |
+-- | ```
+-- | let
+-- |   inContext :: forall s m a. (String -> String) -> ParserT s m a -> ParserT s m a
+-- |   inContext context = region \(ParseError message pos) ->
+-- |     ParseError (context message) pos
+-- |
+-- |   input = "Tokyo thirty-nine million"
+-- |
+-- | lmap (parseErrorHuman input 30) $ runParser input do
+-- |   inContext ("Megacity list: " <> _) do
+-- |     cityname <- inContext ("city name: " <> _) do
+-- |       fst <$> match (skipMany letter)
+-- |     skipSpaces
+-- |     population <- inContext ("population: " <> _) intDecimal
+-- |     pure $ Tuple cityname population
+-- | ```
+-- | ---
+-- | ```
+-- | Megacity list: population: Expected Int at position index:6 (line:1, column:7)
+-- |       ▼
+-- | Tokyo thirty-nine million
+-- | ```
 region :: forall m s a. (ParseError -> ParseError) -> ParserT s m a -> ParserT s m a
 region context p = catchError p $ \err -> throwError $ context err
 
