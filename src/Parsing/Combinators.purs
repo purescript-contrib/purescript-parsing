@@ -158,7 +158,7 @@ optionMaybe p = option Nothing (Just <$> p)
 -- | >>> runParser "ac" ((char 'a' *> char 'b') <|> (char 'a' *> char 'c'))
 -- | Left (ParseError "Expected 'b'" (Position { line: 1, column: 2 }))
 -- | ```
--- |
+-- | ---
 -- | ```
 -- | >>> runParser "ac" (try (char 'a' *> char 'b') <|> (char 'a' *> char 'c'))
 -- | Right 'c'
@@ -181,7 +181,7 @@ try (ParserT k1) = ParserT
 -- | >>> runParser "ac" (try (char 'a' *> char 'b'))
 -- | Left (ParseError "Expected 'b'" (Position { index: 1, line: 1, column: 2 }))
 -- | ```
--- |
+-- | ---
 -- | ```
 -- | >>> runParser "ac" (tryRethrow (char 'a' *> char 'b'))
 -- | Left (ParseError "Expected 'b'" (Position { index: 0, line: 1, column: 1 }))

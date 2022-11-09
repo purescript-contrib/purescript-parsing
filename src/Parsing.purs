@@ -20,6 +20,9 @@ module Parsing
   , fail
   , failWithPosition
   , region
+  , liftMaybe
+  , liftEither
+  , liftExceptT
   , ParseState(..)
   , stateParserT
   , getParserT
@@ -33,6 +36,7 @@ import Control.Alt (class Alt)
 import Control.Apply (lift2)
 import Control.Lazy (class Lazy)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Except (ExceptT, runExceptT)
 import Control.Monad.Reader.Class (class MonadAsk, class MonadReader, ask, local)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
 import Control.Monad.State.Class (class MonadState, state)
@@ -43,6 +47,7 @@ import Data.Function.Uncurried (Fn2, Fn5, mkFn2, mkFn3, mkFn5, runFn2, runFn3, r
 import Data.Generic.Rep (class Generic)
 import Data.Identity (Identity)
 import Data.Lazy as Lazy
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Show.Generic (genericShow)
 import Data.Tuple (Tuple(..), fst)
@@ -468,3 +473,60 @@ instance Ord Position where
 -- | `{ index: 0, line: 1, column: 1 }`
 initialPos :: Position
 initialPos = Position { index: 0, line: 1, column: 1 }
+
+-- | Lift a `Maybe a` computation into a `ParserT`, with a note for
+-- | the `ParseError` message in case of `Nothing`.
+-- |
+-- | Consumes no parsing input, does not change the parser state at all.
+-- | If the `Maybe` computation is `Nothing`, then this will `fail` in the
+-- | `ParserT` monad with the given error message `String` at the current input
+-- | `Position`.
+-- |
+-- | This is a “validation” function, for when we want to produce some
+-- | data from the parsing input or fail at the current
+-- | parsing position if that’s impossible.
+-- |
+-- | For example, parse an integer
+-- | [`BoundedEnum`](https://pursuit.purescript.org/packages/purescript-enums/docs/Data.Enum#t:BoundedEnum)
+-- | code and validate it by turning it
+-- | into a `MyEnum`. Use `tryRethrow` to position the parse error at the
+-- | beginning of the integer in the input `String` if the `toEnum` fails.
+-- |
+-- | ```
+-- | runParser "3" do
+-- |   myenum :: MyEnum <- tryRethrow do
+-- |     x <- intDecimal
+-- |     liftMaybe (\_ -> "Bad MyEnum " <> show x) $ toEnum x
+-- | ```
+liftMaybe :: forall s m a. Monad m => (Unit -> String) -> Maybe a -> ParserT s m a
+liftMaybe message f = case f of
+  Nothing -> fail (message unit)
+  Just x -> pure x
+
+-- | Lift an `Either String a` computation into a `ParserT`.
+-- |
+-- | Consumes no parsing input, does not change the parser state at all.
+-- | If the `Either` computation is `Left String`, then this will `fail` in the
+-- | `ParserT` monad at the current input `Position`.
+-- |
+-- | This is a “validation” function, for when we want to produce some
+-- | data from the parsing input or fail at the current
+-- | parsing position if that’s impossible.
+liftEither :: forall s m a. Monad m => Either String a -> ParserT s m a
+liftEither f = case f of
+  Left err -> fail err
+  Right x -> pure x
+
+-- | Lift an `ExceptT String m a` computation into a `ParserT`.
+-- |
+-- | Consumes no parsing input, does not change the parser state at all.
+-- | If the `ExceptT` computation is `Left String`, then this will `fail` in the
+-- | `ParserT` monad at the current input `Position`.
+-- |
+-- | This is a “validation” function, for when we want to produce some
+-- | data from the parsing input or fail at the current
+-- | parsing position if that’s impossible.
+liftExceptT :: forall s m a. (Monad m) => ExceptT String m a -> ParserT s m a
+liftExceptT f = lift (runExceptT f) >>= case _ of
+  Left err -> fail err
+  Right x -> pure x
