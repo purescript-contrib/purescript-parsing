@@ -27,7 +27,7 @@ import Data.String.CodePoints as SCP
 import Data.String.CodeUnits (fromCharArray, singleton)
 import Data.String.CodeUnits as SCU
 import Data.String.Regex.Flags (RegexFlags, ignoreCase, noFlags)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..), fst, snd)
 import Data.Tuple.Nested (get2, (/\))
 import Effect (Effect)
 import Effect.Console (log, logShow)
@@ -1060,6 +1060,10 @@ main = do
     { actual: runParser "aaa" $ manyIndex (-2) (1) (\_ -> char 'a')
     , expected: Right (Tuple 0 (Nil))
     }
+  assertEqual' "manyIndex 6 errors"
+    { actual: lmap parseErrorPosition $ runParser "aab" $ map snd $ manyIndex 3 3 (\_ -> char 'a')
+    , expected: lmap parseErrorPosition $ runParser "aab" $ (replicateA 3 (char 'a') :: Parser String (List Char))
+    }
 
   log "\nTESTS advance\n"
 
@@ -1106,3 +1110,4 @@ main = do
           $ string "aaaa\r\n" *> (replicateA 5 letter :: Parser String (List Char))
       , expected: [ "Expected letter at position index:6 (line:2, column:1)", "▼", "🍷bbbb" ]
       }
+

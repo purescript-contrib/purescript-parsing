@@ -19,6 +19,7 @@ module Parsing.Combinators.Array
 import Prelude
 
 import Control.Alt (alt)
+import Control.Monad.Error.Class (catchError, throwError)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -26,7 +27,7 @@ import Data.Array.NonEmpty as Array.NonEmpty
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Parsing (ParserT, fail)
+import Parsing (ParseError(..), ParserT, fail, parseErrorMessage, parseErrorPosition)
 import Parsing.Combinators (try)
 
 -- | Match the phrase `p` as many times as possible.
@@ -85,12 +86,14 @@ manyIndex from to p =
   go (Tuple i xs) =
     if i >= to then
       pure (Done (Tuple i xs))
-    else alt
+    else catchError
       do
         x <- p i
         pure (Loop (Tuple (i + 1) (x : xs)))
-      do
+      \e -> do
         if i >= from then
           pure (Done (Tuple i xs))
         else
-          fail "Expected more phrases"
+          throwError $ ParseError
+            (parseErrorMessage e <> " (at least " <> show from <> ", but only parsed " <> show i <> ")")
+            (parseErrorPosition e)

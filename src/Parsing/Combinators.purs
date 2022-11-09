@@ -84,6 +84,7 @@ module Parsing.Combinators
 import Prelude
 
 import Control.Lazy (defer)
+import Control.Monad.Error.Class (catchError, throwError)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Plus (empty, (<|>), alt)
 import Data.Foldable (class Foldable, foldl, foldr)
@@ -98,7 +99,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Data.Unfoldable (replicateA)
 import Data.Unfoldable1 (replicate1A)
-import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..), fail, position)
+import Parsing (ParseError(..), ParseState(..), ParserT(..), Position(..), fail, parseErrorMessage, parseErrorPosition, position)
 
 -- | Provide an error message in the case of failure.
 withErrorMessage :: forall m s a. ParserT s m a -> String -> ParserT s m a
@@ -461,15 +462,17 @@ manyIndex from to p =
   go (Tuple i xs) =
     if i >= to then
       pure (Done (Tuple i (reverse xs)))
-    else alt
+    else catchError
       do
         x <- p i
         pure (Loop (Tuple (i + 1) (x : xs)))
-      do
+      \e -> do
         if i >= from then
           pure (Done (Tuple i (reverse xs)))
         else
-          fail "Expected more phrases"
+          throwError $ ParseError
+            (parseErrorMessage e <> " (at least " <> show from <> ", but only parsed " <> show i <> ")")
+            (parseErrorPosition e)
 
 -- | If the parser succeeds without advancing the input stream position,
 -- | then force the parser to fail.
