@@ -135,9 +135,8 @@ where such a reference would be unavailable because of *strict evaluation*.”__
 The
 [best way to solve](https://discourse.purescript.org/t/parsing-recursively-with-purescript-parsing/3184/2)
 this is to stick a
-[`Data.Lazy.defer`](https://pursuit.purescript.org/packages/purescript-lazy/docs/Data.Lazy#v:defer)
+[`Control.Lazy.defer`](https://pursuit.purescript.org/packages/purescript-control/docs/Control.Lazy#t:Lazy)
 in front of the parser to break the cycle.
-
 ```purescript
 aye :: Parser String Char
 aye = defer \_ -> do
