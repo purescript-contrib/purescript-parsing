@@ -8,7 +8,7 @@ module Test.Main where
 import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
-import Control.Lazy (fix)
+import Control.Lazy (fix, defer)
 import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
@@ -16,6 +16,7 @@ import Data.Bifunctor (lmap, rmap)
 import Data.Either (Either(..), either, fromLeft, hush)
 import Data.Foldable (oneOf)
 import Data.List (List(..), fromFoldable, (:))
+import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
 import Data.List.NonEmpty as NE
 import Data.Maybe (Maybe(..), fromJust, maybe)
@@ -1128,3 +1129,25 @@ main = do
       , expected: [ "Expected letter at position index:6 (line:2, column:1)", "▼", "🍷bbbb" ]
       }
 
+  log "\nTESTS recursion"
+
+  do
+    let
+      aye :: Parser String Char
+      aye = defer \_ -> char 'a' *> (aye <|> pure 'e')
+    assertEqual' "recusion aye"
+      { actual: runParser "aaa" aye
+      , expected: Right 'e'
+      }
+
+  do
+    let
+      aye :: Parser String (List Char)
+      aye = defer \_ -> List.Cons <$> char 'a' <*> (aye <|> bee <|> pure List.Nil)
+
+      bee :: Parser String (List Char)
+      bee = defer \_ -> List.Cons <$> char 'b' <*> (aye <|> bee <|> pure List.Nil)
+    assertEqual' "mutual recusion aye bee"
+      { actual: runParser "aabbaa" aye
+      , expected: Right ('a' : 'a' : 'b' : 'b' : 'a' : 'a' : List.Nil)
+      }
