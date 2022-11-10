@@ -10,6 +10,16 @@ Breaking changes:
 
 New features:
 
+Other improvements:
+
+## [v10.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.1.0) - 2022-11-10
+
+Bugfixes:
+
+Breaking changes:
+
+New features:
+
 - add `MonadAsk` and `MonadReader` instances (#208 by @bentongxyz)
 - Add `Parsing.String.parseErrorHuman` (#209 by @jamesdbrock)
 - Add `liftMaybe`, `liftEither`, `liftExceptT` (#212 by @jamesdbrock)
@@ -20,7 +30,7 @@ Other improvements:
 - Docs for `region` (#213 by @jamesdbrock)
 - README Recursion (#214 by @jamesdbrock)
 
-## [v10.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v9.1.0) - 2022-07-18
+## [v10.0.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.0.0) - 2022-07-18
 
 Bugfixes:
 

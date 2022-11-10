@@ -1,6 +1,5 @@
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.15.4-20220921/packages.dhall
-        sha256:169bd823a71ae033eaf4f77776e184f12c656163feae14e7f649a48932ca6ac0
+      https://github.com/purescript/package-sets/releases/download/psc-0.15.4-20221110/packages.dhall
+        sha256:55be93ee309eeb1b3a1d30c7b9fa5d18ffefa67f5fbeec1566b7b6a70b0ac218
 
 in  upstream
-  with minibench.version = "77329a816a4be933cd3c51cc8517608d5affb450"
