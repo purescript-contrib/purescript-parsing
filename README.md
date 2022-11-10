@@ -105,6 +105,48 @@ will return `Right [true, false, true]`.
 Starting with v9.0.0, all parsers and combinators in this package are always
 stack-safe.
 
+## Recursion
+
+For the most part, we can just write recursive parsers (parsers defined in
+terms of themselves) and they will work as we expect.
+
+In some cases like this:
+
+```purescript
+aye :: Parser String Char
+aye = do
+  char 'a'
+  aye
+```
+
+we might get a compile-time *CycleInDeclaration* error which looks like this:
+
+```
+  The value of aye is undefined here, so this reference is not allowed.
+
+
+See https://github.com/purescript/documentation/blob/master/errors/CycleInDeclaration.md for more information,
+or to contribute content related to this error.
+```
+
+This is happening because we tried to call `aye` recursively __“at a point
+where such a reference would be unavailable because of *strict evaluation*.”__
+
+The
+[best way to solve](https://discourse.purescript.org/t/parsing-recursively-with-purescript-parsing/3184/2)
+this is to stick a
+[`Data.Lazy.defer`](https://pursuit.purescript.org/packages/purescript-lazy/docs/Data.Lazy#v:defer)
+in front of the parser to break the cycle.
+
+```purescript
+aye :: Parser String Char
+aye = defer \_ -> do
+  char 'a'
+  aye
+```
+
+
+
 ## Resources
 
 - [*Monadic Parsers at the Input Boundary* (YouTube)](https://www.youtube.com/watch?v=LLkbzt4ms6M) by James Brock is an introductory tutorial to monadic parser combinators with this package.
@@ -123,8 +165,6 @@ stack-safe.
 from a failed alternative.
 
 - [*Parser Combinators in Haskell*](https://serokell.io/blog/parser-combinators-in-haskell) by Heitor Toledo Lassarote de Paula.
-
-- [*Parsing recursively*](https://github.com/Thimoteus/SandScript/wiki/2.-Parsing-recursively) “Because PureScript is not evaluated lazily like Haskell is, this will bite us if we naïvely try to port recursive Haskell parsing to PureScript.”
 
 There are lots of other great monadic parsing tutorials on the internet.
 
