@@ -12,6 +12,7 @@ New features:
 
 - add `MonadAsk` and `MonadReader` instances (#208 by @bentongxyz)
 - Add `Parsing.String.parseErrorHuman` (#209 by @jamesdbrock)
+- Add `liftMaybe`, `liftEither`, `liftExceptT` (#212 by @jamesdbrock)
 
 Other improvements:
 

@@ -35,7 +35,7 @@ import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
 import Parsing.Combinators as Combinators
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -719,6 +719,11 @@ main = do
             pure $ Tuple cityname population
       , expected: (Left (ParseError "Megacity list: population: Expected Int" (Position { column: 7, index: 6, line: 1 })))
       }
+
+  assertEqual' "tryRethrow 1"
+    { actual: runParser "abx" $ char 'a' *> tryRethrow (char 'b' *> char 'c')
+    , expected: Left $ ParseError "Expected 'c'" (Position { index: 1, column: 2, line: 1 })
+    }
 
   log "\nTESTS number\n"
 
