@@ -114,9 +114,7 @@ In some cases like this:
 
 ```purescript
 aye :: Parser String Char
-aye = do
-  char 'a'
-  aye
+aye = char 'a' *> aye
 ```
 
 we might get a compile-time *CycleInDeclaration* error which looks like this:
@@ -139,9 +137,7 @@ this is to stick a
 in front of the parser to break the cycle.
 ```purescript
 aye :: Parser String Char
-aye = defer \_ -> do
-  char 'a'
-  aye
+aye = defer \_ -> char 'a' *> aye
 ```
 
 
