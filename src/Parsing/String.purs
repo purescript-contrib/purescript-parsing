@@ -3,8 +3,8 @@
 -- |
 -- | All of these primitive parsers will consume when they succeed.
 -- |
--- | All of these primitive parsers will not consume when they
--- | fail.
+-- | All of these primitive parsers will not consume and will automatically
+-- | backtrack when they fail.
 -- |
 -- | The behavior of these primitive parsers is based on the behavior of the
 -- | `Data.String` module in the __strings__ package.
@@ -181,22 +181,6 @@ updatePosSingle (Position { index, line, column }) cp after = case fromEnum cp o
 
 -- | Combinator which returns both the result of a parse and the slice of
 -- | the input that was consumed while it was being parsed.
--- |
--- | Because `String`s are not `Char` arrays in PureScript, `many` and `some`
--- | on `Char` parsers need to
--- | be used with `Data.String.CodeUnits.fromCharArray` to
--- | construct a `String`.
--- |
--- | ```
--- | fromCharArray <$> Data.Array.many (char 'x')
--- | ```
--- |
--- | It’s more efficient to achieve the same result by using this `match` combinator
--- | instead of `fromCharArray`.
--- |
--- | ```
--- | fst <$> match (Combinators.skipMany (char 'x'))
--- | ```
 match :: forall m a. ParserT String m a -> ParserT String m (Tuple String a)
 match p = do
   ParseState input1 _ _ <- getParserT

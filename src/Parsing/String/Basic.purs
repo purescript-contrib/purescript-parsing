@@ -2,7 +2,9 @@
 -- |
 -- | #### unicode dependency
 -- |
--- | Some of the parsers in this module depend on the __unicode__ package.
+-- | Some of the parsers in this module depend on the
+-- | [__unicode__](https://pursuit.purescript.org/packages/purescript-unicode)
+-- | package.
 -- | The __unicode__ package is large; about half a megabyte unminified.
 -- | If code which depends on __parsing__ is “tree-shaken”
 -- | “dead-code-eliminated,” then
@@ -24,6 +26,8 @@ module Parsing.String.Basic
   , alphaNum
   , intDecimal
   , number
+  , takeWhile
+  , takeWhile1
   , whiteSpace
   , skipSpaces
   , oneOf
@@ -41,13 +45,13 @@ import Data.Int as Data.Int
 import Data.Maybe (Maybe(..))
 import Data.Number (infinity, nan)
 import Data.Number as Data.Number
-import Data.String (CodePoint, singleton, takeWhile)
+import Data.String (CodePoint, singleton)
+import Data.String as String
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits as SCU
-import Data.Tuple (fst)
 import Parsing (ParserT, fail)
 import Parsing.Combinators (choice, tryRethrow, (<?>), (<|>), (<~?>))
-import Parsing.String (consumeWith, match, regex, satisfy, satisfyCodePoint, string)
+import Parsing.String (consumeWith, regex, satisfy, satisfyCodePoint, string)
 import Partial.Unsafe (unsafeCrashWith)
 
 -- | Parse a digit.  Matches any char that satisfies `Data.CodePoint.Unicode.isDecDigit`.
@@ -112,7 +116,7 @@ number =
         section <- numberRegex
         -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseFloat
         case Data.Number.fromString section of
-          Nothing -> fail $ "Number.fromString failed"
+          Nothing -> fail "Expected Number"
           Just x -> pure x
     ] <|> fail "Expected Number"
 
@@ -134,7 +138,7 @@ intDecimal :: forall m. ParserT String m Int
 intDecimal = tryRethrow do
   section <- intDecimalRegex <|> fail "Expected Int"
   case Data.Int.fromString section of
-    Nothing -> fail $ "Int.fromString failed"
+    Nothing -> fail "Expected Int"
     Just x -> pure x
 
 -- Non-exported regex is compiled at startup time.
@@ -153,17 +157,14 @@ satisfyCP p = satisfy (p <<< codePointFromChar)
 -- | Always succeeds. Will consume only when matched whitespace string
 -- | is non-empty.
 whiteSpace :: forall m. ParserT String m String
-whiteSpace = fst <$> match skipSpaces
+whiteSpace = takeWhile isSpace
 
 -- | Skip whitespace characters satisfying `Data.CodePoint.Unicode.isSpace`
 -- | and throw them away.
 -- |
 -- | Always succeeds. Will only consume when some characters are skipped.
 skipSpaces :: forall m. ParserT String m Unit
-skipSpaces = consumeWith \input -> do
-  let consumed = takeWhile isSpace input
-  let remainder = SCU.drop (SCU.length consumed) input
-  Right { value: unit, consumed, remainder }
+skipSpaces = void whiteSpace
 
 -- | Match one of the BMP `Char`s in the array.
 oneOf :: forall m. Array Char -> ParserT String m Char
@@ -180,3 +181,66 @@ oneOfCodePoints ss = satisfyCodePoint (flip elem ss) <~?> \_ -> "one of " <> sho
 -- | Match any Unicode character not in the array.
 noneOfCodePoints :: forall m. Array CodePoint -> ParserT String m CodePoint
 noneOfCodePoints ss = satisfyCodePoint (flip notElem ss) <~?> \_ -> "none of " <> show (singleton <$> ss)
+
+-- | Take the longest `String` for which the characters satisfy the
+-- | predicate.
+-- |
+-- | See [__`Data.CodePoint.Unicode`__](https://pursuit.purescript.org/packages/purescript-unicode/docs/Data.CodePoint.Unicode)
+-- | for useful predicates.
+-- |
+-- | Example:
+-- |
+-- | ```
+-- | runParser "Tackling the Awkward Squad" do
+-- |   takeWhile Data.CodePoint.Unicode.isLetter
+-- | ```
+-- | ---
+-- | ```
+-- | Right "Tackling"
+-- | ```
+-- |
+-- | You should prefer `takeWhile isLetter` to
+-- | `fromCharArray <$> Data.Array.many letter`.
+takeWhile :: forall m. (CodePoint -> Boolean) -> ParserT String m String
+takeWhile predicate =
+  consumeWith \s ->
+    let
+      value = String.takeWhile predicate s
+    in
+      Right
+        { consumed: value
+        , remainder: SCU.drop (SCU.length value) s
+        , value
+        }
+
+-- | Take the longest `String` for which the characters satisfy the
+-- | predicate. Require at least 1 character. You should supply an
+-- | expectation description for the error
+-- | message for when the predicate fails on the first character.
+-- |
+-- | See [__`Data.CodePoint.Unicode`__](https://pursuit.purescript.org/packages/purescript-unicode/docs/Data.CodePoint.Unicode)
+-- | for useful predicates.
+-- |
+-- | Example:
+-- |
+-- | ```
+-- | runParser "Tackling the Awkward Squad" do
+-- |   takeWhile1 Data.CodePoint.Unicode.isLetter <?> "a letter"
+-- | ```
+-- | ---
+-- | ```
+-- | Right "Tackling"
+-- | ```
+takeWhile1 :: forall m. (CodePoint -> Boolean) -> ParserT String m String
+takeWhile1 predicate =
+  consumeWith \s ->
+    let
+      value = String.takeWhile predicate s
+      len = SCU.length value
+    in
+      if len > 0 then Right
+        { consumed: value
+        , remainder: SCU.drop (SCU.length value) s
+        , value
+        }
+      else Left "Expected character satisfying predicate"
