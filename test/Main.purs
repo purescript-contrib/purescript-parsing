@@ -13,6 +13,7 @@ import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
 import Data.Bifunctor (lmap, rmap)
+import Data.CodePoint.Unicode as CodePoint.Unicode
 import Data.Either (Either(..), either, fromLeft, hush)
 import Data.Foldable (oneOf)
 import Data.List (List(..), fromFoldable, (:))
@@ -36,12 +37,11 @@ import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
-import Parsing.Combinators as Combinators
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, parseErrorHuman, regex, rest, satisfy, string, takeN)
-import Parsing.String.Basic (intDecimal, letter, noneOfCodePoints, number, oneOfCodePoints, skipSpaces, whiteSpace)
+import Parsing.String.Basic (intDecimal, letter, noneOfCodePoints, number, oneOfCodePoints, skipSpaces, takeWhile, takeWhile1, whiteSpace)
 import Parsing.String.Basic as String.Basic
 import Parsing.String.Replace (breakCap, replace, replaceT, splitCap, splitCapT)
 import Parsing.Token (TokenParser, makeTokenParser, token, when)
@@ -712,8 +712,7 @@ main = do
     assertEqual' "region 1"
       { actual: runParser input do
           inContext ("Megacity list: " <> _) do
-            cityname <- inContext ("city name: " <> _) do
-              fst <$> match (Combinators.skipMany letter)
+            cityname <- inContext ("city name: " <> _) (takeWhile CodePoint.Unicode.isLetter)
             skipSpaces
             population <- inContext ("population: " <> _) intDecimal
             pure $ Tuple cityname population
@@ -723,6 +722,18 @@ main = do
   assertEqual' "tryRethrow 1"
     { actual: runParser "abx" $ char 'a' *> tryRethrow (char 'b' *> char 'c')
     , expected: Left $ ParseError "Expected 'c'" (Position { index: 1, column: 2, line: 1 })
+    }
+
+  assertEqual' "takeWhile 1"
+    { actual: runParser "Tackling the Awkward" do
+        takeWhile CodePoint.Unicode.isLetter <* string " the Awkward"
+    , expected: Right "Tackling"
+    }
+
+  assertEqual' "takeWhile1 1"
+    { actual: runParser "3ackling the Awkward" do
+        takeWhile1 CodePoint.Unicode.isLetter <* string " the Awkward" <?> "letter"
+    , expected: Left $ ParseError "Expected letter" (Position { index: 0, line: 1, column: 1 })
     }
 
   log "\nTESTS number\n"

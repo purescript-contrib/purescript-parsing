@@ -113,7 +113,7 @@ infixl 4 withErrorMessage as <?>
 -- |
 -- |```purescript
 -- |parseBang :: Parser Char
--- |parseBang = char '!' <~?> \_ -> "Expected a bang"
+-- |parseBang = char '!' <~?> \_ -> "a bang"
 -- |```
 withLazyErrorMessage :: forall m s a. ParserT s m a -> (Unit -> String) -> ParserT s m a
 withLazyErrorMessage p msg = p <|> defer \_ -> fail ("Expected " <> msg unit)

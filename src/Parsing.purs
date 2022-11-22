@@ -430,8 +430,7 @@ failWithPosition message pos = throwError (ParseError message pos)
 -- |
 -- | lmap (parseErrorHuman input 30) $ runParser input do
 -- |   inContext ("Megacity list: " <> _) do
--- |     cityname <- inContext ("city name: " <> _) do
--- |       fst <$> match (skipMany letter)
+-- |     cityname <- inContext ("city name: " <> _) (takeWhile isLetter)
 -- |     skipSpaces
 -- |     population <- inContext ("population: " <> _) intDecimal
 -- |     pure $ Tuple cityname population
