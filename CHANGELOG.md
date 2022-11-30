@@ -10,15 +10,15 @@ Breaking changes:
 
 New features:
 
-- Add `Parsing.String.Basic.takeWhile`, `takeWhile1` (#218 by @jamesdbrock)
-
 Other improvements:
 
+## [v10.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.2.0) - 2022-11-30
+
+New features:
+
+- Add `Parsing.String.Basic.takeWhile`, `takeWhile1` (#218 by @jamesdbrock)
+
 ## [v10.1.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.1.0) - 2022-11-10
-
-Bugfixes:
-
-Breaking changes:
 
 New features:
 
