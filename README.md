@@ -140,7 +140,21 @@ aye :: Parser String Char
 aye = defer \_ -> char 'a' *> aye
 ```
 
+## Other input types
 
+Here are the input types supported by this package.
+
+| Input type | Module |
+|----|-----|
+| `String` | [__Parsing.String__](https://pursuit.purescript.org/packages/purescript-parsing/docs/Parsing.String) |
+| `ArrayBuffer` | [__Parsing.DataView__](https://pursuit.purescript.org/packages/purescript-parsing/docs/Parsing.DataView) |
+| `List a` | [__Parsing.Token__](https://pursuit.purescript.org/packages/purescript-parsing/docs/Parsing.Token) |
+
+To support some other input type `t`, write a collection of primitive parsers `:: forall m. ParserT t m a` for that input type.
+
+## Related Packages
+
+- [__`datetime-parsing`__](https://pursuit.purescript.org/packages/purescript-datetime-parsing) for parsing dates and times.
 
 ## Resources
 
@@ -163,18 +177,12 @@ from a failed alternative.
 
 There are lots of other great monadic parsing tutorials on the internet.
 
-## Related Packages
-
-- [__`parsing-dataview`__](https://pursuit.purescript.org/packages/purescript-parsing-dataview) primitive parsers for binary parsing of `ArrayBuffer`.
-- [__`datetime-parsing`__](https://pursuit.purescript.org/packages/purescript-datetime-parsing) for parsing dates and times.
-
 ## Documentation
 
 `parsing` documentation is stored in a few places:
 
 1. Module documentation is [published on Pursuit](https://pursuit.purescript.org/packages/purescript-parsing).
-2. Written documentation is kept in the [docs directory](./docs).
-3. Usage examples can be found in [the test suite](./test).
+2. Usage examples can be found in [the test suite](./test).
 
 If you get stuck, there are several ways to get help:
 

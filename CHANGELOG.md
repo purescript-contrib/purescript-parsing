@@ -10,6 +10,8 @@ Breaking changes:
 
 New features:
 
+- Add primitive `Parsing.DataView` parsers from https://github.com/jamesdbrock/purescript-parsing-dataview (#219 by @jamesdbrock)
+
 Other improvements:
 
 ## [v10.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.2.0) - 2022-11-30

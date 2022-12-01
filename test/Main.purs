@@ -12,10 +12,12 @@ import Control.Lazy (fix, defer)
 import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
+import Data.ArrayBuffer.ArrayBuffer as AB
+import Data.ArrayBuffer.DataView as DataView
 import Data.Bifunctor (lmap, rmap)
 import Data.CodePoint.Unicode as CodePoint.Unicode
 import Data.Either (Either(..), either, fromLeft, hush)
-import Data.Foldable (oneOf)
+import Data.Foldable (for_, oneOf)
 import Data.List (List(..), fromFoldable, (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
@@ -31,13 +33,15 @@ import Data.String.CodeUnits as SCU
 import Data.String.Regex.Flags (RegexFlags, ignoreCase, noFlags)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Tuple.Nested (get2, (/\))
+import Data.UInt (fromInt)
 import Effect (Effect)
 import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
-import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser, runParserT)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
+import Parsing.DataView as DV
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
 import Parsing.String (anyChar, anyCodePoint, anyTill, char, eof, match, parseErrorHuman, regex, rest, satisfy, string, takeN)
@@ -904,18 +908,19 @@ main = do
   javaStyleTest
 
   log "\nTESTS region\n"
-  let
-    prependContext m' (ParseError m pos) = ParseError (m' <> m) pos
-    p = region (prependContext "context1 ") $ do
-      _ <- string "a"
-      region (prependContext "context2 ") $ do
-        string "b"
-  case runParser "aa" p of
-    Right _ -> assert' "error: ParseError expected!" false
-    Left (ParseError message _) -> do
-      let messageExpected = "context1 context2 Expected \"b\""
-      assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
-      logShow messageExpected
+  do
+    let
+      prependContext m' (ParseError m pos) = ParseError (m' <> m) pos
+      p = region (prependContext "context1 ") $ do
+        _ <- string "a"
+        region (prependContext "context2 ") $ do
+          string "b"
+    case runParser "aa" p of
+      Right _ -> assert' "error: ParseError expected!" false
+      Left (ParseError message _) -> do
+        let messageExpected = "context1 context2 Expected \"b\""
+        assert' ("expected message: " <> messageExpected <> ", message: " <> message) (message == messageExpected)
+        logShow messageExpected
 
   log "\nTESTS anyTill\n"
   parseTest "𝅘𝅥𝅮𝅘𝅥𝅘𝅥𝅘𝅥𝅘𝅥" (Tuple "" "𝅘𝅥𝅮") $ anyTill (string "𝅘𝅥𝅮")
@@ -1145,7 +1150,7 @@ main = do
       , expected: [ "Expected letter at position index:6 (line:2, column:1)", "▼", "🍷bbbb" ]
       }
 
-  log "\nTESTS recursion"
+  log "\nTESTS recursion\n"
 
   do
     let
@@ -1167,3 +1172,119 @@ main = do
       { actual: runParser "aabbaa" aye
       , expected: Right ('a' : 'a' : 'b' : 'b' : 'a' : 'a' : List.Nil)
       }
+
+  log "\nTESTS DataView\n"
+
+  do
+    let
+      parseTestT :: forall s a. Show a => Eq a => s -> a -> ParserT s Effect a -> Effect Unit
+      parseTestT input expected p = do
+        result <- runParserT input p
+        case result of
+          Right actual -> do
+            assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
+            logShow actual
+          Left err -> assert' (show err) false
+
+      parseFailT :: forall s a. s -> Position -> ParserT s Effect a -> Effect Unit
+      parseFailT input failPos p = do
+        result <- runParserT input p
+        case result of
+          Right _ -> assert' ("ParseError expected at " <> show failPos) false
+          Left err -> do
+            let pos = parseErrorPosition err
+            assert' ("ParseError expected at " <> show failPos <> " but parser failed at " <> show pos)
+              (pos == failPos)
+            logShow $ show failPos
+
+      mkPosDV :: Int -> Position
+      mkPosDV n = Position { index: n, line: 1, column: 1 }
+    -- Test input is DataView = [5,6,7,8,9]
+    ab <- AB.empty 5
+    let dv = DataView.whole ab
+    for_ [ 0, 1, 2, 3, 4 ] $ \i -> DataView.setInt8 dv i (i + 5)
+    -- anyInt8
+    parseTestT dv 5 DV.anyInt8
+    -- manyTill eof
+    parseTestT dv (fromFoldable [ 5, 6, 7, 8, 9 ]) $ manyTill DV.anyInt8 DV.eof
+    -- anyInt16be
+    parseTestT dv 0x0506 DV.anyInt16be
+    -- anyInt16le
+    parseTestT dv 0x0605 DV.anyInt16le
+    -- anyUint16be
+    parseTestT dv (fromInt 0x0506) DV.anyUint16be
+    -- anyUint16le
+    parseTestT dv (fromInt 0x0605) DV.anyUint16le
+    -- fail on anyInt16le past end of DataView
+    parseFailT dv (mkPosDV 4) $ DV.anyInt16le *> DV.anyInt16le *> DV.anyInt16le
+    -- anyInt32be and anyInt8
+    parseTestT dv (Tuple 0x05060708 0x09) $ do
+      l <- DV.anyInt32be
+      r <- DV.anyInt8
+      DV.eof
+      pure $ Tuple l r
+    -- anyInt32le and anyInt8
+    parseTestT dv (Tuple 0x08070605 0x09) $ do
+      l <- DV.anyInt32le
+      r <- DV.anyInt8
+      DV.eof
+      pure $ Tuple l r
+    -- anyUint32be and anyInt8
+    parseTestT dv (Tuple (fromInt 0x05060708) 0x09) $ do
+      l <- DV.anyUint32be
+      r <- DV.anyInt8
+      DV.eof
+      pure $ Tuple l r
+    -- anyUint32le and anyInt8
+    parseTestT dv (Tuple (fromInt 0x08070605) 0x09) $ do
+      l <- DV.anyUint32le
+      r <- DV.anyInt8
+      DV.eof
+      pure $ Tuple l r
+    -- takeN
+    parseTestT dv 0x0908 do
+      _ <- DV.takeN 3
+      DV.anyInt16le <* DV.eof
+    -- rest then a new parse then anyInt16le
+    parseTestT dv 0x0908 do
+      _ <- DV.takeN 3
+      remain <- DV.rest
+      lift (runParserT remain DV.anyInt16le) >>= case _ of
+        Right actual -> pure actual
+        Left err -> fail $ show err
+    -- fail on takeN past end of DataView
+    parseFailT dv (mkPosDV 0) $ DV.takeN 6
+    -- rest then new parse on rest then anyInt8
+    parseTestT dv 0x07 do
+      _ <- DV.takeN 1
+      DV.rest >>= \dv2 ->
+        lift (runParserT dv2 $ DV.takeN 1 *> DV.rest) >>= case _ of
+          Left err -> fail $ show err
+          Right dv3 -> lift (runParserT dv3 $ DV.anyInt8) >>= case _ of
+            Left err -> fail $ show err
+            Right x -> pure x
+    -- takeN then a new parse then fail on anyInt16le past end of DataView
+    parseFailT dv (mkPosDV 1) $ do
+      dv2 <- DV.takeN 1
+      lift (runParserT dv2 DV.anyInt16le) >>= case _ of
+        Left err -> fail $ show err
+        Right x -> pure x
+    parseTestT dv unit $ DV.takeN 5 *> pure unit
+
+    -- test match combinator
+    runParserT dv (DV.match (DV.anyInt8 *> DV.anyInt8)) >>= case _ of
+      Right (Tuple matchresult _) -> do
+        r0 <- DataView.getInt8 matchresult 0
+        r1 <- DataView.getInt8 matchresult 1
+        assert' ("match failed " <> show r0 <> " " <> show r1) $ r0 == Just 5 && r1 == Just 6
+        logShow $ show r0 <> " " <> show r1
+      Left err -> assert' ("match failed " <> show err) false
+
+    do
+      ablarge <- AB.empty 200000
+      let dvlarge = DataView.whole ablarge
+      x <- map List.length <$> runParserT dvlarge (many DV.anyInt8)
+      assertEqual' "stack safety"
+        { actual: x
+        , expected: Right 200000
+        }

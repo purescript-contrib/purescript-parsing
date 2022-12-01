@@ -14,11 +14,14 @@
         "output"
     ],
     "dependencies": {
+        "purescript-arraybuffer": "^v13.0.0",
+        "purescript-arraybuffer-types": "^v3.0.2",
         "purescript-arrays": "^v7.1.0",
         "purescript-control": "^v6.0.0",
         "purescript-effect": "^v4.0.0",
         "purescript-either": "^v6.1.0",
         "purescript-enums": "^v6.0.1",
+        "purescript-float32": "^v2.0.0",
         "purescript-foldable-traversable": "^v6.0.0",
         "purescript-functions": "^v6.0.0",
         "purescript-identity": "^v6.0.0",
@@ -36,6 +39,7 @@
         "purescript-tailrec": "^v6.1.0",
         "purescript-transformers": "^v6.0.0",
         "purescript-tuples": "^v7.0.0",
+        "purescript-uint": "^v7.0.0",
         "purescript-unfoldable": "^v6.0.0",
         "purescript-unicode": "^v6.0.0",
         "purescript-unsafe-coerce": "^v6.0.0"
