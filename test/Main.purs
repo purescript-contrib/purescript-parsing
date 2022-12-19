@@ -1145,6 +1145,17 @@ main = do
       , expected: [ "Expected letter at position index:6 (line:2, column:1)", "▼", "🍷bbbb" ]
       }
 
+  do
+    let input = "aCaB"
+    assertEqual' "parseErrorHuman ayebee"
+      { actual: parseErrorHuman input 20 $ fromLeft (ParseError "" initialPos)
+          $ runParser input do
+              _ <- char 'a'
+              b <- char 'b' <|> char 'B'
+              pure (b == 'B')
+      , expected: [ "Expected 'B' at position index:1 (line:1, column:2)", " ▼", input ]
+      }
+
   log "\nTESTS recursion"
 
   do
