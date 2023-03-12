@@ -166,7 +166,8 @@ There are lots of other great monadic parsing tutorials on the internet.
 ## Related Packages
 
 - [__`parsing-dataview`__](https://pursuit.purescript.org/packages/purescript-parsing-dataview) primitive parsers for binary parsing of `ArrayBuffer`.
-- [__`datetime-parsing`__](https://pursuit.purescript.org/packages/purescript-datetime-parsing) for parsing dates and times.
+- [__`datetime-parsing`__](https://pursuit.purescript.org/packages/purescript-datetime-parsing) parsers for dates and times.
+- [__`formatters`__](https://pursuit.purescript.org/packages/purescript-formatters) parsers for dates and times and various other things. 
 
 ## Documentation
 
