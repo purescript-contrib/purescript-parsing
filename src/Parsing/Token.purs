@@ -34,7 +34,7 @@ import Data.Int (toNumber)
 import Data.List (List(..))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number (pow)
 import Data.String (null, toLower)
 import Data.String.CodePoints (codePointFromChar)
@@ -43,7 +43,7 @@ import Data.String.CodeUnits as SCU
 import Data.String.Unicode as Unicode
 import Data.Tuple (Tuple(..))
 import Parsing (ParseState(..), ParserT, Position, consume, fail, getParserT, stateParserT)
-import Parsing.Combinators (between, choice, notFollowedBy, option, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
+import Parsing.Combinators (between, choice, notFollowedBy, option, optionMaybe, sepBy, sepBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>))
 import Parsing.String (char, satisfy, satisfyCodePoint, string)
 import Parsing.String.Basic (alphaNum, digit, hexDigit, letter, noneOf, octDigit, oneOf, space, upper)
 import Parsing.String.Basic as Basic
@@ -608,7 +608,10 @@ makeTokenParser (LanguageDef languageDef) =
 
   -- floats
   floating :: ParserT String m Number
-  floating = decimal >>= fractExponent
+  floating = do
+    f <- fromMaybe identity <$> optionMaybe sign
+    x <- decimal >>= fractExponent
+    pure $ f x
 
   natFloat :: ParserT String m (Either Int Number)
   natFloat = char '0' *> zeroNumFloat
