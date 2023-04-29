@@ -392,6 +392,9 @@ tokenParserFloatTest = do
   -- parse float
   parseTest "100.5" 100.5 testTokenParser.float
 
+  -- parse float prefixed with a plus sign
+  parseTest "+100.5" 100.5 testTokenParser.float
+
   -- parse a negative float
   parseTest "-100.5" (-100.5) testTokenParser.float
 
@@ -400,6 +403,9 @@ tokenParserFloatTest = do
 
   -- parse float with exponent
   parseTest "100.5e1" 1005.0 testTokenParser.float
+
+  -- parse a negative float with exponent
+  parseTest "-100.5e1" (-1005.0) testTokenParser.float
 
   -- fail on nonfloat
   parseErrorTestPosition testTokenParser.float "100.e1" $ mkPos 5
