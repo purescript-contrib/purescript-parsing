@@ -392,6 +392,9 @@ tokenParserFloatTest = do
   -- parse float
   parseTest "100.5" 100.5 testTokenParser.float
 
+  -- parse a negative float
+  parseTest "-100.5" (-100.5) testTokenParser.float
+
   -- parse float with exponent
   parseTest "100e1" 1000.0 testTokenParser.float
 

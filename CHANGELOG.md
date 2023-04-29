@@ -5,6 +5,7 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Bugfixes:
+- `float` parser of `GenTokenParser` does not parse negative numbers (by @mstream)
 
 Breaking changes:
 
