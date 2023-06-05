@@ -43,6 +43,7 @@ module Parsing.Combinators
   ( try
   , tryRethrow
   , lookAhead
+  , withRecovery
   , choice
   , between
   , notFollowedBy
@@ -203,6 +204,41 @@ lookAhead (ParserT k1) = ParserT
       runFn5 k1 state1 more lift
         (mkFn2 \_ err -> runFn2 throw state1 err)
         (mkFn2 \_ res -> runFn2 done state1 res)
+  )
+
+-- | If the main parser fails, the recovery function will be called
+-- | on the `ParseError` to get
+-- | a recovery parser. Then the input stream will be backtracked to where the
+-- | main parser began, and the recovery parser will run.
+-- |
+-- | The recovery parser should typically consume input until it is safe to
+-- | resume normal parsing and then return some data describing the parse
+-- | failure and recovery.
+-- |
+-- | If the recovery parser fails, the original `ParseError` from the main parser
+-- | will be returned. There is no way to see the error from the recovery parser.
+withRecovery
+  :: forall s m a
+   . (ParseError -> ParserT s m a)
+  -> ParserT s m a
+  -> ParserT s m a
+withRecovery recover (ParserT k1) = ParserT
+  ( mkFn5 \state1 more lift throw done ->
+      runFn5 k1 state1 more lift
+        ( mkFn2 \state2 err ->
+            let
+              (ParserT k2) = recover err
+            in
+              runFn5 k2 state1 more lift
+                --throw
+                -- https://hackage.haskell.org/package/megaparsec-9.3.0/docs/Text-Megaparsec.html#v:withRecovery
+                -- “if recovery fails, the original error message is reported as
+                -- if without withRecovery. In no way can the recovering parser r
+                -- influence error messages.”
+                (mkFn2 \_ _ -> runFn2 throw state2 err)
+                done
+        )
+        done
   )
 
 -- | Match the phrase `p` as many times as possible.

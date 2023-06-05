@@ -11,6 +11,8 @@ Breaking changes:
 
 New features:
 
+- New combinator `withRecovery` (#224 by @jamesdbrock)
+
 Other improvements:
 
 ## [v10.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.2.0) - 2022-11-30

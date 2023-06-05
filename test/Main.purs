@@ -13,6 +13,7 @@ import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
 import Data.Bifunctor (lmap, rmap)
+import Data.CodePoint.Unicode (isSpace)
 import Data.CodePoint.Unicode as CodePoint.Unicode
 import Data.Either (Either(..), either, fromLeft, hush)
 import Data.Foldable (oneOf)
@@ -36,7 +37,7 @@ import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, withRecovery, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
@@ -696,6 +697,25 @@ main = do
   parseErrorTestPosition (string "abc" *> eof) "abcdefg" (Position { index: 3, column: 4, line: 1 })
   parseErrorTestPosition (string "a\nb\nc\n" *> eof) "a\nb\nc\nd\n" (Position { index: 6, column: 1, line: 4 })
   parseErrorTestPosition (string "\ta" *> eof) "\tab" (Position { index: 2, column: 10, line: 1 })
+
+  assertEqual' "withRecovery1"
+    { actual: runParser "  not-an-int here" do
+        _ <- takeWhile isSpace
+        withRecovery
+          ( \err -> do
+              nonint <- takeWhile (not <<< isSpace)
+              pure $ Left
+                { error: err
+                , input: nonint
+                }
+          )
+          (Right <$> intDecimal)
+    , expected:
+        Right $ Left
+          { error: ParseError "Expected Int" (Position { index: 2, column: 3, line: 1 })
+          , input: "not-an-int"
+          } :: Either ParseError (Either { error :: ParseError, input :: String } Int)
+    }
 
   assertEqual' "skipSpaces consumes if position advancement issue #200"
     { actual: runParser " " do
