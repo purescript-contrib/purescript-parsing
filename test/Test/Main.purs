@@ -5,7 +5,7 @@
 
 module Test.Main where
 
-import Prelude hiding (between, when)
+import Prelude (class Eq, class Show, Unit, append, bind, const, discard, div, flip, identity, map, negate, pure, show, unit, void, ($), ($>), (*), (*>), (+), (-), (/), (/=), (<$), (<$>), (<*), (<*>), (<>), (==), (>>=))
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix, defer)
@@ -35,7 +35,7 @@ import Effect (Effect)
 import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
-import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorMessage, parseErrorPosition, position, region, runParser)
+import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -48,6 +48,17 @@ import Parsing.Token (TokenParser, makeTokenParser, token, when)
 import Parsing.Token as Token
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert', assertEqual')
+import Test.IndentationTests as IndentationTests
+import Test.Lib
+
+parseTest :: forall s a. Show a => Eq a => ParseErrorHuman__OnlyString s => s -> a -> Parser s a -> Effect Unit
+parseTest = mkParseTest runParser
+
+parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
+parseErrorTestPosition = mkParseErrorTestPosition runParser
+
+parseErrorTestMessage :: forall s a. Show a => Parser s a -> s -> String -> Effect Unit
+parseErrorTestMessage = mkParseErrorTestMessage runParser
 
 parens :: forall m a. ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -58,29 +69,6 @@ nested = fix \p ->
       _ <- string "a"
       pure 0
   ) <|> ((+) 1) <$> parens p
-
-parseTest :: forall s a. Show a => Eq a => s -> a -> Parser s a -> Effect Unit
-parseTest input expected p = case runParser input p of
-  Right actual -> do
-    assert' ("expected: " <> show expected <> ", actual: " <> show actual) (expected == actual)
-    logShow actual
-  Left err -> assert' ("error: " <> show err) false
-
-parseErrorTestPosition :: forall s a. Show a => Parser s a -> s -> Position -> Effect Unit
-parseErrorTestPosition p input expected = case runParser input p of
-  Right x -> assert' ("ParseError expected at " <> show expected <> " but parsed " <> show x) false
-  Left err -> do
-    let pos = parseErrorPosition err
-    assert' ("expected: " <> show expected <> ", pos: " <> show pos) (expected == pos)
-    logShow expected
-
-parseErrorTestMessage :: forall s a. Show a => Parser s a -> s -> String -> Effect Unit
-parseErrorTestMessage p input expected = case runParser input p of
-  Right x -> assert' ("ParseError expected '" <> expected <> "' but parsed " <> show x) false
-  Left err -> do
-    let msg = parseErrorMessage err
-    assert' ("expected: " <> expected <> ", message: " <> msg) (expected == msg)
-    logShow expected
 
 opTest :: Parser String String
 opTest = chainl (singleton <$> anyChar) (char '+' $> append) ""
@@ -258,8 +246,6 @@ testTokenParser = makeTokenParser haskellDef
 
 mkPos :: Int -> Position
 mkPos n = Position { index: n - 1, line: 1, column: n }
-
-type TestM = Effect Unit
 
 tokenParserIdentifierTest :: TestM
 tokenParserIdentifierTest = do
@@ -588,6 +574,9 @@ javaStyleTest = do
 
 main :: Effect Unit
 main = do
+
+  log "\nTESTS Indentation\n"
+  IndentationTests.testIndentationParser
 
   log "\nTESTS String\n"
   parseErrorTestPosition
