@@ -28,6 +28,7 @@ module Parsing
   , getParserT
   , hoistParserT
   , mapParserT
+  , eqPositionFull
   ) where
 
 import Prelude
@@ -463,6 +464,9 @@ instance Show Position where
 
 instance Eq Position where
   eq (Position l) (Position r) = l.index == r.index
+
+eqPositionFull :: Position -> Position -> Boolean
+eqPositionFull (Position l) (Position r) = l.index == r.index && l.line == r.line && l.column == r.column
 
 instance Ord Position where
   compare (Position l) (Position r) = compare l.index r.index

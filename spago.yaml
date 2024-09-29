@@ -1,0 +1,38 @@
+package:
+  name: parsing
+  dependencies:
+    - arrays
+    - control
+    - effect
+    - either
+    - enums
+    - foldable-traversable
+    - functions
+    - identity
+    - integers
+    - lazy
+    - lists
+    - maybe
+    - newtype
+    - nullable
+    - numbers
+    - partial
+    - prelude
+    - st
+    - strings
+    - tailrec
+    - transformers
+    - tuples
+    - unfoldable
+    - unicode
+    - unsafe-coerce
+  test:
+    main: Test.Main
+    dependencies:
+      - assert
+      - node-process
+      - debug
+workspace:
+  extraPackages: {}
+  packageSet:
+    registry: 60.2.1
