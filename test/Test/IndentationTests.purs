@@ -59,28 +59,28 @@ testIndentationParser :: TestM
 testIndentationParser = do
   parseTest
     ( joinWith "\n"
-      [ "k        \n"
-      , "  a1     \n"
-      , "  a2     \n"
-      , "   b1    \n"
-      , "  a3     \n"
-      , "   haha  \n"
-      , "   it    \n"
-      , "   works \n"
-      , "    "
-      ]
+        [ "k        \n"
+        , "  a1     \n"
+        , "  a2     \n"
+        , "   b1    \n"
+        , "  a3     \n"
+        , "   haha  \n"
+        , "   it    \n"
+        , "   works \n"
+        , "    "
+        ]
     )
     ( Taxonomy "k"
-      [ Taxonomy "a1" []
-      , Taxonomy "a2"
-          [ Taxonomy "b1" []
-          ]
-      , Taxonomy "a3"
-          [ Taxonomy "haha"  []
-          , Taxonomy "it"    []
-          , Taxonomy "works" []
-          ]
-      ]
+        [ Taxonomy "a1" []
+        , Taxonomy "a2"
+            [ Taxonomy "b1" []
+            ]
+        , Taxonomy "a3"
+            [ Taxonomy "haha" []
+            , Taxonomy "it" []
+            , Taxonomy "works" []
+            ]
+        ]
     )
     (pTaxonomy <* eof)
 
@@ -98,25 +98,27 @@ testIndentationParser = do
         eof
         pure { x, y, z }
 
-  parseErrorTestPositionAndMessage (do
-    x <- intDecimal
-    void $ string "\n  "
-    indented *> withPos do
-      checkIndent -- This should pass.
-      y <- intDecimal
-      void $ string "\n"
-      indented *> withPos do -- indented should fail
-        z <- intDecimal
-        eof
-        pure { x, y, z }
+  parseErrorTestPositionAndMessage
+    ( do
+        x <- intDecimal
+        void $ string "\n  "
+        indented *> withPos do
+          checkIndent -- This should pass.
+          y <- intDecimal
+          void $ string "\n"
+          indented *> withPos do -- indented should fail
+            z <- intDecimal
+            eof
+            pure { x, y, z }
     )
     "111\n  222\n333"
     """not indented"""
     (Position { column: 1, index: 10, line: 3 })
 
   -- Testing function 'indentParens'
-  parseTest "(1,2,3)" (fromFoldable ["1", "2", "3"]) $
-    indentParens $ sepBy (string "1" <|> string "2" <|> string "3") (char ',')
+  parseTest "(1,2,3)" (fromFoldable [ "1", "2", "3" ])
+    $ indentParens
+    $ sepBy (string "1" <|> string "2" <|> string "3") (char ',')
 
   -- doesnt work, dont understand idea of this method
   -- parseTest """(\n  1,\n  2,\n  3)""" (fromFoldable ["1", "2", "3"]) $
