@@ -27,7 +27,7 @@ mkParseTest runParser input expected p = case runParser input p of
   Right actual -> do
     assert' ("expected output: " <> show expected <> ", actual output: " <> show actual) (expected == actual)
     logShow actual
-  Left err -> assert' (joinWith "\n" $ ["error: " <> show err] <> parseErrorHuman__onlyString input 60 err) false
+  Left err -> assert' (joinWith "\n" $ [ "error: " <> show err ] <> parseErrorHuman__onlyString input 60 err) false
 
 mkParseErrorTestPosition :: forall s a m. Show a => (s -> ParserT s m a -> Either ParseError a) -> ParserT s m a -> s -> Position -> Effect Unit
 mkParseErrorTestPosition runParser p input expected = case runParser input p of
