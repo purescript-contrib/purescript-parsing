@@ -9,35 +9,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up a PureScript toolchain
         uses: purescript-contrib/setup-purescript@main
         with:
-          purescript: "unstable"
+          purescript: "latest"
           purs-tidy: "latest"
+          spago: "unstable"
 
       - name: Cache PureScript dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}-2
+          key: ${{ runner.os }}-spago-${{ hashFiles('**/spago.lock') }}
           path: |
             .spago
             output
 
-      - name: Install dependencies
-        run: spago install
-
       - name: Build source
-        run: spago build --no-install --purs-args '--censor-lib --strict --censor-codes='UserDefinedWarning''
-
-      - name: Install dev dependencies
-        run: spago -x spago-dev.dhall install
+        run: spago build --censor-stats --strict --pedantic-packages
 
       - name: Run tests
-        run: spago -x spago-dev.dhall test --no-install
+        run: spago test --offline --censor-stats --strict --pedantic-packages -- --censor-codes=UserDefinedWarning
 
-      - name: Check formatting
+      - name: Verify formatting
         run: purs-tidy check src test bench

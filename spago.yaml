@@ -30,8 +30,10 @@ package:
     main: Test.Main
     dependencies:
       - assert
+      - bifunctors
+      - console
       - node-process
-      - debug
+      - nonempty
 workspace:
   extraPackages: {}
   packageSet:
