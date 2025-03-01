@@ -36,7 +36,7 @@ import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorPosition, position, region, runParser)
-import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
+import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optional, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
@@ -572,6 +572,15 @@ javaStyleTest = do
     "hello {- comment\n -} foo"
     (mkPos 7)
 
+takeWhilePropagateFail :: TestM
+takeWhilePropagateFail = do
+  -- `takeWhile` always succeeds, but if input was consumed prior and failure happens
+  -- later, then the failure with consumption should propagate past `optional` #236
+  parseErrorTestPosition
+    (optional (char 'f' <* takeWhile (const false) <* fail "failure"))
+    "f"
+    (Position { index: 1, line: 1, column: 2 })
+
 main :: Effect Unit
 main = do
 
@@ -733,6 +742,8 @@ main = do
         takeWhile1 CodePoint.Unicode.isLetter <* string " the Awkward" <?> "letter"
     , expected: Left $ ParseError "Expected letter" (Position { index: 0, line: 1, column: 1 })
     }
+
+  takeWhilePropagateFail
 
   log "\nTESTS number\n"
 
