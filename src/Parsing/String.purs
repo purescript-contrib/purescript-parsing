@@ -282,12 +282,12 @@ consumeWith
    . (String -> Either String { value :: a, consumed :: String, remainder :: String })
   -> ParserT String m a
 consumeWith f = ParserT
-  ( mkFn5 \state1@(ParseState input pos _) _ _ throw done ->
+  ( mkFn5 \state1@(ParseState input pos oldConsumed) _ _ throw done ->
       case f input of
         Left err ->
           runFn2 throw state1 (ParseError err pos)
         Right { value, consumed, remainder } ->
-          runFn2 done (ParseState remainder (updatePosString pos consumed remainder) (not (String.null consumed))) value
+          runFn2 done (ParseState remainder (updatePosString pos consumed remainder) (oldConsumed || not (String.null consumed))) value
   )
 
 -- | Combinator which finds the first position in the input `String` where the
