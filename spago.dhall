@@ -3,6 +3,7 @@
 , repository = "https://github.com/purescript-contrib/purescript-parsing.git"
 , dependencies =
   [ "arrays"
+  , "console"
   , "control"
   , "effect"
   , "either"
@@ -15,8 +16,8 @@
   , "lists"
   , "maybe"
   , "newtype"
-  , "numbers"
   , "nullable"
+  , "numbers"
   , "partial"
   , "prelude"
   , "st"
