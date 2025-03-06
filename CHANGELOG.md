@@ -6,6 +6,7 @@ Notable changes to this project are documented in this file. The format is based
 
 Bugfixes:
 - `float` parser of `GenTokenParser` does not parse negative numbers (by @mstream)
+- Fixes `consumed` semantics which could cause unexpected backtracking instead of a failure (by @natefaubion)
 
 Breaking changes:
 
