@@ -93,6 +93,12 @@ data ParseState s = ParseState s Position Boolean
 --
 -- http://blog.ezyang.com/2014/05/parsec-try-a-or-b-considered-harmful/
 
+appendConsumed :: forall a. ParseState a -> ParseState a -> ParseState a
+appendConsumed (ParseState _ _ consumed1) state@(ParseState a b consumed2) =
+  case consumed1, consumed2 of
+    true, false -> ParseState a b true
+    _, _ -> state
+
 -- | The `Parser s` monad with a monad transformer parameter `m`.
 newtype ParserT s m a = ParserT
   -- The parser is implemented using continuation-passing-style with uncurried
@@ -231,11 +237,12 @@ instance Apply (ParserT s m) where
         more \_ ->
           runFn5 k1 state1 more lift throw
             ( mkFn2 \state2 f ->
-                more \_ ->
-                  runFn5 k2 state2 more lift throw
+                more \_ -> do
+                  let state2' = state1 `appendConsumed` state2
+                  runFn5 k2 state2' more lift throw
                     ( mkFn2 \state3 a ->
                         more \_ ->
-                          runFn2 done state3 (f a)
+                          runFn2 done (state2' `appendConsumed` state3) (f a)
                     )
             )
     )
@@ -254,7 +261,7 @@ instance Bind (ParserT s m) where
             ( mkFn2 \state2 a ->
                 more \_ -> do
                   let (ParserT k2) = next a
-                  runFn5 k2 state2 more lift throw done
+                  runFn5 k2 (state1 `appendConsumed` state2) more lift throw done
             )
     )
 
@@ -271,15 +278,17 @@ instance MonadRec (ParserT s m) where
           loop = mkFn3 \state2 arg gas -> do
             let (ParserT k1) = next arg
             runFn5 k1 state2 more lift throw
-              ( mkFn2 \state3 step -> case step of
-                  Loop nextArg ->
-                    if gas == 0 then
-                      more \_ ->
-                        runFn3 loop state3 nextArg 30
-                    else
-                      runFn3 loop state3 nextArg (gas - 1)
-                  Done res ->
-                    runFn2 done state3 res
+              ( mkFn2 \state3 step -> do
+                  let state3' = state2 `appendConsumed` state3
+                  case step of
+                    Loop nextArg ->
+                      if gas == 0 then
+                        more \_ ->
+                          runFn3 loop state3' nextArg 30
+                      else
+                        runFn3 loop state3' nextArg (gas - 1)
+                    Done res ->
+                      runFn2 done state3' res
               )
         runFn3 loop state1 initArg 30
     )
