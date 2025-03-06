@@ -5,10 +5,11 @@
 
 module Test.Main where
 
-import Prelude (class Eq, class Show, Unit, append, bind, const, discard, div, flip, identity, map, negate, pure, show, unit, void, ($), ($>), (*), (*>), (+), (-), (/), (/=), (<$), (<$>), (<*), (<*>), (<>), (==), (>>=))
+import Prelude hiding (between, when)
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix, defer)
+import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.State (State, lift, modify, runState)
 import Data.Array (some, toUnfoldable)
 import Data.Array as Array
@@ -16,6 +17,7 @@ import Data.Bifunctor (lmap, rmap)
 import Data.CodePoint.Unicode as CodePoint.Unicode
 import Data.Either (Either(..), either, fromLeft, hush)
 import Data.Foldable (oneOf)
+import Data.Function.Uncurried (mkFn5, runFn2)
 import Data.List (List(..), fromFoldable, (:))
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), catMaybes, cons, cons')
@@ -35,7 +37,7 @@ import Effect (Effect)
 import Effect.Console (log, logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
-import Parsing (ParseError(..), ParseState(..), Parser, ParserT, Position(..), consume, fail, getParserT, initialPos, parseErrorPosition, position, region, runParser)
+import Parsing (ParseError(..), ParseState(..), Parser, ParserT(..), Position(..), consume, fail, getParserT, initialPos, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optional, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -49,7 +51,7 @@ import Parsing.Token as Token
 import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert', assertEqual')
 import Test.IndentationTests as IndentationTests
-import Test.Lib
+import Test.Lib (class ParseErrorHuman__OnlyString, TestM, mkParseErrorTestMessage, mkParseErrorTestPosition, mkParseTest)
 
 parseTest :: forall s a. Show a => Eq a => ParseErrorHuman__OnlyString s => s -> a -> Parser s a -> Effect Unit
 parseTest = mkParseTest runParser
@@ -59,6 +61,13 @@ parseErrorTestPosition = mkParseErrorTestPosition runParser
 
 parseErrorTestMessage :: forall s a. Show a => Parser s a -> s -> String -> Effect Unit
 parseErrorTestMessage = mkParseErrorTestMessage runParser
+
+parseState :: forall m s a. (ParseState s -> Tuple (ParseState s) a) -> ParserT s m a
+parseState k = ParserT
+  ( mkFn5 \state1 _ _ _ done -> do
+      let Tuple state2 res = k state1
+      runFn2 done state2 res
+  )
 
 parens :: forall m a. ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -581,8 +590,44 @@ takeWhilePropagateFail = do
     "f"
     (Position { index: 1, line: 1, column: 2 })
 
+applicativeSemantics :: Parser String String
+applicativeSemantics =
+  ( string "foo"
+      <* parseState (\(ParseState a b _) -> Tuple (ParseState a b false) unit)
+      <* fail "fail"
+  )
+    <|> pure ""
+
+bindSemantics :: Parser String String
+bindSemantics =
+  ( do
+      _ <- string "foo"
+      parseState (\(ParseState a b _) -> Tuple (ParseState a b false) unit)
+      fail "fail"
+  )
+    <|> pure ""
+
+monadRecSemantics :: Parser String String
+monadRecSemantics = loop <|> pure ""
+  where
+  loop = tailRecM
+    ( case _ of
+        1 -> do
+          _ <- string "foo"
+          pure (Loop 2)
+        2 ->
+          parseState (\(ParseState a b _) -> Tuple (ParseState a b false) (Loop 3))
+        _ ->
+          fail "fail"
+    )
+    1
+
 main :: Effect Unit
 main = do
+  log "\nTESTS Semantics\n"
+  parseErrorTestMessage applicativeSemantics "foo" "fail"
+  parseErrorTestMessage bindSemantics "foo" "fail"
+  parseErrorTestMessage monadRecSemantics "foo" "fail"
 
   log "\nTESTS Indentation\n"
   IndentationTests.testIndentationParser
