@@ -80,6 +80,7 @@ derive instance ordParseError :: Ord ParseError
 -- | - If the left parser fails *without consuming any input*, then backtrack and try the right parser.
 -- | - If the left parser fails and consumes input, then fail immediately.
 data ParseState s = ParseState s Position Boolean
+
 -- ParseState constructor has three parameters,
 -- s: the remaining input
 -- Position: the current position
