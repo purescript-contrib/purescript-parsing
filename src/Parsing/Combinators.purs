@@ -207,8 +207,12 @@ lookAhead (ParserT k1) = ParserT
 
 -- | Match the phrase `p` as many times as possible.
 -- |
--- | If `p` never consumes input when it
--- | fails then `many p` will always succeed,
+-- | Will match until the phrase `p` fails *without consuming*.
+-- |
+-- | If the phrase `p` fails after consuming input then the `many` will fail.
+-- |
+-- | If the phrase `p` is wrapped in `try` then it will never consume.
+-- | If phrase `p` never consumes then `many p` will always succeed,
 -- | but may return an empty list.
 many :: forall s m a. ParserT s m a -> ParserT s m (List a)
 many = List.manyRec

@@ -28,18 +28,21 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Parsing (ParseError(..), ParserT, fail, parseErrorMessage, parseErrorPosition)
-import Parsing.Combinators (try)
 
 -- | Match the phrase `p` as many times as possible.
 -- |
--- | If `p` never consumes input when it
--- | fails then `many p` will always succeed,
+-- | Will match until the phrase `p` fails *without consuming*.
+-- |
+-- | If the phrase `p` fails after consuming input then the `many` will fail.
+-- |
+-- | If the phrase `p` is wrapped in `try` then it will never consume.
+-- | If phrase `p` never consumes then `many p` will always succeed,
 -- | but may return an empty array.
 many :: forall s m a. ParserT s m a -> ParserT s m (Array a)
 many p = do
   rlist <- flip tailRecM Nil $ \xs -> alt
     do
-      x <- try p
+      x <- p
       pure (Loop (x : xs))
     do
       pure (Done xs)
