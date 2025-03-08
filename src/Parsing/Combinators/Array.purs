@@ -33,7 +33,7 @@ import Parsing (ParseError(..), ParserT, fail, parseErrorMessage, parseErrorPosi
 -- |
 -- | Will match until the phrase `p` fails *without consuming*.
 -- |
--- | If the phrase `p` fails after consuming input then the `many` will fail.
+-- | If the phrase `p` fails after consuming then the `many` will fail.
 -- |
 -- | If the phrase `p` is wrapped in `try` then it will never consume.
 -- | If phrase `p` never consumes then `many p` will always succeed,

@@ -136,7 +136,7 @@ infixr 3 asErrorMessage as <??>
 between :: forall m s a open close. ParserT s m open -> ParserT s m close -> ParserT s m a -> ParserT s m a
 between open close p = open *> p <* close
 
--- | Provide a default result in the case where a parser fails without consuming input.
+-- | Provide a default result in the case where a parser fails without consuming.
 option :: forall m s a. a -> ParserT s m a -> ParserT s m a
 option a p = p <|> pure a
 
@@ -146,11 +146,11 @@ option a p = p <|> pure a
 optional :: forall m s a. ParserT s m a -> ParserT s m Unit
 optional p = void p <|> pure unit
 
--- | pure `Nothing` in the case where a parser fails without consuming input.
+-- | pure `Nothing` in the case where a parser fails without consuming.
 optionMaybe :: forall m s a. ParserT s m a -> ParserT s m (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
--- | If the parser fails then backtrack the input stream to the unconsumed state.
+-- | If the parser fails then backtrack the input stream and reset to the unconsumed state.
 -- |
 -- | One use for this combinator is to ensure that the right parser of an
 -- | alternative will always be tried when the left parser fails.
@@ -173,7 +173,7 @@ try (ParserT k1) = ParserT
         done
   )
 
--- | If the parser fails then backtrack the input stream to the unconsumed state.
+-- | If the parser fails then backtrack the input stream and reset to the unconsumed state.
 -- |
 -- | Like `try`, but will reposition the error to the `try` point.
 -- |
@@ -209,7 +209,7 @@ lookAhead (ParserT k1) = ParserT
 -- |
 -- | Will match until the phrase `p` fails *without consuming*.
 -- |
--- | If the phrase `p` fails after consuming input then the `many` will fail.
+-- | If the phrase `p` fails after consuming then the `many` will fail.
 -- |
 -- | If the phrase `p` is wrapped in `try` then it will never consume.
 -- | If phrase `p` never consumes then `many p` will always succeed,
@@ -375,7 +375,7 @@ skipMany1 p = p *> tailRecM go unit
 
 -- | Fail if the parser succeeds.
 -- |
--- | Will never consume input.
+-- | Will never consume.
 notFollowedBy :: forall s a m. ParserT s m a -> ParserT s m Unit
 notFollowedBy p = try $ (try p *> fail "Negated parser succeeded") <|> pure unit
 
