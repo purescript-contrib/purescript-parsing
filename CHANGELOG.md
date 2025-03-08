@@ -5,16 +5,21 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Bugfixes:
-- `float` parser of `GenTokenParser` does not parse negative numbers (by @mstream)
-- Fixes `consumed` semantics which could cause unexpected backtracking instead of a failure (by @natefaubion)
-- Fix `Combinators.Array.many` and `Combinators.Array.many1`. If the phrase fails after consuming
-  then the combinator fails. (#240 by @jamesdbrock)
 
 Breaking changes:
 
 New features:
 
 Other improvements:
+
+## [v10.3.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.3.0) - 2025-03-08
+
+Bugfixes:
+
+- `float` parser of `GenTokenParser` does not parse negative numbers (by @mstream)
+- Fixes `consumed` semantics which could cause unexpected backtracking instead of a failure (by @natefaubion)
+- Fix `Combinators.Array.many` and `Combinators.Array.many1`. If the phrase fails after consuming
+  then the combinator fails. (#240 by @jamesdbrock)
 
 ## [v10.2.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.2.0) - 2022-11-30
 

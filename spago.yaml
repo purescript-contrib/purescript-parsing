@@ -34,6 +34,40 @@ package:
       - console
       - node-process
       - nonempty
+  publish:
+    # The version of your package. This follows semver rules, but with no
+    # prereleases - so only major.minor.patch.
+    version: 10.3.0
+    # The license for your source, in SPDX format: https://spdx.dev/
+    license: BSD-2-Clause
+    # # Optional list of globs to include in the published archive, in
+    # # addition to the list of files that the Registry includes by default:
+    # # https://github.com/purescript/registry-dev/blob/master/SPEC.md#always-included-files
+    # include:
+    # - "test/**/*.purs"
+    # # Optional list of globs to exclude from the published archive, in
+    # # addition to the list of files that the Registry includes by default:
+    # # https://github.com/purescript/registry-dev/blob/master/SPEC.md#always-excluded-files
+    # # Note that the Registry will first apply the `include` list, then
+    # # the `exclude` one, as detailed in the specification:
+    # # https://github.com/purescript/registry-dev/blob/master/SPEC.md#33-manifest
+    # exclude:
+    # - "test/graphs/**/*"
+    # The place where the Registry will fetch the source from.
+    # This is optional since you might want to release the code without
+    # publishing to the Registry, which is what this is needed for.
+    location:
+      # There are a few supported locations:
+      # 1) Github: no URL needed, just username and the name of the repo
+      #    The `subdir` field is optional, and only necessary if your
+      #    package is not in the root of the repo.
+      githubOwner: purescript-contrib
+      githubRepo: purescript-parsing
+      # subdir: lib
+      # 2) Git: any git server should work with this
+      #    The `subdir` is optional as above
+      url: https://github.com/purescript-contrib/purescript-parsing
+      # subdir: lib
 workspace:
   extraPackages: {}
   packageSet:
