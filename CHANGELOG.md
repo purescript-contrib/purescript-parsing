@@ -7,6 +7,8 @@ Notable changes to this project are documented in this file. The format is based
 Bugfixes:
 - `float` parser of `GenTokenParser` does not parse negative numbers (by @mstream)
 - Fixes `consumed` semantics which could cause unexpected backtracking instead of a failure (by @natefaubion)
+- Fix `Combinators.Array.many` and `Combinators.Array.many1`. If the phrase fails after consuming
+  then the combinator fails. (#240 by @jamesdbrock)
 
 Breaking changes:
 

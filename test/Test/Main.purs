@@ -39,6 +39,7 @@ import Effect.Unsafe (unsafePerformEffect)
 import Node.Process (lookupEnv)
 import Parsing (ParseError(..), ParseState(..), Parser, ParserT(..), Position(..), consume, fail, getParserT, initialPos, parseErrorPosition, position, region, runParser)
 import Parsing.Combinators (advance, between, chainl, chainl1, chainr, chainr1, choice, empty, endBy, endBy1, lookAhead, many, many1, many1Till, many1Till_, manyIndex, manyTill, manyTill_, notFollowedBy, optional, optionMaybe, replicateA, sepBy, sepBy1, sepEndBy, sepEndBy1, skipMany, skipMany1, try, tryRethrow, (<?>), (<??>), (<~?>))
+import Parsing.Combinators as Combinators
 import Parsing.Combinators.Array as Combinators.Array
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Language (haskellDef, haskellStyle, javaStyle)
@@ -1232,3 +1233,31 @@ main = do
       { actual: runParser "aabbaa" aye
       , expected: Right ('a' : 'a' : 'b' : 'b' : 'a' : 'a' : List.Nil)
       }
+
+  do
+    log "\nTESTS Combinators many"
+    -- https://github.com/purescript-contrib/purescript-parsing/issues/234
+
+    let
+      failAfterConsuming :: forall a. Parser String a
+      failAfterConsuming = anyChar *> fail "failure"
+
+    parseErrorTestPosition
+      (Combinators.Array.many (char 'a' <|> failAfterConsuming))
+      "abc"
+      (Position { index: 2, line: 1, column: 3 })
+
+    parseErrorTestPosition
+      (Combinators.Array.many1 (char 'a' <|> failAfterConsuming))
+      "abc"
+      (Position { index: 2, line: 1, column: 3 })
+
+    parseErrorTestPosition
+      (Combinators.many (char 'a' <|> failAfterConsuming))
+      "abc"
+      (Position { index: 2, line: 1, column: 3 })
+
+    parseErrorTestPosition
+      (Combinators.many (char 'a' <|> failAfterConsuming))
+      "abc"
+      (Position { index: 2, line: 1, column: 3 })
