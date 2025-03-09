@@ -202,8 +202,11 @@ match p = do
 -- | error message.
 -- |
 -- | The returned parser will try to match the regular expression pattern once,
--- | starting at the current parser position. On success, it will return
--- | the matched substring.
+-- | starting at the current parser position. Note that this implies that an
+-- | expression starting as `^…` (i.e. with the beginning of line) will match the
+-- | current position even in absence of a preceding newline.
+-- |
+-- | On success, the parser will return the matched substring.
 -- |
 -- | If the RegExp `String` is constant then we can assume that compilation will
 -- | always succeed and `unsafeCrashWith` if it doesn’t. If we dynamically
@@ -231,14 +234,24 @@ match p = do
 -- |
 -- | #### Example
 -- |
--- | This example shows how to compile and run the `xMany` parser which will
--- | capture the regular expression pattern `x*`.
+-- | Compiling and running different regex parsers:
 -- |
 -- | ```purescript
--- | case regex "x*" noFlags of
--- |   Left compileError -> unsafeCrashWith $ "xMany failed to compile: " <> compileError
--- |   Right xMany -> runParser "xxxZ" do
--- |     xMany
+-- | example re flags text =
+-- |   case regex re flags of
+-- |     Left compileError -> unsafeCrashWith $ "xMany failed to compile: " <> compileError
+-- |     Right xMany -> runParser text do
+-- |       xMany
+-- |
+-- | -- Capturing a string per `x*` regex.
+-- | exampleXMany = example "x*" noFlags "xxxZ"
+-- |
+-- | -- Capturing everything till end of line.
+-- | exampleCharsTillEol = example ".*$" multiline "line1\nline2"
+-- |
+-- | -- Capturing everything till end of string. Note the distinction with
+-- | -- `exampleCharsTillEol`.
+-- | exampleCharsTillEos = example ".*$" dotAll "line1\nline2"
 -- | ```
 -- |
 -- | #### Flags
@@ -249,9 +262,11 @@ match p = do
 -- | regex "x*" (dotAll <> ignoreCase)
 -- | ```
 -- |
--- | The `dotAll`, `unicode`, and `ignoreCase` flags might make sense for
--- | a `regex` parser. The other flags will
--- | probably cause surprising behavior and you should avoid them.
+-- | The `dotAll`, `multiline`, `unicode`, and `ignoreCase` flags might make
+-- | sense for a `regex` parser. In fact, per JS RegExp semantics matching a
+-- | single line boundary in a multiline string requires passing `multiline`.
+-- |
+-- | Other flags will probably cause surprising behavior and should be avoided.
 -- |
 -- | [*MDN Advanced searching with flags*](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags)
 regex :: forall m. String -> RegexFlags -> Either String (ParserT String m String)
