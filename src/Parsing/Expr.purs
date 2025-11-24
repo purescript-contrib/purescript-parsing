@@ -13,9 +13,9 @@ import Prelude hiding (between)
 
 import Control.Alt ((<|>))
 import Data.Foldable (foldl, foldr)
-import Data.List (List(..), (:))
+import Data.List (List(..), reverse, (:))
 import Parsing (ParserT)
-import Parsing.Combinators (choice, (<?>))
+import Parsing.Combinators (choice, many, (<?>))
 
 data Assoc = AssocNone | AssocLeft | AssocRight
 
@@ -72,8 +72,8 @@ makeParser term ops = do
   prefixOp = choice accum.prefix <?> ""
   postfixOp = choice accum.postfix <?> ""
 
-  postfixP = chainP (>>>) postfixOp
-  prefixP = chainP (<<<) prefixOp
+  postfixP = rchainP postfixOp
+  prefixP = lchainP prefixOp
 
 splitOp :: forall m s a. Operator m s a -> SplitAccum m s a -> SplitAccum m s a
 splitOp (Infix op AssocNone) accum = accum { nassoc = op : accum.nassoc }
@@ -108,13 +108,11 @@ nassocP x nassocOp prefixP term postfixP = do
   y <- termP prefixP term postfixP
   pure (f x y)
 
-chainP :: forall m s a. ((a -> a) -> (a -> a) -> (a -> a)) -> ParserT s m (a -> a) -> ParserT s m (a -> a)
-chainP comp p =
-  do
-    op <- p
-    rest <- chainP comp p
-    pure (comp op rest)
-    <|> pure identity
+rchainP :: forall m s a. ParserT s m (a -> a) -> ParserT s m (a -> a)
+rchainP p = flip (foldl (\acc f -> f acc)) <$> many p
+
+lchainP :: forall m s a. ParserT s m (a -> a) -> ParserT s m (a -> a)
+lchainP p = flip (foldl (\acc f -> f acc)) <$> reverse <$> many p
 
 termP :: forall m s a b c. ParserT s m (a -> b) -> ParserT s m a -> ParserT s m (b -> c) -> ParserT s m c
 termP prefixP term postfixP = do
