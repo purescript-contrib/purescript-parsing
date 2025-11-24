@@ -72,8 +72,8 @@ makeParser term ops = do
   prefixOp = choice accum.prefix <?> ""
   postfixOp = choice accum.postfix <?> ""
 
-  postfixP = postfixOp <|> pure identity
-  prefixP = prefixOp <|> pure identity
+  postfixP = chainP (>>>) postfixOp
+  prefixP = chainP (<<<) prefixOp
 
 splitOp :: forall m s a. Operator m s a -> SplitAccum m s a -> SplitAccum m s a
 splitOp (Infix op AssocNone) accum = accum { nassoc = op : accum.nassoc }
@@ -107,6 +107,14 @@ nassocP x nassocOp prefixP term postfixP = do
   f <- nassocOp
   y <- termP prefixP term postfixP
   pure (f x y)
+
+chainP :: forall m s a. ((a -> a) -> (a -> a) -> (a -> a)) -> ParserT s m (a -> a) -> ParserT s m (a -> a)
+chainP comp p =
+  do
+    op <- p
+    rest <- chainP comp p
+    pure (comp op rest)
+    <|> pure identity
 
 termP :: forall m s a b c. ParserT s m (a -> b) -> ParserT s m a -> ParserT s m (b -> c) -> ParserT s m c
 termP prefixP term postfixP = do
