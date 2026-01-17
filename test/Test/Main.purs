@@ -104,6 +104,37 @@ exprTest = buildExprParser
   ]
   digit
 
+exprTest' :: Parser String Int
+exprTest' = buildExprParser
+  [ [ Postfix (string "--" >>= \_ -> pure (flip (-) 1))
+    , Postfix (string "++" >>= \_ -> pure ((+) 1))
+    ]
+  , [ Prefix (string "-" >>= \_ -> pure negate)
+    , Prefix (string "+" >>= \_ -> pure identity)
+    ]
+  , [ Infix (string "/" >>= \_ -> pure (/)) AssocLeft
+    , Infix (string "*" >>= \_ -> pure (*)) AssocLeft
+    ]
+  , [ Infix (string "-" >>= \_ -> pure (-)) AssocLeft
+    , Infix (string "+" >>= \_ -> pure (+)) AssocLeft
+    ]
+  ]
+  digit
+
+word :: String -> Parser String String
+word s = string s <* whiteSpace
+
+bool :: Parser String Boolean
+bool = (word "True" >>= \_ -> pure true) <|> (word "False" >>= \_ -> pure false)
+
+chainExprTest :: Parser String Boolean
+chainExprTest = buildExprParser
+  [ [ Prefix (word "not" >>= \_ -> pure not) ]
+  , [ Infix (word "and" >>= \_ -> pure (&&)) AssocLeft ]
+  , [ Postfix (word "ton" >>= \_ -> pure \x -> not x) ]
+  ]
+  bool
+
 manySatisfyTest :: Parser String String
 manySatisfyTest = do
   r <- some $ satisfy (\s -> s /= '?')
@@ -662,6 +693,10 @@ main = do
     pure as
   parseTest "a+b+c" "abc" opTest
   parseTest "1*2+3/4-5" (-3) exprTest
+  parseTest "1*2+3/4-5" (-3) exprTest'
+  parseTest "1+++-2-----3+++4" (2) exprTest'
+  parseTest "not False and not not True" (true) chainExprTest
+  parseTest "True ton ton and False ton" (true) chainExprTest
   parseTest "ab?" "ab" manySatisfyTest
 
   parseTest "ab" unit (char 'a' *> notFollowedBy (char 'a'))

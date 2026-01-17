@@ -8,6 +8,8 @@ Bugfixes:
 
 Breaking changes:
 
+- `Prefix` and `Postfix` operators in `Parsing.Expr` are chained. (#242 by @jacobpake)
+
 New features:
 
 Other improvements:
