@@ -14,6 +14,8 @@ New features:
 
 Other improvements:
 
+- Update repository tooling for Spago 1.0.
+
 ## [v10.3.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.3.0) - 2025-03-08
 
 Bugfixes:
