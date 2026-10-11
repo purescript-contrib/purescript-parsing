@@ -39,7 +39,7 @@ package:
     # prereleases - so only major.minor.patch.
     version: 11.0.1
     # The license for your source, in SPDX format: https://spdx.dev/
-    license: BSD-2-Clause
+    license: BSD-3-Clause
     # # Optional list of globs to include in the published archive, in
     # # addition to the list of files that the Registry includes by default:
     # # https://github.com/purescript/registry-dev/blob/master/SPEC.md#always-included-files
