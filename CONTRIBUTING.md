@@ -6,7 +6,7 @@ Every library in the Contributors organization shares a simple handbook that hel
 
 # Development
 
-This package includes a `spago-dev.dhall` which provides the dependencies
+This package includes a `spago.yaml` which provides the dependencies
 for development and testing.
 
 ## Testing
@@ -14,5 +14,5 @@ for development and testing.
 To run the test suite:
 
 ```
-spago -x spago-dev.dhall test
+spago test
 ```
