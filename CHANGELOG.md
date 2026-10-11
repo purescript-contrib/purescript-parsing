@@ -8,13 +8,22 @@ Bugfixes:
 
 Breaking changes:
 
-- `Prefix` and `Postfix` operators in `Parsing.Expr` are chained. (#242 by @jacobpake)
-
 New features:
 
 Other improvements:
 
+## [v11.0.1](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v11.0.1) - 2026-10-11
+
+Other improvements:
+
 - Update repository tooling for Spago 1.0.
+- Describe the existing license notices with `BSD-2-Clause AND BSD-3-Clause` publish metadata; source and notices are unchanged.
+
+## [v11.0.0](https://github.com/purescript-contrib/purescript-parsing/tree/v11.0.0) - 2026-01-17
+
+Breaking changes:
+
+- `Prefix` and `Postfix` operators in `Parsing.Expr` are chained. (#242 by @jacobpake)
 
 ## [v10.3.0](https://github.com/purescript-contrib/purescript-parsing/releases/tag/v10.3.0) - 2025-03-08
 
